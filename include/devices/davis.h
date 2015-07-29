@@ -8,11 +8,14 @@
 #ifndef LIBCAER_DEVICES_DAVIS_H_
 #define LIBCAER_DEVICES_DAVIS_H_
 
-#include "events/packetContainer.h"
+#include "usb.h"
 #include "events/polarity.h"
 #include "events/special.h"
 #include "events/frame.h"
 #include "events/imu6.h"
+
+#define CAER_DEVICE_DAVIS_FX2 1
+#define CAER_DEVICE_DAVIS_FX3 2
 
 #define DAVIS_CHIP_DAVIS240A 0
 #define DAVIS_CHIP_DAVIS240B 1
@@ -462,5 +465,7 @@ struct caer_davis_info {
 };
 
 typedef struct caer_davis_info *caerDavisInfo;
+
+caerDavisInfo caerDavisInfoGet(caerDeviceHandle handle);
 
 #endif /* LIBCAER_DEVICES_DAVIS_H_ */
