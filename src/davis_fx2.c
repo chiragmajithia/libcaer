@@ -1,24 +1,9 @@
-#include "davis_common.h"
-#include "devices/davis_fx2.h"
-#include <pthread.h>
-#include <unistd.h>
+#include "davis_fx2.h"
 
-#define DAVIS_FX2_VID 0x152A
-#define DAVIS_FX2_PID 0x841B
-#define DAVIS_FX2_DID_TYPE 0x00
-
-#define VR_CHIP_BIAS 0xC0
-#define VR_CHIP_DIAG 0xC1
-
-struct caer_davis_fx2_handle {
-	// Common info and state structure (handle).
-	struct davis_handle h;
-};
-
-caerDavisFX2Handle caerDavisFX2Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict,
+caerDeviceHandle caerDavisFX2Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
 	// Allocate memory for device structures.
-	caerDavisFX2Handle handle = ccalloc(1, sizeof(*handle));
+	davisFX2Handle handle = ccalloc(1, sizeof(*handle));
 	if (handle == NULL) {
 		caerLog(LOG_CRITICAL, "DAVIS FX2", "Failed to allocate memory.");
 		return (NULL);

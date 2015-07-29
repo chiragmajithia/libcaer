@@ -1,6 +1,4 @@
 #include "davis_common.h"
-#include <pthread.h>
-#include <unistd.h>
 
 static libusb_device_handle *deviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID, uint8_t devType,
 	uint8_t busNumber, uint8_t devAddress);
@@ -16,6 +14,7 @@ static inline void checkMonotonicTimestamp(davisHandle handle) {
 
 static inline void initFrame(davisHandle handle, caerFrameEvent currentFrameEvent) {
 	handle->state.apsCurrentReadoutType = APS_READOUT_RESET;
+
 	for (size_t j = 0; j < APS_READOUT_TYPES_NUM; j++) {
 		handle->state.apsCountX[j] = 0;
 		handle->state.apsCountY[j] = 0;
@@ -124,6 +123,7 @@ uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, u
 
 	return (returnedParam);
 }
+
 
 bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, uint8_t busNumberRestrict,
 	uint8_t devAddressRestrict, const char *serialNumberRestrict) {

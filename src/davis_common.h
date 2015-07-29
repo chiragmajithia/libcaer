@@ -3,6 +3,8 @@
 
 #include "devices/davis.h"
 #include "ringbuffer/ringbuffer.h"
+#include <pthread.h>
+#include <unistd.h>
 #include <libusb.h>
 #include <stdatomic.h>
 
@@ -18,7 +20,7 @@
 
 #define DATA_ENDPOINT 0x82
 
-#define VR_FPGA_CONFIG 0xBF
+#define VENDOR_REQUEST_FPGA_CONFIG 0xBF
 
 struct davis_state {
 	// Data Acquisition Thread -> Mainloop Exchange
@@ -98,6 +100,12 @@ struct davis_handle {
 };
 
 typedef struct davis_handle *davisHandle;
+
+bool davisCommonClose(caerDeviceHandle handle);
+
+bool davisCommonDataStart(caerDeviceHandle handle);
+bool davisCommonDataStop(caerDeviceHandle handle);
+caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
 
 void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
 uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr);

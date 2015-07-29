@@ -94,7 +94,7 @@ static inline void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, uint1
 		return;
 	}
 
-	// Zero out event memory (all events invalid).
+	// Zero out event memory (all pixels black).
 	memset(pixels, 0, pixelSize);
 
 	// Fill in header fields.

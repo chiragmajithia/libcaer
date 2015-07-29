@@ -1,83 +1,36 @@
-/*
- * dvs128.c
- *
- *  Created on: Nov 26, 2013
- *      Author: chtekk
- */
+#include "dvs128.h"
 
-#include "devices/dvs128.h"
-#include "ringbuffer/ringbuffer.h"
-#include <pthread.h>
-#include <libusb.h>
 
-#define DVS128_VID 0x152A
-#define DVS128_PID 0x8400
-#define DVS128_DID_TYPE 0x00
+caerDeviceHandle dvs128Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict) {
 
-#define DVS128_ARRAY_SIZE_X 128
-#define DVS128_ARRAY_SIZE_Y 128
+}
 
-#define DATA_ENDPOINT 0x86
+bool dvs128Close(caerDeviceHandle handle) {
 
-#define VENDOR_REQUEST_START_TRANSFER 0xB3
-#define VENDOR_REQUEST_STOP_TRANSFER 0xB4
-#define VENDOR_REQUEST_SEND_BIASES 0xB8
-#define VENDOR_REQUEST_RESET_TS 0xBB
-#define VENDOR_REQUEST_RESET_ARRAY 0xBD
+}
 
-struct dvs128_state {
-	// Data Acquisition Thread -> Mainloop Exchange
-	pthread_t dataAcquisitionThread;
-	RingBuffer dataExchangeBuffer;
-	caerMainloopData mainloopNotify;
-	uint16_t sourceID;
-	char *sourceSubSystemString;
-	// USB Device State
-	libusb_context *deviceContext;
-	libusb_device_handle *deviceHandle;
-	// Data Acquisition Thread State
-	struct libusb_transfer **transfers;
-	size_t transfersLength;
-	size_t activeTransfers;
-	uint32_t wrapAdd;
-	uint32_t lastTimestamp;
-	// Polarity Packet State
-	caerPolarityEventPacket currentPolarityPacket;
-	uint32_t currentPolarityPacketPosition;
-	uint32_t maxPolarityPacketSize;
-	uint32_t maxPolarityPacketInterval;
-	// Special Packet State
-	caerSpecialEventPacket currentSpecialPacket;
-	uint32_t currentSpecialPacketPosition;
-	uint32_t maxSpecialPacketSize;
-	uint32_t maxSpecialPacketInterval;
-};
+bool dvs128SendDefaultConfig(caerDeviceHandle handle) {
 
-typedef struct dvs128_state *dvs128State;
+}
 
-static bool caerInputDVS128Init(caerModuleData moduleData);
-static void caerInputDVS128Run(caerModuleData moduleData, size_t argsNumber, va_list args);
-// CONFIG: Nothing to do here in the main thread!
-// Biases are configured asynchronously, and buffer sizes in the data
-// acquisition thread itself. Resetting the main config_refresh flag
-// will also happen there.
-static void caerInputDVS128Exit(caerModuleData moduleData);
+bool dvs128ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 
-static struct caer_module_functions caerInputDVS128Functions = { .moduleInit = &caerInputDVS128Init, .moduleRun =
-	&caerInputDVS128Run, .moduleConfig = NULL, .moduleExit = &caerInputDVS128Exit };
+}
 
-void caerInputDVS128(uint16_t moduleID, caerPolarityEventPacket *polarity, caerSpecialEventPacket *special) {
-	caerModuleData moduleData = caerMainloopFindModule(moduleID, "DVS128");
+bool dvs128ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 
-	// IMPORTANT: THE CONTENT OF OUTPUT ARGUMENTS MUST BE SET TO NULL!
-	if (polarity != NULL) {
-		*polarity = NULL;
-	}
-	if (special != NULL) {
-		*special = NULL;
-	}
+}
 
-	caerModuleSM(&caerInputDVS128Functions, moduleData, sizeof(struct dvs128_state), 2, polarity, special);
+bool dvs128DataStart(caerDeviceHandle handle) {
+
+}
+
+bool dvs128DataStop(caerDeviceHandle handle) {
+
+}
+
+caerEventPacketContainer dvs128DataGet(caerDeviceHandle handle) {
+
 }
 
 static void *dvs128DataAcquisitionThread(void *inPtr);
@@ -128,10 +81,6 @@ static bool caerInputDVS128Init(caerModuleData moduleData) {
 	sshsNodePutIntIfAbsent(biasNode, "diff", 13125);
 	sshsNodePutIntIfAbsent(biasNode, "foll", 271);
 	sshsNodePutIntIfAbsent(biasNode, "pr", 217);
-
-	// USB port settings/restrictions.
-	sshsNodePutByteIfAbsent(moduleData->moduleNode, "usbBusNumber", 0);
-	sshsNodePutByteIfAbsent(moduleData->moduleNode, "usbDevAddress", 0);
 
 	// USB buffer settings.
 	sshsNodePutIntIfAbsent(moduleData->moduleNode, "bufferNumber", 8);
