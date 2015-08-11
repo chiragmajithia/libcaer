@@ -1,8 +1,11 @@
 #include "dvs128.h"
 
-
 caerDeviceHandle dvs128Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict) {
+	dvs128Handle handle = malloc(sizeof(*handle));
 
+	handle->state->dataExchangeBufferSize = 64;
+	handle->state->usbBufferNumber = 8;
+	handle->state->usbBufferSize = 4096;
 }
 
 bool dvs128Close(caerDeviceHandle handle) {
@@ -10,6 +13,18 @@ bool dvs128Close(caerDeviceHandle handle) {
 }
 
 bool dvs128SendDefaultConfig(caerDeviceHandle handle) {
+	sshsNodePutIntIfAbsent(biasNode, "cas", 1992);
+		sshsNodePutIntIfAbsent(biasNode, "injGnd", 1108364);
+		sshsNodePutIntIfAbsent(biasNode, "reqPd", 16777215);
+		sshsNodePutIntIfAbsent(biasNode, "puX", 8159221);
+		sshsNodePutIntIfAbsent(biasNode, "diffOff", 132);
+		sshsNodePutIntIfAbsent(biasNode, "req", 309590);
+		sshsNodePutIntIfAbsent(biasNode, "refr", 969);
+		sshsNodePutIntIfAbsent(biasNode, "puY", 16777215);
+		sshsNodePutIntIfAbsent(biasNode, "diffOn", 209996);
+		sshsNodePutIntIfAbsent(biasNode, "diff", 13125);
+		sshsNodePutIntIfAbsent(biasNode, "foll", 271);
+		sshsNodePutIntIfAbsent(biasNode, "pr", 217);
 
 }
 
@@ -65,35 +80,11 @@ static inline void freeAllMemory(dvs128State state) {
 static bool caerInputDVS128Init(caerModuleData moduleData) {
 	caerLog(LOG_DEBUG, moduleData->moduleSubSystemString, "Initializing module ...");
 
-	// First, always create all needed setting nodes, set their default values
-	// and add their listeners.
-	// Set default biases, from DVS128Fast.xml settings.
-	sshsNode biasNode = sshsGetRelativeNode(moduleData->moduleNode, "bias/");
-	sshsNodePutIntIfAbsent(biasNode, "cas", 1992);
-	sshsNodePutIntIfAbsent(biasNode, "injGnd", 1108364);
-	sshsNodePutIntIfAbsent(biasNode, "reqPd", 16777215);
-	sshsNodePutIntIfAbsent(biasNode, "puX", 8159221);
-	sshsNodePutIntIfAbsent(biasNode, "diffOff", 132);
-	sshsNodePutIntIfAbsent(biasNode, "req", 309590);
-	sshsNodePutIntIfAbsent(biasNode, "refr", 969);
-	sshsNodePutIntIfAbsent(biasNode, "puY", 16777215);
-	sshsNodePutIntIfAbsent(biasNode, "diffOn", 209996);
-	sshsNodePutIntIfAbsent(biasNode, "diff", 13125);
-	sshsNodePutIntIfAbsent(biasNode, "foll", 271);
-	sshsNodePutIntIfAbsent(biasNode, "pr", 217);
-
-	// USB buffer settings.
-	sshsNodePutIntIfAbsent(moduleData->moduleNode, "bufferNumber", 8);
-	sshsNodePutIntIfAbsent(moduleData->moduleNode, "bufferSize", 4096);
-
 	// Packet settings (size (in events) and time interval (in µs)).
 	sshsNodePutIntIfAbsent(moduleData->moduleNode, "polarityPacketMaxSize", 4096);
 	sshsNodePutIntIfAbsent(moduleData->moduleNode, "polarityPacketMaxInterval", 5000);
 	sshsNodePutIntIfAbsent(moduleData->moduleNode, "specialPacketMaxSize", 128);
 	sshsNodePutIntIfAbsent(moduleData->moduleNode, "specialPacketMaxInterval", 1000);
-
-	// Ring-buffer setting (only changes value on module init/shutdown cycles).
-	sshsNodePutIntIfAbsent(moduleData->moduleNode, "dataExchangeBufferSize", 64);
 
 	// Install default listener to signal configuration updates asynchronously.
 	sshsNodeAddAttrListener(biasNode, moduleData, &caerInputDVS128ConfigListener);

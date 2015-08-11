@@ -53,6 +53,10 @@ struct dvs128_state {
 	uint32_t currentSpecialPacketPosition;
 	uint32_t maxSpecialPacketSize;
 	uint32_t maxSpecialPacketInterval;
+	// Data Transfer State
+	uint32_t usbBufferNumber;
+	uint32_t usbBufferSize;
+	uint32_t dataExchangeBufferSize;
 };
 
 typedef struct dvs128_state *dvs128State;
