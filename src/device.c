@@ -94,13 +94,14 @@ bool caerDeviceClose(caerDeviceHandle *handlePtr) {
 	}
 
 	// Call appropriate destructor function.
-	destructors[*handlePtr->deviceType](*handlePtr);
-	// TODO: maybe return?
+	bool retVal = destructors[*handlePtr->deviceType](*handlePtr);
 
-	// Done. Set reference to NULL.
-	*handlePtr = NULL;
+	// Done. Set reference to NULL if successfull.
+	if (retVal) {
+		*handlePtr = NULL;
+	}
 
-	return (true);
+	return (retVal);
 }
 
 bool caerDeviceSendDefaultConfig(caerDeviceHandle handle) {
