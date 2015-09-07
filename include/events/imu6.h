@@ -12,6 +12,7 @@
 
 struct caer_imu6_event {
 	uint16_t info;
+	uint32_t timestamp;
 	float accel_x;
 	float accel_y;
 	float accel_z;
@@ -19,7 +20,6 @@ struct caer_imu6_event {
 	float gyro_y;
 	float gyro_z;
 	float temp;
-	uint32_t timestamp;
 }__attribute__((__packed__));
 
 typedef struct caer_imu6_event *caerIMU6Event;
@@ -35,19 +35,16 @@ static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(uint32_t eventCapa
 	uint32_t eventSize = sizeof(struct caer_imu6_event);
 	size_t eventPacketSize = sizeof(struct caer_imu6_event_packet) + (eventCapacity * eventSize);
 
-	caerIMU6EventPacket packet = malloc(eventPacketSize);
+	// Zero out event memory (all events invalid).
+	caerIMU6EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event",
-			"Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
-			PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
-			errno);
+		caerLog(LOG_CRITICAL, "IMU6 Event", "Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
+		PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+		errno);
 #endif
 		return (NULL);
 	}
-
-	// Zero out event memory (all events invalid).
-	memset(packet, 0, eventPacketSize);
 
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU6_EVENT);
@@ -55,8 +52,6 @@ static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(uint32_t eventCapa
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu6_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-	caerEventPacketHeaderSetEventNumber(&packet->packetHeader, 0);
-	caerEventPacketHeaderSetEventValid(&packet->packetHeader, 0);
 
 	return (packet);
 }
@@ -80,7 +75,16 @@ static inline uint32_t caerIMU6EventGetTimestamp(caerIMU6Event event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline void caerIMU6EventSetTimestamp(caerIMU6Event event, uint32_t timestamp) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerIMU6EventSetTimestamp(caerIMU6Event event, int32_t timestamp) {
+	if (timestamp < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventSetTimestamp() with negative value!");
+#endif
+		return;
+	}
+
 	event->timestamp = htole32(timestamp);
 }
 
@@ -101,15 +105,14 @@ static inline void caerIMU6EventValidate(caerIMU6Event event, caerIMU6EventPacke
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event",
-			"Called caerIMU6EventValidate() on already valid event.");
+		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventValidate() on already valid event.");
 #endif
 	}
 }
 
 static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPacket packet) {
 	if (caerIMU6EventIsValid(event)) {
-		event->info &= htole16((uint16_t)(~(U16T(1) << VALID_MARK_SHIFT)));
+		event->info &= htole16((uint16_t) (~(U16T(1) << VALID_MARK_SHIFT)));
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -118,8 +121,7 @@ static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPac
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event",
-			"Called caerIMU6EventInvalidate() on already invalid event.");
+		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventInvalidate() on already invalid event.");
 #endif
 	}
 }

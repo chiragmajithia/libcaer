@@ -16,17 +16,16 @@
 #define DATA_MASK 0x03FFFFFF
 
 enum caer_special_event_types {
-	TIMESTAMP_WRAP = 0,
-	TIMESTAMP_RESET = 1,
-	EXTERNAL_INPUT_RISING_EDGE = 2,
-	EXTERNAL_INPUT_FALLING_EDGE = 3,
-	EXTERNAL_INPUT_PULSE = 4,
-	DVS_ROW_ONLY = 5,
+	TIMESTAMP_RESET = 0,
+	EXTERNAL_INPUT_RISING_EDGE = 1,
+	EXTERNAL_INPUT_FALLING_EDGE = 2,
+	EXTERNAL_INPUT_PULSE = 3,
+	DVS_ROW_ONLY = 4,
 };
 
 struct caer_special_event {
-	uint32_t data;
 	uint32_t timestamp;
+	uint32_t data;
 }__attribute__((__packed__));
 
 typedef struct caer_special_event *caerSpecialEvent;
@@ -42,7 +41,8 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(uint32_t eve
 	uint32_t eventSize = sizeof(struct caer_special_event);
 	size_t eventPacketSize = sizeof(struct caer_special_event_packet) + (eventCapacity * eventSize);
 
-	caerSpecialEventPacket packet = malloc(eventPacketSize);
+	// Zero out event memory (all events invalid).
+	caerSpecialEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Special Event",
@@ -53,17 +53,12 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(uint32_t eve
 		return (NULL);
 	}
 
-	// Zero out event memory (all events invalid).
-	memset(packet, 0, eventPacketSize);
-
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SPECIAL_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_special_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-	caerEventPacketHeaderSetEventNumber(&packet->packetHeader, 0);
-	caerEventPacketHeaderSetEventValid(&packet->packetHeader, 0);
 
 	return (packet);
 }
@@ -87,7 +82,16 @@ static inline uint32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, uint32_t timestamp) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t timestamp) {
+	if (timestamp < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventSetTimestamp() with negative value!");
+#endif
+		return;
+	}
+
 	event->timestamp = htole32(timestamp);
 }
 
@@ -108,8 +112,7 @@ static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialE
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event",
-			"Called caerSpecialEventValidate() on already valid event.");
+		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -125,8 +128,7 @@ static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecia
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event",
-			"Called caerSpecialEventInvalidate() on already invalid event.");
+		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventInvalidate() on already invalid event.");
 #endif
 	}
 }

@@ -18,8 +18,8 @@
 #define X_ADDR_MASK 0x00001FFF
 
 struct caer_polarity_event {
-	uint32_t data;
 	uint32_t timestamp;
+	uint32_t data;
 }__attribute__((__packed__));
 
 typedef struct caer_polarity_event *caerPolarityEvent;
@@ -35,7 +35,8 @@ static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(uint32_t e
 	uint32_t eventSize = sizeof(struct caer_polarity_event);
 	size_t eventPacketSize = sizeof(struct caer_polarity_event_packet) + (eventCapacity * eventSize);
 
-	caerPolarityEventPacket packet = malloc(eventPacketSize);
+	// Zero out event memory (all events invalid).
+	caerPolarityEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Polarity Event",
@@ -46,17 +47,12 @@ static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(uint32_t e
 		return (NULL);
 	}
 
-	// Zero out event memory (all events invalid).
-	memset(packet, 0, eventPacketSize);
-
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, POLARITY_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_polarity_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-	caerEventPacketHeaderSetEventNumber(&packet->packetHeader, 0);
-	caerEventPacketHeaderSetEventValid(&packet->packetHeader, 0);
 
 	return (packet);
 }
@@ -80,7 +76,16 @@ static inline uint32_t caerPolarityEventGetTimestamp(caerPolarityEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, uint32_t timestamp) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, int32_t timestamp) {
+	if (timestamp < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventSetTimestamp() with negative value!");
+#endif
+		return;
+	}
+
 	event->timestamp = htole32(timestamp);
 }
 
@@ -101,8 +106,7 @@ static inline void caerPolarityEventValidate(caerPolarityEvent event, caerPolari
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event",
-			"Called caerPolarityEventValidate() on already valid event.");
+		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -118,8 +122,7 @@ static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPola
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event",
-			"Called caerPolarityEventInvalidate() on already invalid event.");
+		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventInvalidate() on already invalid event.");
 #endif
 	}
 }

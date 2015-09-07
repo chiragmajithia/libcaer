@@ -15,6 +15,9 @@
 #define VALID_MARK_SHIFT 0
 #define VALID_MARK_MASK 0x00000001
 
+// Timestamps have 31 significant bits, so TSOverflow needs to be shifted by that amount.
+#define TS_OVERFLOW_SHIFT 21
+
 enum caer_event_types {
 	SPECIAL_EVENT = 0,
 	POLARITY_EVENT = 1,
@@ -30,6 +33,7 @@ struct caer_event_packet_header {
 	uint16_t eventSource; // Numerical source ID, unique inside a process.
 	uint32_t eventSize; // Size of one event in bytes.
 	uint32_t eventTSOffset; // Offset in bytes at which the main 32bit time-stamp can be found.
+	uint32_t eventTSOverflow; // Overflow counter for the standard 32bit event time-stamp.
 	uint32_t eventCapacity; // Maximum number of events this packet can store.
 	uint32_t eventNumber; // Total number of events present in this packet (valid + invalid).
 	uint32_t eventValid; // Total number of valid events present in this packet.
@@ -67,6 +71,23 @@ static inline uint32_t caerEventPacketHeaderGetEventTSOffset(caerEventPacketHead
 
 static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader header, uint32_t eventTSOffset) {
 	header->eventTSOffset = htole32(eventTSOffset);
+}
+
+static inline uint32_t caerEventPacketHeaderGetEventTSOverflow(caerEventPacketHeader header) {
+	return (le32toh(header->eventTSOverflow));
+}
+
+// Limit TSOverflow to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader header, int32_t eventTSOverflow) {
+	if (eventTSOverflow < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Packet Header", "Called caerEventPacketHeaderSetEventTSOverflow() with negative value!");
+#endif
+		return;
+	}
+
+	header->eventTSOverflow = htole32(eventTSOverflow);
 }
 
 static inline uint32_t caerEventPacketHeaderGetEventCapacity(caerEventPacketHeader header) {
@@ -113,8 +134,13 @@ static inline uint32_t caerGenericEventGetTimestamp(void *eventPtr, void *header
 	return (le32toh(*((uint32_t *) (((uint8_t *) eventPtr) + caerEventPacketHeaderGetEventTSOffset(headerPtr)))));
 }
 
+static inline uint64_t caerGenericEventGetTimestamp64(void *eventPtr, void *headerPtr) {
+	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr)));
+}
+
 static inline bool caerGenericEventIsValid(void *eventPtr) {
-	return (*((uint8_t *) eventPtr) & 0x01);
+	return (*((uint8_t *) eventPtr) & VALID_MARK_MASK);
 }
 
 #endif /* LIBCAER_EVENTS_COMMON_H_ */

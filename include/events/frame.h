@@ -17,12 +17,12 @@
 
 struct caer_frame_event {
 	uint32_t info;
-	uint16_t lengthX;
-	uint16_t lengthY;
 	uint32_t ts_startframe;
 	uint32_t ts_endframe;
 	uint32_t ts_startexposure;
 	uint32_t ts_endexposure;
+	uint16_t lengthX;
+	uint16_t lengthY;
 	uint16_t *pixels;
 }__attribute__((__packed__));
 
@@ -40,7 +40,8 @@ static inline caerFrameEventPacket caerFrameEventPacketAllocate(uint32_t eventCa
 	uint32_t eventSize = sizeof(struct caer_frame_event);
 	size_t eventPacketSize = sizeof(struct caer_frame_event_packet) + (eventCapacity * eventSize);
 
-	caerFrameEventPacket packet = malloc(eventPacketSize);
+	// Zero out event memory (all events invalid).
+	caerFrameEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Frame Event",
@@ -51,17 +52,12 @@ static inline caerFrameEventPacket caerFrameEventPacketAllocate(uint32_t eventCa
 		return (NULL);
 	}
 
-	// Zero out event memory (all events invalid).
-	memset(packet, 0, eventPacketSize);
-
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, FRAME_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_frame_event, ts_startexposure));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-	caerEventPacketHeaderSetEventNumber(&packet->packetHeader, 0);
-	caerEventPacketHeaderSetEventValid(&packet->packetHeader, 0);
 
 	return (packet);
 }
@@ -82,20 +78,18 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 }
 
 // Allocate effective pixel memory for frame event.
-static inline void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, uint16_t lengthX, uint16_t lengthY, uint8_t channelNumber) {
+static inline void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, uint16_t lengthX, uint16_t lengthY,
+	uint8_t channelNumber) {
 	size_t pixelSize = sizeof(uint16_t) * lengthX * lengthY * channelNumber;
 
-	uint16_t *pixels = malloc(pixelSize);
+	uint16_t *pixels = calloc(1, pixelSize);
 	if (pixels == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Frame Event", "Failed to allocate %zu bytes of memory for pixels. Error: %d.",
-			pixelSize, errno);
+		caerLog(LOG_CRITICAL, "Frame Event", "Failed to allocate %zu bytes of memory for pixels. Error: %d.", pixelSize,
+		errno);
 #endif
 		return;
 	}
-
-	// Zero out event memory (all pixels black).
-	memset(pixels, 0, pixelSize);
 
 	// Fill in header fields.
 	frameEvent->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
@@ -108,7 +102,16 @@ static inline uint32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_startframe));
 }
 
-static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, uint32_t startFrame) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t startFrame) {
+	if (startFrame < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSStartOfFrame() with negative value!");
+#endif
+		return;
+	}
+
 	event->ts_startframe = htole32(startFrame);
 }
 
@@ -116,7 +119,16 @@ static inline uint32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_endframe));
 }
 
-static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, uint32_t endFrame) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, int32_t endFrame) {
+	if (endFrame < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSEndOfFrame() with negative value!");
+#endif
+		return;
+	}
+
 	event->ts_endframe = htole32(endFrame);
 }
 
@@ -124,7 +136,16 @@ static inline uint32_t caerFrameEventGetTSStartOfExposure(caerFrameEvent event) 
 	return (le32toh(event->ts_startexposure));
 }
 
-static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, uint32_t startExposure) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int32_t startExposure) {
+	if (startExposure < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSStartOfExposure() with negative value!");
+#endif
+		return;
+	}
+
 	event->ts_startexposure = htole32(startExposure);
 }
 
@@ -132,7 +153,16 @@ static inline uint32_t caerFrameEventGetTSEndOfExposure(caerFrameEvent event) {
 	return (le32toh(event->ts_endexposure));
 }
 
-static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, uint32_t endExposure) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_t endExposure) {
+	if (endExposure < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSEndOfExposure() with negative value!");
+#endif
+		return;
+	}
+
 	event->ts_endexposure = htole32(endExposure);
 }
 

@@ -16,8 +16,8 @@
 #define SAMPLE_MASK 0x00FFFFFF
 
 struct caer_sample_event {
-	uint32_t data;
 	uint32_t timestamp;
+	uint32_t data;
 }__attribute__((__packed__));
 
 typedef struct caer_sample_event *caerSampleEvent;
@@ -33,7 +33,8 @@ static inline caerSampleEventPacket caerSampleEventPacketAllocate(uint32_t event
 	uint32_t eventSize = sizeof(struct caer_sample_event);
 	size_t eventPacketSize = sizeof(struct caer_sample_event_packet) + (eventCapacity * eventSize);
 
-	caerSampleEventPacket packet = malloc(eventPacketSize);
+	// Zero out event memory (all events invalid).
+	caerSampleEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Sample Event",
@@ -44,17 +45,12 @@ static inline caerSampleEventPacket caerSampleEventPacketAllocate(uint32_t event
 		return (NULL);
 	}
 
-	// Zero out event memory (all events invalid).
-	memset(packet, 0, eventPacketSize);
-
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SAMPLE_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_sample_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-	caerEventPacketHeaderSetEventNumber(&packet->packetHeader, 0);
-	caerEventPacketHeaderSetEventValid(&packet->packetHeader, 0);
 
 	return (packet);
 }
@@ -78,7 +74,16 @@ static inline uint32_t caerSampleEventGetTimestamp(caerSampleEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline void caerSampleEventSetTimestamp(caerSampleEvent event, uint32_t timestamp) {
+// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+static inline void caerSampleEventSetTimestamp(caerSampleEvent event, int32_t timestamp) {
+	if (timestamp < 0) {
+		// Negative means using the 31st bit!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventSetTimestamp() with negative value!");
+#endif
+		return;
+	}
+
 	event->timestamp = htole32(timestamp);
 }
 
@@ -99,8 +104,7 @@ static inline void caerSampleEventValidate(caerSampleEvent event, caerSampleEven
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event",
-			"Called caerSampleEventValidate() on already valid event.");
+		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -116,8 +120,7 @@ static inline void caerSampleEventInvalidate(caerSampleEvent event, caerSampleEv
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event",
-			"Called caerSampleEventInvalidate() on already invalid event.");
+		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventInvalidate() on already invalid event.");
 #endif
 	}
 }
