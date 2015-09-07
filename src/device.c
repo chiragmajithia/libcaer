@@ -68,7 +68,7 @@ struct caer_device_handle {
 caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
 	// Check if device type is supported.
-	if (deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (NULL);
 	}
 
@@ -89,14 +89,14 @@ bool caerDeviceClose(caerDeviceHandle *handlePtr) {
 	}
 
 	// Check if device type is supported.
-	if (*handlePtr->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (*handlePtr->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
 	// Call appropriate destructor function.
 	bool retVal = destructors[*handlePtr->deviceType](*handlePtr);
 
-	// Done. Set reference to NULL if successfull.
+	// Done. Set reference to NULL if successful.
 	if (retVal) {
 		*handlePtr = NULL;
 	}
@@ -111,7 +111,7 @@ bool caerDeviceSendDefaultConfig(caerDeviceHandle handle) {
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
@@ -128,7 +128,7 @@ bool caerDeviceConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramA
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
@@ -143,7 +143,7 @@ bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramA
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
@@ -158,7 +158,7 @@ bool caerDeviceDataStart(caerDeviceHandle handle) {
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
@@ -173,7 +173,7 @@ bool caerDeviceDataStop(caerDeviceHandle handle) {
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
@@ -188,7 +188,7 @@ caerEventPacketContainer caerDeviceDataGet(caerDeviceHandle handle) {
 	}
 
 	// Check if device type is supported.
-	if (handle->deviceType > SUPPORTED_DEVICES_NUMBER) {
+	if (handle->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
