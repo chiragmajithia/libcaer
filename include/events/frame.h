@@ -102,6 +102,11 @@ static inline uint32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_startframe));
 }
 
+static inline uint64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
+	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerFrameEventGetTSStartOfFrame(event)));
+}
+
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t startFrame) {
 	if (startFrame < 0) {
@@ -117,6 +122,20 @@ static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t
 
 static inline uint32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_endframe));
+}
+
+static inline uint64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
+	// Since frames have multiple time-stamps, it's possible for later time-stamps to
+	// be in a different TSOverflow period (for the last frame of a packet). We can
+	// detect this here and act accordingly.
+	if (caerFrameEventGetTSEndOfFrame(event) >= caerFrameEventGetTSStartOfFrame(event)) {
+		return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSEndOfFrame(event)));
+	}
+	else {
+		return (((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) + 1) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSEndOfFrame(event)));
+	}
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -136,6 +155,20 @@ static inline uint32_t caerFrameEventGetTSStartOfExposure(caerFrameEvent event) 
 	return (le32toh(event->ts_startexposure));
 }
 
+static inline uint64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
+	// Since frames have multiple time-stamps, it's possible for later time-stamps to
+	// be in a different TSOverflow period (for the last frame of a packet). We can
+	// detect this here and act accordingly.
+	if (caerFrameEventGetTSStartOfExposure(event) >= caerFrameEventGetTSStartOfFrame(event)) {
+		return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSStartOfExposure(event)));
+	}
+	else {
+		return (((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) + 1) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSStartOfExposure(event)));
+	}
+}
+
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int32_t startExposure) {
 	if (startExposure < 0) {
@@ -151,6 +184,20 @@ static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int3
 
 static inline uint32_t caerFrameEventGetTSEndOfExposure(caerFrameEvent event) {
 	return (le32toh(event->ts_endexposure));
+}
+
+static inline uint64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
+	// Since frames have multiple time-stamps, it's possible for later time-stamps to
+	// be in a different TSOverflow period (for the last frame of a packet). We can
+	// detect this here and act accordingly.
+	if (caerFrameEventGetTSEndOfExposure(event) >= caerFrameEventGetTSStartOfFrame(event)) {
+		return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSEndOfExposure(event)));
+	}
+	else {
+		return (((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) + 1) << TS_OVERFLOW_SHIFT)
+			| U64T(caerFrameEventGetTSEndOfExposure(event)));
+	}
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

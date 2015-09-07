@@ -16,7 +16,7 @@
 #define VALID_MARK_MASK 0x00000001
 
 // Timestamps have 31 significant bits, so TSOverflow needs to be shifted by that amount.
-#define TS_OVERFLOW_SHIFT 21
+#define TS_OVERFLOW_SHIFT 31
 
 enum caer_event_types {
 	SPECIAL_EVENT = 0,

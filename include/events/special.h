@@ -82,6 +82,11 @@ static inline uint32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
 	return (le32toh(event->timestamp));
 }
 
+static inline uint64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, caerSpecialEventPacket packet) {
+	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerSpecialEventGetTimestamp(event)));
+}
+
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t timestamp) {
 	if (timestamp < 0) {

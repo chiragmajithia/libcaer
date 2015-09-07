@@ -76,6 +76,11 @@ static inline uint32_t caerPolarityEventGetTimestamp(caerPolarityEvent event) {
 	return (le32toh(event->timestamp));
 }
 
+static inline uint64_t caerPolarityEventGetTimestamp64(caerPolarityEvent event, caerPolarityEventPacket packet) {
+	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerPolarityEventGetTimestamp(event)));
+}
+
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, int32_t timestamp) {
 	if (timestamp < 0) {

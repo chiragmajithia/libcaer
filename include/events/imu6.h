@@ -75,6 +75,11 @@ static inline uint32_t caerIMU6EventGetTimestamp(caerIMU6Event event) {
 	return (le32toh(event->timestamp));
 }
 
+static inline uint64_t caerIMU6EventGetTimestamp64(caerIMU6Event event, caerIMU6EventPacket packet) {
+	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerIMU6EventGetTimestamp(event)));
+}
+
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerIMU6EventSetTimestamp(caerIMU6Event event, int32_t timestamp) {
 	if (timestamp < 0) {
