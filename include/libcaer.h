@@ -59,6 +59,31 @@ static inline bool str_equals_upto(const char *s1, const char *s2, size_t len) {
 	return (false);
 }
 
+static inline void bitArrayCopy(uint8_t *src, size_t srcPos, uint8_t *dest, size_t destPos, size_t length) {
+	size_t copyOffset = 0;
+
+	while (copyOffset < length) {
+		size_t srcBytePos = (srcPos + copyOffset) >> 3;
+		size_t srcBitPos = (srcPos + copyOffset) & 0x07;
+		uint8_t srcBitMask = U8T(0x80 >> srcBitPos);
+
+		size_t destBytePos = (destPos + copyOffset) >> 3;
+		size_t destBitPos = (destPos + copyOffset) & 0x07;
+		uint8_t destBitMask = U8T(0x80 >> destBitPos);
+
+		if ((src[srcBytePos] & srcBitMask) != 0) {
+			// Set bit.
+			dest[destBytePos] |= destBitMask;
+		}
+		else {
+			// Clear bit.
+			dest[destBytePos] &= U8T(~destBitMask);
+		}
+
+		copyOffset++;
+	}
+}
+
 #ifdef __cplusplus
 }
 #endif
