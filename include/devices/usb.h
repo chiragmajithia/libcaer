@@ -6,6 +6,15 @@
 
 typedef struct caer_device_handle *caerDeviceHandle;
 
+#define HOST_CONFIG_USB -1
+#define HOST_CONFIG_DATAEXCHANGE -2
+
+#define HOST_CONFIG_USB_BUFFER_NUMBER 0
+#define HOST_CONFIG_USB_BUFFER_SIZE   1
+
+#define HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE 0
+#define HOST_CONFIG_DATAEXCHANGE_BLOCKING    1
+
 caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict);
 bool caerDeviceClose(caerDeviceHandle *handle);
 
