@@ -36,6 +36,7 @@ struct dvs128_state {
 	size_t dataTransfersLength;
 	size_t activeDataTransfers;
 	// Timestamp fields
+	uint32_t wrapOverflow;
 	uint32_t wrapAdd;
 	uint32_t lastTimestamp;
 	uint32_t currentTimestamp;
@@ -57,6 +58,7 @@ struct dvs128_state {
 	uint32_t usbBufferNumber;
 	uint32_t usbBufferSize;
 	uint32_t dataExchangeBufferSize;
+	bool dataExchangeBlockOnEmpty;
 };
 
 typedef struct dvs128_state *dvs128State;

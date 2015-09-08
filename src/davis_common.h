@@ -35,6 +35,7 @@ struct davis_state {
 	size_t dataTransfersLength;
 	size_t activeDataTransfers;
 	// Timestamp fields
+	uint32_t wrapOverflow;
 	uint32_t wrapAdd;
 	uint32_t lastTimestamp;
 	uint32_t currentTimestamp;
@@ -88,6 +89,11 @@ struct davis_state {
 	uint32_t currentSpecialPacketPosition;
 	uint32_t maxSpecialPacketSize;
 	uint32_t maxSpecialPacketInterval;
+	// Data Transfer State
+	uint32_t usbBufferNumber;
+	uint32_t usbBufferSize;
+	uint32_t dataExchangeBufferSize;
+	bool dataExchangeBlockOnEmpty;
 };
 
 typedef struct davis_state *davisState;
