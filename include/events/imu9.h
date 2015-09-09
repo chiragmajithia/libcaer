@@ -11,7 +11,7 @@
 #include "common.h"
 
 struct caer_imu9_event {
-	uint16_t info;
+	uint16_t info; // First because of valid mark.
 	uint32_t timestamp;
 	float accel_x;
 	float accel_y;

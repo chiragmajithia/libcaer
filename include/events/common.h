@@ -49,6 +49,23 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	header->eventType = htole16(eventType);
 }
 
+// Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
+static inline void caerFrameEventPacketFreePixels(caerEventPacketHeader header);
+
+static inline void caerEventPacketFree(caerEventPacketHeader header) {
+	if (header == NULL) {
+		return;
+	}
+
+	// Frame packets contain multiple memory blocks, need to free them here!
+	if (caerEventPacketHeaderGetEventType(header) == FRAME_EVENT) {
+		caerFrameEventPacketFreePixels(header);
+	}
+
+	// Free packet memory.
+	free(header);
+}
+
 static inline uint16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
 	return (le16toh(header->eventSource));
 }
@@ -114,7 +131,7 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 	header->eventValid = htole32(eventsValid);
 }
 
-static inline void *caerGenericEventGetEvent(void *headerPtr, uint32_t n) {
+static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, uint32_t n) {
 	// Check that we're not out of bounds.
 	if (n >= caerEventPacketHeaderGetEventCapacity(headerPtr)) {
 #if !defined(LIBCAER_LOG_NONE)
@@ -130,16 +147,19 @@ static inline void *caerGenericEventGetEvent(void *headerPtr, uint32_t n) {
 		+ (sizeof(struct caer_event_packet_header) + (n * caerEventPacketHeaderGetEventSize(headerPtr))));
 }
 
-static inline uint32_t caerGenericEventGetTimestamp(void *eventPtr, void *headerPtr) {
+static inline uint32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
 	return (le32toh(*((uint32_t *) (((uint8_t *) eventPtr) + caerEventPacketHeaderGetEventTSOffset(headerPtr)))));
 }
 
-static inline uint64_t caerGenericEventGetTimestamp64(void *eventPtr, void *headerPtr) {
+static inline uint64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
 	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr)));
 }
 
 static inline bool caerGenericEventIsValid(void *eventPtr) {
+	// Look at first byte of event memory's lowest bit.
+	// This should always work since first event member must contain the valid mark
+	// and memory is little-endian, so lowest bit must be in first byte of memory.
 	return (*((uint8_t *) eventPtr) & VALID_MARK_MASK);
 }
 

@@ -20,8 +20,8 @@
 #define CHANNEL_MASK 0x000000FF
 
 struct caer_ear_event {
+	uint32_t data; // First because of valid mark.
 	uint32_t timestamp;
-	uint32_t data;
 }__attribute__((__packed__));
 
 typedef struct caer_ear_event *caerEarEvent;

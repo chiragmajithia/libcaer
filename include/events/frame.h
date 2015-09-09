@@ -16,7 +16,7 @@
 #define CHANNEL_NUMBER_MASK 0x0000001F
 
 struct caer_frame_event {
-	uint32_t info;
+	uint32_t info; // First because of valid mark.
 	uint32_t ts_startframe;
 	uint32_t ts_endframe;
 	uint32_t ts_startexposure;
@@ -75,6 +75,22 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 
 	// Return a pointer to the specified event.
 	return (packet->events + n);
+}
+
+static inline void caerFrameEventPacketFreePixels(caerEventPacketHeader header) {
+	if (header == NULL || caerEventPacketHeaderGetEventType(header) != FRAME_EVENT) {
+		return;
+	}
+
+	// Frame also needs all pixel memory freed!
+	for (uint32_t i = 0; i < caerEventPacketHeaderGetEventNumber(header); i++) {
+		caerFrameEvent frame = caerFrameEventPacketGetEvent((caerFrameEventPacket) header, i);
+
+		if (frame != NULL && frame->pixels != NULL) {
+			free(frame->pixels);
+			frame->pixels = NULL;
+		}
+	}
 }
 
 // Allocate effective pixel memory for frame event.
@@ -418,6 +434,7 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
 		+ channel] = htole16(pixelValue);
 }
 
+// Direct access to underlying memory. Remember the uint16_t's are little-endian!
 static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) {
 	// Get pixel array.
 	return (event->pixels);
