@@ -84,6 +84,68 @@ static inline void bitArrayCopy(uint8_t *src, size_t srcPos, uint8_t *dest, size
 	}
 }
 
+static inline void integerToByteArray(uint32_t integer, uint8_t *byteArray, uint8_t byteArrayLength) {
+	switch (byteArrayLength) {
+		case 4:
+			byteArray[0] = U8T(integer >> 24);
+			byteArray[1] = U8T(integer >> 16);
+			byteArray[2] = U8T(integer >> 8);
+			byteArray[3] = U8T(integer);
+			break;
+
+		case 3:
+			byteArray[0] = U8T(integer >> 16);
+			byteArray[1] = U8T(integer >> 8);
+			byteArray[2] = U8T(integer);
+			break;
+
+		case 2:
+			byteArray[0] = U8T(integer >> 8);
+			byteArray[1] = U8T(integer);
+			break;
+
+		case 1:
+			byteArray[0] = U8T(integer);
+			break;
+
+		default:
+			break;
+	}
+}
+
+static inline uint32_t byteArrayToInteger(uint8_t *byteArray, uint8_t byteArrayLength) {
+	uint32_t integer = 0;
+
+	switch (byteArrayLength) {
+		case 4:
+			integer |= U32T(byteArray[0] << 24);
+			integer |= U32T(byteArray[1] << 16);
+			integer |= U32T(byteArray[2] << 8);
+			integer |= U32T(byteArray[3]);
+			break;
+
+		case 3:
+			integer |= U32T(byteArray[0] << 16);
+			integer |= U32T(byteArray[1] << 8);
+			integer |= U32T(byteArray[2]);
+			break;
+
+		case 2:
+			integer |= U32T(byteArray[0] << 8);
+			integer |= U32T(byteArray[1]);
+			break;
+
+		case 1:
+			integer |= U32T(byteArray[0]);
+			break;
+
+		default:
+			break;
+	}
+
+	return (integer);
+}
+
 #ifdef __cplusplus
 }
 #endif
