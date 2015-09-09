@@ -25,7 +25,9 @@
 struct davis_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
-	atomic_ulong dataNotify;
+	void (*dataNotifyIncrease)(void *ptr);
+	void (*dataNotifyDecrease)(void *ptr);
+	void *dataNotifyUserPtr;
 	// USB Device State
 	libusb_context *deviceContext;
 	libusb_device_handle *deviceHandle;
@@ -93,7 +95,7 @@ struct davis_state {
 	uint32_t usbBufferNumber;
 	uint32_t usbBufferSize;
 	uint32_t dataExchangeBufferSize;
-	bool dataExchangeBlockOnEmpty;
+	bool dataExchangeBlocking;
 };
 
 typedef struct davis_state *davisState;

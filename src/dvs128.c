@@ -1,51 +1,87 @@
 #include "dvs128.h"
 
 caerDeviceHandle dvs128Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict) {
-	dvs128Handle handle = malloc(sizeof(*handle));
+	dvs128Handle handle = calloc(1, sizeof(*handle));
 
-	handle->state->dataExchangeBufferSize = 64;
 	handle->state->usbBufferNumber = 8;
 	handle->state->usbBufferSize = 4096;
+	handle->state->dataExchangeBufferSize = 64;
+	handle->state->dataExchangeBlocking = false;
 }
 
-bool dvs128Close(caerDeviceHandle handle) {
-
-}
-
-bool dvs128SendDefaultConfig(caerDeviceHandle handle) {
-	sshsNodePutIntIfAbsent(biasNode, "cas", 1992);
-		sshsNodePutIntIfAbsent(biasNode, "injGnd", 1108364);
-		sshsNodePutIntIfAbsent(biasNode, "reqPd", 16777215);
-		sshsNodePutIntIfAbsent(biasNode, "puX", 8159221);
-		sshsNodePutIntIfAbsent(biasNode, "diffOff", 132);
-		sshsNodePutIntIfAbsent(biasNode, "req", 309590);
-		sshsNodePutIntIfAbsent(biasNode, "refr", 969);
-		sshsNodePutIntIfAbsent(biasNode, "puY", 16777215);
-		sshsNodePutIntIfAbsent(biasNode, "diffOn", 209996);
-		sshsNodePutIntIfAbsent(biasNode, "diff", 13125);
-		sshsNodePutIntIfAbsent(biasNode, "foll", 271);
-		sshsNodePutIntIfAbsent(biasNode, "pr", 217);
+bool dvs128Close(caerDeviceHandle cdh) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
 
 }
 
-bool dvs128ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+bool dvs128SendDefaultConfig(caerDeviceHandle cdh) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
+
+	// Set all biases to default value.
+	integerToByteArray(1992, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+	integerToByteArray(1108364, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+	integerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+	integerToByteArray(8159221, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+	integerToByteArray(132, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+	integerToByteArray(309590, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+	integerToByteArray(969, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+	integerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+	integerToByteArray(209996, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+	integerToByteArray(13125, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+	integerToByteArray(271, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+	integerToByteArray(217, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+
+	// Send biases to device.
+	dvs128SendBiases(state);
+}
+
+bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
+}
+
+bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
+}
+
+bool dvs128DataStart(caerDeviceHandle cdh) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
 
 }
 
-bool dvs128ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+bool dvs128DataStop(caerDeviceHandle cdh) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
 
 }
 
-bool dvs128DataStart(caerDeviceHandle handle) {
+// Remember to properly free the returned memory after usage!
+caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
+	dvs128Handle handle = cdh;
+	dvs128State state = handle->state;
 
-}
+retry:
+	caerEventPacketContainer container = ringBufferGet(state->dataExchangeBuffer);
+	if (container != NULL) {
+		// Found an event container, return it and signal this piece of data
+		// is no longer available for later acquisition.
+		state->dataNotifyDecrease(state->dataNotifyUserPtr);
 
-bool dvs128DataStop(caerDeviceHandle handle) {
+		return (container);
+	}
 
-}
+	// Didn't find any event container, either report this or retry, depending
+	// on blocking setting.
+	if (state->dataExchangeBlocking) {
+		goto retry;
+	}
 
-caerEventPacketContainer dvs128DataGet(caerDeviceHandle handle) {
-
+	// Nothing.
+	return (NULL);
 }
 
 static void *dvs128DataAcquisitionThread(void *inPtr);
@@ -201,90 +237,6 @@ static void caerInputDVS128Exit(caerModuleData moduleData) {
 	caerLog(LOG_DEBUG, moduleData->moduleSubSystemString, "Shutdown successful.");
 }
 
-static void caerInputDVS128Run(caerModuleData moduleData, size_t argsNumber, va_list args) {
-	UNUSED_ARGUMENT(argsNumber);
-
-	// Interpret variable arguments (same as above in main function).
-	caerPolarityEventPacket *polarity = va_arg(args, caerPolarityEventPacket *);
-	caerSpecialEventPacket *special = va_arg(args, caerSpecialEventPacket *);
-
-	dvs128State state = moduleData->moduleState;
-
-	// Check what the user wants.
-	bool wantPolarity = false, havePolarity = false;
-	bool wantSpecial = false, haveSpecial = false;
-
-	if (polarity != NULL) {
-		wantPolarity = true;
-	}
-
-	if (special != NULL) {
-		wantSpecial = true;
-	}
-
-	void *packet;
-	while ((packet = ringBufferLook(state->dataExchangeBuffer)) != NULL) {
-		// Check what kind it is and assign accordingly.
-		caerEventPacketHeader packetHeader = packet;
-
-		// Check polarity events first, then the special ones.
-		if (packetHeader->eventType == POLARITY_EVENT) {
-			// Throw away unwanted packets first.
-			if (!wantPolarity) {
-				caerMainloopDataAvailableDecrease(state->mainloopNotify);
-				free(ringBufferGet(state->dataExchangeBuffer));
-				continue;
-			}
-
-			// At this point packet is something we want, so we see if we can
-			// assign it to one of the output pointers. This will be possible if
-			// the output is still free, if not, we have to wait until next loop
-			// iteration to fit this somewhere, and so we exit.
-			if (!havePolarity) {
-				caerMainloopDataAvailableDecrease(state->mainloopNotify);
-				*polarity = ringBufferGet(state->dataExchangeBuffer);
-				havePolarity = true;
-
-				// Ensure memory gets recycled after the loop is over.
-				caerMainloopFreeAfterLoop(*polarity);
-
-				continue;
-			}
-
-			// Couldn't fit the current packet into any free output pointers,
-			// break off and defer to next iteration of mainloop.
-			break;
-		}
-		else if (packetHeader->eventType == SPECIAL_EVENT) {
-			// Throw away unwanted packets first.
-			if (!wantSpecial) {
-				caerMainloopDataAvailableDecrease(state->mainloopNotify);
-				free(ringBufferGet(state->dataExchangeBuffer));
-				continue;
-			}
-
-			// At this point packet is something we want, so we see if we can
-			// assign it to one of the output pointers. This will be possible if
-			// the output is still free, if not, we have to wait until next loop
-			// iteration to fit this somewhere, and so we exit.
-			if (!haveSpecial) {
-				caerMainloopDataAvailableDecrease(state->mainloopNotify);
-				*special = ringBufferGet(state->dataExchangeBuffer);
-				haveSpecial = true;
-
-				// Ensure memory gets recycled after the loop is over.
-				caerMainloopFreeAfterLoop(*special);
-
-				continue;
-			}
-
-			// Couldn't fit the current packet into any free output pointers,
-			// break off and defer to next iteration of mainloop.
-			break;
-		}
-	}
-}
-
 static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// inPtr is a pointer to module data.
 	caerModuleData data = inPtr;
@@ -390,7 +342,8 @@ static void dvs128AllocateTransfers(dvs128State state, uint32_t bufferNum, uint3
 		state->transfers[i]->buffer = malloc(bufferSize);
 		if (state->transfers[i]->buffer == NULL) {
 			caerLog(LOG_CRITICAL, state->sourceSubSystemString,
-				"Unable to allocate buffer for libusb transfer %zu. Error: %s (%d).", i, caerLogStrerror(errno), errno);
+				"Unable to allocate buffer for libusb transfer %zu. Error: %s (%d).", i, caerLogStrerror(errno),
+				errno);
 
 			libusb_free_transfer(state->transfers[i]);
 			state->transfers[i] = NULL;
@@ -545,11 +498,11 @@ static void dvs128EventTranslator(dvs128State state, uint8_t *buffer, size_t byt
 		}
 		else {
 			// address is LSB MSB (USB is LE)
-			uint16_t addressUSB = le16toh(*((uint16_t * ) (&buffer[i])));
+			uint16_t addressUSB = le16toh(*((uint16_t *) (&buffer[i])));
 
 			// same for timestamp, LSB MSB (USB is LE)
 			// 15 bit value of timestamp in 1 us tick
-			uint16_t timestampUSB = le16toh(*((uint16_t * ) (&buffer[i + 2])));
+			uint16_t timestampUSB = le16toh(*((uint16_t *) (&buffer[i + 2])));
 
 			// Expand to 32 bits. (Tick is 1µs already.)
 			uint32_t timestamp = timestampUSB + state->wrapAdd;
@@ -660,72 +613,13 @@ static void dvs128EventTranslator(dvs128State state, uint8_t *buffer, size_t byt
 	}
 }
 
-static void dvs128SendBiases(sshsNode biasNode, libusb_device_handle *devHandle) {
-	// 12 biases, a 24 bits = 3 bytes each.
-	uint8_t biases[12 * 3];
+static void dvs128SendBiases(dvs128State state) {
+	// Biases are already stored in an array with the same format as expected by
+	// the device, we can thus send it directly.
 
-	uint32_t cas = sshsNodeGetInt(biasNode, "cas");
-	biases[0] = U8T(cas >> 16);
-	biases[1] = U8T(cas >> 8);
-	biases[2] = U8T(cas >> 0);
-
-	uint32_t injGnd = sshsNodeGetInt(biasNode, "injGnd");
-	biases[3] = U8T(injGnd >> 16);
-	biases[4] = U8T(injGnd >> 8);
-	biases[5] = U8T(injGnd >> 0);
-
-	uint32_t reqPd = sshsNodeGetInt(biasNode, "reqPd");
-	biases[6] = U8T(reqPd >> 16);
-	biases[7] = U8T(reqPd >> 8);
-	biases[8] = U8T(reqPd >> 0);
-
-	uint32_t puX = sshsNodeGetInt(biasNode, "puX");
-	biases[9] = U8T(puX >> 16);
-	biases[10] = U8T(puX >> 8);
-	biases[11] = U8T(puX >> 0);
-
-	uint32_t diffOff = sshsNodeGetInt(biasNode, "diffOff");
-	biases[12] = U8T(diffOff >> 16);
-	biases[13] = U8T(diffOff >> 8);
-	biases[14] = U8T(diffOff >> 0);
-
-	uint32_t req = sshsNodeGetInt(biasNode, "req");
-	biases[15] = U8T(req >> 16);
-	biases[16] = U8T(req >> 8);
-	biases[17] = U8T(req >> 0);
-
-	uint32_t refr = sshsNodeGetInt(biasNode, "refr");
-	biases[18] = U8T(refr >> 16);
-	biases[19] = U8T(refr >> 8);
-	biases[20] = U8T(refr >> 0);
-
-	uint32_t puY = sshsNodeGetInt(biasNode, "puY");
-	biases[21] = U8T(puY >> 16);
-	biases[22] = U8T(puY >> 8);
-	biases[23] = U8T(puY >> 0);
-
-	uint32_t diffOn = sshsNodeGetInt(biasNode, "diffOn");
-	biases[24] = U8T(diffOn >> 16);
-	biases[25] = U8T(diffOn >> 8);
-	biases[26] = U8T(diffOn >> 0);
-
-	uint32_t diff = sshsNodeGetInt(biasNode, "diff");
-	biases[27] = U8T(diff >> 16);
-	biases[28] = U8T(diff >> 8);
-	biases[29] = U8T(diff >> 0);
-
-	uint32_t foll = sshsNodeGetInt(biasNode, "foll");
-	biases[30] = U8T(foll >> 16);
-	biases[31] = U8T(foll >> 8);
-	biases[32] = U8T(foll >> 0);
-
-	uint32_t pr = sshsNodeGetInt(biasNode, "pr");
-	biases[33] = U8T(pr >> 16);
-	biases[34] = U8T(pr >> 8);
-	biases[35] = U8T(pr >> 0);
-
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_SEND_BIASES, 0, 0, biases, sizeof(biases), 0);
+	libusb_control_transfer(state->deviceHandle,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		VENDOR_REQUEST_SEND_BIASES, 0, 0, state->biases, BIAS_NUMBER * BIAS_LENGTH, 0);
 }
 
 static libusb_device_handle *dvs128Open(libusb_context *devContext, uint8_t busNumber, uint8_t devAddress) {

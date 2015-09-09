@@ -23,10 +23,15 @@
 #define VENDOR_REQUEST_RESET_TS 0xBB
 #define VENDOR_REQUEST_RESET_ARRAY 0xBD
 
+#define BIAS_NUMBER 12
+#define BIAS_LENGTH 3
+
 struct dvs128_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
-	atomic_ulong dataNotify;
+	void (*dataNotifyIncrease)(void *ptr);
+	void (*dataNotifyDecrease)(void *ptr);
+	void *dataNotifyUserPtr;
 	// USB Device State
 	libusb_context *deviceContext;
 	libusb_device_handle *deviceHandle;
@@ -58,7 +63,11 @@ struct dvs128_state {
 	uint32_t usbBufferNumber;
 	uint32_t usbBufferSize;
 	uint32_t dataExchangeBufferSize;
-	bool dataExchangeBlockOnEmpty;
+	bool dataExchangeBlocking;
+	// Camera bias and settings memory (for getter operations)
+	// TODO: replace with real device calls once DVS128 logic rewritten.
+	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];
+	bool dvsRunning;
 };
 
 typedef struct dvs128_state *dvs128State;
