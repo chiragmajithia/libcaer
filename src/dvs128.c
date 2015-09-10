@@ -63,9 +63,11 @@ bool dvs128DataStop(caerDeviceHandle cdh) {
 caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 	dvs128Handle handle = cdh;
 	dvs128State state = handle->state;
+	caerEventPacketContainer container = NULL;
 
 retry:
-	caerEventPacketContainer container = ringBufferGet(state->dataExchangeBuffer);
+	container = ringBufferGet(state->dataExchangeBuffer);
+
 	if (container != NULL) {
 		// Found an event container, return it and signal this piece of data
 		// is no longer available for later acquisition.
@@ -77,6 +79,7 @@ retry:
 	// Didn't find any event container, either report this or retry, depending
 	// on blocking setting.
 	if (state->dataExchangeBlocking) {
+		// TODO: think about thread-safety.
 		goto retry;
 	}
 

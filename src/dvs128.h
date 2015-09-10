@@ -29,14 +29,21 @@
 struct dvs128_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
+	uint32_t dataExchangeBufferSize;
+	bool dataExchangeBlocking;
 	void (*dataNotifyIncrease)(void *ptr);
 	void (*dataNotifyDecrease)(void *ptr);
 	void *dataNotifyUserPtr;
 	// USB Device State
 	libusb_context *deviceContext;
 	libusb_device_handle *deviceHandle;
+	// USB Transfer Settings
+	uint32_t usbBufferNumber;
+	uint32_t usbBufferSize;
 	// Data Acquisition Thread
 	pthread_t dataAcquisitionThread;
+	atomic_bool dataAcquisitionThreadRun;
+	atomic_uint_fast32_t dataAcquisitionThreadConfigUpdate;
 	struct libusb_transfer **dataTransfers;
 	size_t dataTransfersLength;
 	size_t activeDataTransfers;
@@ -59,11 +66,6 @@ struct dvs128_state {
 	uint32_t currentSpecialPacketPosition;
 	uint32_t maxSpecialPacketSize;
 	uint32_t maxSpecialPacketInterval;
-	// Data Transfer State
-	uint32_t usbBufferNumber;
-	uint32_t usbBufferSize;
-	uint32_t dataExchangeBufferSize;
-	bool dataExchangeBlocking;
 	// Camera bias and settings memory (for getter operations)
 	// TODO: replace with real device calls once DVS128 logic rewritten.
 	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];

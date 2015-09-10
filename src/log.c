@@ -11,7 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 
-static atomic_uint_least8_t caerLogLevel = ATOMIC_VAR_INIT(LOG_ERROR);
+static atomic_uint_fast8_t caerLogLevel = ATOMIC_VAR_INIT(LOG_ERROR);
 
 void caerLogLevelSet(uint8_t logLevel) {
 	atomic_store(&caerLogLevel, logLevel);
