@@ -41,10 +41,11 @@ bool (*configGetters[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle, int8_t 
 		[CAER_DEVICE_DAVIS_FX3] = &davisFX3ConfigGet
 };
 
-bool (*dataStarters[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle) = {
-	[CAER_DEVICE_DVS128] = &dvs128DataStart,
-	[CAER_DEVICE_DAVIS_FX2] = &davisCommonDataStart,
-	[CAER_DEVICE_DAVIS_FX3] = &davisCommonDataStart
+bool (*dataStarters[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) = {
+		[CAER_DEVICE_DVS128] = &dvs128DataStart,
+		[CAER_DEVICE_DAVIS_FX2] = &davisCommonDataStart,
+		[CAER_DEVICE_DAVIS_FX3] = &davisCommonDataStart
 };
 
 bool (*dataStoppers[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle) = {
@@ -151,7 +152,8 @@ bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramA
 	return (configGetters[handle->deviceType](handle, modAddr, paramAddr, param));
 }
 
-bool caerDeviceDataStart(caerDeviceHandle handle) {
+bool caerDeviceDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) {
 	// Check if the pointer is valid.
 	if (handle == NULL) {
 		return (false);
@@ -163,7 +165,7 @@ bool caerDeviceDataStart(caerDeviceHandle handle) {
 	}
 
 	// Call appropriate function.
-	return (dataStarters[handle->deviceType](handle));
+	return (dataStarters[handle->deviceType](handle, dataNotifyIncrease, dataNotifyDecrease, dataNotifyUserPtr));
 }
 
 bool caerDeviceDataStop(caerDeviceHandle handle) {

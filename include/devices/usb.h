@@ -15,7 +15,8 @@ typedef struct caer_device_handle *caerDeviceHandle;
 #define HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE 0
 #define HOST_CONFIG_DATAEXCHANGE_BLOCKING    1
 
-caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict);
+caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
+	const char *serialNumberRestrict);
 bool caerDeviceClose(caerDeviceHandle *handle);
 
 bool caerDeviceSendDefaultConfig(caerDeviceHandle handle);
@@ -24,7 +25,8 @@ bool caerDeviceSendDefaultConfig(caerDeviceHandle handle);
 bool caerDeviceConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
 bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
-bool caerDeviceDataStart(caerDeviceHandle handle);
+bool caerDeviceDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
 bool caerDeviceDataStop(caerDeviceHandle handle);
 caerEventPacketContainer caerDeviceDataGet(caerDeviceHandle handle);
 

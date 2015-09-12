@@ -113,7 +113,8 @@ typedef struct davis_handle *davisHandle;
 
 bool davisCommonClose(caerDeviceHandle handle);
 
-bool davisCommonDataStart(caerDeviceHandle handle);
+bool davisCommonDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
 bool davisCommonDataStop(caerDeviceHandle handle);
 caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
 

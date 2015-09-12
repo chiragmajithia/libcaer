@@ -93,7 +93,8 @@ bool dvs128SendDefaultConfig(caerDeviceHandle handle);
 bool dvs128ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
 bool dvs128ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
-bool dvs128DataStart(caerDeviceHandle handle);
+bool dvs128DataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
 bool dvs128DataStop(caerDeviceHandle handle);
 caerEventPacketContainer dvs128DataGet(caerDeviceHandle handle);
 

@@ -47,7 +47,8 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 	dvs128State state = handle->state;
 }
 
-bool dvs128DataStart(caerDeviceHandle cdh) {
+bool dvs128DataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) {
 	dvs128Handle handle = cdh;
 	dvs128State state = handle->state;
 
@@ -65,8 +66,7 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 	dvs128State state = handle->state;
 	caerEventPacketContainer container = NULL;
 
-retry:
-	container = ringBufferGet(state->dataExchangeBuffer);
+	retry: container = ringBufferGet(state->dataExchangeBuffer);
 
 	if (container != NULL) {
 		// Found an event container, return it and signal this piece of data
