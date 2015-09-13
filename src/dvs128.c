@@ -52,6 +52,10 @@ bool dvs128DataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *p
 	dvs128Handle handle = cdh;
 	dvs128State state = handle->state;
 
+	// Store new data available/not available anymore call-backs.
+	state->dataNotifyIncrease = dataNotifyIncrease;
+	state->dataNotifyDecrease = dataNotifyDecrease;
+	state->dataNotifyUserPtr = dataNotifyUserPtr;
 }
 
 bool dvs128DataStop(caerDeviceHandle cdh) {

@@ -29,8 +29,8 @@
 struct dvs128_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
-	uint32_t dataExchangeBufferSize;
-	bool dataExchangeBlocking;
+	atomic_uint_fast32_t dataExchangeBufferSize;
+	atomic_bool dataExchangeBlocking;
 	void (*dataNotifyIncrease)(void *ptr);
 	void (*dataNotifyDecrease)(void *ptr);
 	void *dataNotifyUserPtr;
@@ -38,8 +38,8 @@ struct dvs128_state {
 	libusb_context *deviceContext;
 	libusb_device_handle *deviceHandle;
 	// USB Transfer Settings
-	uint32_t usbBufferNumber;
-	uint32_t usbBufferSize;
+	atomic_uint_fast32_t usbBufferNumber;
+	atomic_uint_fast32_t usbBufferSize;
 	// Data Acquisition Thread
 	pthread_t dataAcquisitionThread;
 	atomic_bool dataAcquisitionThreadRun;
@@ -54,18 +54,18 @@ struct dvs128_state {
 	uint32_t currentTimestamp;
 	// Packet Container state
 	caerEventPacketContainer currentPacketContainer;
-	uint32_t maxPacketContainerSize;
-	uint32_t maxPacketContainerInterval;
+	atomic_uint_fast32_t maxPacketContainerSize;
+	atomic_uint_fast32_t maxPacketContainerInterval;
 	// Polarity Packet State
 	caerPolarityEventPacket currentPolarityPacket;
 	uint32_t currentPolarityPacketPosition;
-	uint32_t maxPolarityPacketSize;
-	uint32_t maxPolarityPacketInterval;
+	atomic_uint_fast32_t maxPolarityPacketSize;
+	atomic_uint_fast32_t maxPolarityPacketInterval;
 	// Special Packet State
 	caerSpecialEventPacket currentSpecialPacket;
 	uint32_t currentSpecialPacketPosition;
-	uint32_t maxSpecialPacketSize;
-	uint32_t maxSpecialPacketInterval;
+	atomic_uint_fast32_t maxSpecialPacketSize;
+	atomic_uint_fast32_t maxSpecialPacketInterval;
 	// Camera bias and settings memory (for getter operations)
 	// TODO: replace with real device calls once DVS128 logic rewritten.
 	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];
