@@ -27,8 +27,8 @@ typedef struct caer_device_handle *caerDeviceHandle;
 #define HOST_CONFIG_PACKETS_MAX_IMU6_SIZE          8
 #define HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL      9
 
-caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict);
+caerDeviceHandle caerDeviceOpen(uint16_t deviceID, uint16_t deviceType, uint8_t busNumberRestrict,
+	uint8_t devAddressRestrict, const char *serialNumberRestrict);
 bool caerDeviceClose(caerDeviceHandle *handle);
 
 bool caerDeviceSendDefaultConfig(caerDeviceHandle handle);

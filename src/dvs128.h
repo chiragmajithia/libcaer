@@ -27,6 +27,7 @@
 #define BIAS_LENGTH 3
 
 struct dvs128_state {
+	uint16_t deviceID;
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
 	atomic_uint_fast32_t dataExchangeBufferSize;
@@ -84,7 +85,8 @@ struct dvs128_handle {
 
 typedef struct dvs128_handle *dvs128Handle;
 
-caerDeviceHandle dvs128Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict);
+caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
+	const char *serialNumberRestrict);
 bool dvs128Close(caerDeviceHandle handle);
 
 bool dvs128SendDefaultConfig(caerDeviceHandle handle);

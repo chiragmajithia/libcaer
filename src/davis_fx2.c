@@ -1,6 +1,6 @@
 #include "davis_fx2.h"
 
-caerDeviceHandle caerDavisFX2Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict,
+caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
 	// Allocate memory for device structures.
 	davisFX2Handle handle = ccalloc(1, sizeof(*handle));
@@ -141,7 +141,7 @@ static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint1
 	bias[1] = U8T(biasValue >> 0);
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VR_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+		VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
 }
 
 static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
@@ -280,5 +280,5 @@ static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
 
 	libusb_control_transfer(cstate->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VR_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+		VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
 }

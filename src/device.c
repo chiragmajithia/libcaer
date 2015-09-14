@@ -1,15 +1,15 @@
-#include "usb.h"
+#include "devices/usb.h"
 
 #include "dvs128.h"
 #include "davis_common.h"
-#include "davis_fx3.h"
+#include "davis_fx2.h"
 #include "davis_fx3.h"
 
 #define SUPPORTED_DEVICES_NUMBER 3
 
 // Supported devices and their functions.
-caerDeviceHandle (*constructors[SUPPORTED_DEVICES_NUMBER])(uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict) = {
+caerDeviceHandle (*constructors[SUPPORTED_DEVICES_NUMBER])(uint16_t deviceID, uint8_t busNumberRestrict,
+	uint8_t devAddressRestrict, const char *serialNumberRestrict) = {
 		[CAER_DEVICE_DVS128] = &dvs128Open,
 		[CAER_DEVICE_DAVIS_FX2] = &davisFX2Open,
 		[CAER_DEVICE_DAVIS_FX3] = &davisFX3Open
@@ -66,15 +66,15 @@ struct caer_device_handle {
 // The first member is always 'uint16_t deviceType'.
 };
 
-caerDeviceHandle caerDeviceOpen(uint16_t deviceType, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict) {
+caerDeviceHandle caerDeviceOpen(uint16_t deviceID, uint16_t deviceType, uint8_t busNumberRestrict,
+	uint8_t devAddressRestrict, const char *serialNumberRestrict) {
 	// Check if device type is supported.
 	if (deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (NULL);
 	}
 
 	// Execute main constructor function.
-	return (constructors[deviceType](busNumberRestrict, devAddressRestrict, serialNumberRestrict));
+	return (constructors[deviceType](deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict));
 }
 
 bool caerDeviceClose(caerDeviceHandle *handlePtr) {
@@ -90,12 +90,12 @@ bool caerDeviceClose(caerDeviceHandle *handlePtr) {
 	}
 
 	// Check if device type is supported.
-	if (*handlePtr->deviceType >= SUPPORTED_DEVICES_NUMBER) {
+	if ((*handlePtr)->deviceType >= SUPPORTED_DEVICES_NUMBER) {
 		return (false);
 	}
 
 	// Call appropriate destructor function.
-	bool retVal = destructors[*handlePtr->deviceType](*handlePtr);
+	bool retVal = destructors[(*handlePtr)->deviceType](*handlePtr);
 
 	// Done. Set reference to NULL if successful.
 	if (retVal) {

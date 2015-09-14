@@ -23,6 +23,7 @@
 #define VENDOR_REQUEST_FPGA_CONFIG 0xBF
 
 struct davis_state {
+	uint16_t deviceID;
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
 	atomic_uint_fast32_t dataExchangeBufferSize;

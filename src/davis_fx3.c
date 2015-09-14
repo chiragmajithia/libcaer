@@ -1,6 +1,6 @@
 #include "davis_fx3.h"
 
-caerDeviceHandle caerDavisFX3Open(uint8_t busNumberRestrict, uint8_t devAddressRestrict,
+caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
 	// Allocate memory for device structures.
 	caerDavisFX3Handle handle = ccalloc(1, sizeof(*handle));
