@@ -3,9 +3,13 @@
 
 #include "davis_common.h"
 
-#define DAVIS_FX3_VID 0x152A
-#define DAVIS_FX3_PID 0x841A
-#define DAVIS_FX3_DID_TYPE 0x01
+#define DEVICE_NAME "DAVIS FX3"
+
+#define DEVICE_VID 0x152A
+#define DEVICE_PID 0x841A
+#define DEVICE_DID_TYPE 0x01
+
+#define REQUIRED_LOGIC_REVISION 7084
 
 #define DEBUG_ENDPOINT 0x81
 #define DEBUG_TRANSFER_NUM 4

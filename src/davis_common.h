@@ -18,12 +18,13 @@
 #define IMU6_COUNT 15
 #define IMU9_COUNT 21
 
+#define EVENT_TYPES 4
+
 #define DATA_ENDPOINT 0x82
 
 #define VENDOR_REQUEST_FPGA_CONFIG 0xBF
 
 struct davis_state {
-	uint16_t deviceID;
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
 	atomic_uint_fast32_t dataExchangeBufferSize;

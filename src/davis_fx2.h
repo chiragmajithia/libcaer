@@ -3,9 +3,13 @@
 
 #include "davis_common.h"
 
-#define DAVIS_FX2_VID 0x152A
-#define DAVIS_FX2_PID 0x841B
-#define DAVIS_FX2_DID_TYPE 0x00
+#define DEVICE_NAME "DAVIS FX2"
+
+#define DEVICE_VID 0x152A
+#define DEVICE_PID 0x841B
+#define DEVICE_DID_TYPE 0x00
+
+#define REQUIRED_LOGIC_REVISION 7017
 
 #define VENDOR_REQUEST_CHIP_BIAS 0xC0
 #define VENDOR_REQUEST_CHIP_DIAG 0xC1

@@ -106,7 +106,7 @@ void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t 
 	spiConfig[3] = U8T(param >> 0);
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VR_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
+		VR_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
 }
 
 uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr) {
@@ -114,7 +114,7 @@ uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, u
 	uint8_t spiConfig[4] = { 0 };
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VR_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
+		VR_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
 
 	returnedParam |= U32T(spiConfig[0] << 24);
 	returnedParam |= U32T(spiConfig[1] << 16);
@@ -124,14 +124,13 @@ uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, u
 	return (returnedParam);
 }
 
-
 bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, uint8_t busNumberRestrict,
 	uint8_t devAddressRestrict, const char *serialNumberRestrict) {
 	// Initialize libusb using a separate context for each device.
 	// This is to correctly support one thread per device.
 	if ((errno = libusb_init(&handle->state.deviceContext)) != LIBUSB_SUCCESS) {
 		caerLog(LOG_CRITICAL, "DAVIS", "Failed to initialize libusb context. Error: %s (%d).", libusb_strerror(errno),
-			errno);
+		errno);
 
 		return (false);
 	}
@@ -616,7 +615,7 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 	for (size_t i = 0; i < bytesSent; i += 2) {
 		bool forcePacketCommit = false;
 
-		uint16_t event = le16toh(*((uint16_t * ) (&buffer[i])));
+		uint16_t event = le16toh(*((uint16_t *) (&buffer[i])));
 
 		// Check if timestamp.
 		if ((event & 0x8000) != 0) {
@@ -768,11 +767,6 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 
 								// Check main reset read against zero if disabled.
 								if (j == APS_READOUT_RESET && !state->apsResetRead) {
-									checkValue = 0;
-								}
-
-								// Check second reset read (Cp RST, DAVIS RGB).
-								if (j == APS_READOUT_CPRESET && state->chipID != CHIP_DAVISRGB) {
 									checkValue = 0;
 								}
 
@@ -944,23 +938,6 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 							break;
 						}
 
-						case 32: { // APS Reset2 Column Start
-							caerLog(LOG_DEBUG, state->sourceSubSystemString, "APS Reset2 Column Start event received.");
-							if (state->apsIgnoreEvents) {
-								break;
-							}
-
-							state->apsCurrentReadoutType = APS_READOUT_CPRESET;
-							state->apsCountY[state->apsCurrentReadoutType] = 0;
-
-							state->apsRGBPixelOffsetDirection = 0;
-							state->apsRGBPixelOffset = 1; // RGB support, first pixel of row always even.
-
-							// TODO: figure out exposure time calculation from ADC sample times.
-
-							break;
-						}
-
 						default:
 							caerLog(LOG_ERROR, state->sourceSubSystemString,
 								"Caught special event that can't be handled: %d.", data);
@@ -1071,43 +1048,29 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 					uint16_t yPosAbs = U16T(yPos + state->apsWindow0StartY);
 					size_t pixelPositionAbs = (size_t) (yPosAbs * state->apsSizeX) + xPosAbs;
 
-					if (state->apsCurrentReadoutType == APS_READOUT_RESET) {
+					if ((state->apsCurrentReadoutType == APS_READOUT_RESET
+						&& !(state->chipID == CHIP_DAVISRGB && state->apsGlobalShutter))
+						|| (state->apsCurrentReadoutType == APS_READOUT_SIGNAL
+							&& (state->chipID == CHIP_DAVISRGB && state->apsGlobalShutter))) {
 						state->apsCurrentResetFrame[pixelPositionAbs] = data;
-					}
-					else if (state->chipID == CHIP_DAVISRGB && state->apsCurrentReadoutType == APS_READOUT_SIGNAL) {
-						// Only for DAVIS RGB.
-						state->apsCurrentSignalFrame[pixelPositionAbs] = data;
 					}
 					else {
 						int32_t pixelValue = 0;
 
-						if (state->chipID == CHIP_DAVISRGB) {
-							// For DAVIS RGB, this is CP Reset, the last read for both GS and RS modes.
-							float C = 7.35f / 2.13f;
-
-							if (isDavisPixel(xPos, yPos)) {
-								// DAVIS Pixel
-								pixelValue = (int32_t) ((float) (state->apsCurrentResetFrame[pixelPositionAbs]
-									- state->apsCurrentSignalFrame[pixelPositionAbs])
-									+ (C * (float) (data - state->apsCurrentSignalFrame[pixelPositionAbs])));
-
-								// Protect against overflow from addition.
-								pixelValue = (pixelValue > 1023) ? (1023) : (pixelValue);
-							}
-							else {
-								// APS Pixel
-								pixelValue = (state->apsCurrentResetFrame[pixelPositionAbs]
-									- state->apsCurrentSignalFrame[pixelPositionAbs]);
-							}
+						if (state->chipID == CHIP_DAVISRGB && state->apsGlobalShutter) {
+							// DAVIS RGB GS has inverted samples, signal read comes first
+							// and was stored above inside state->apsCurrentResetFrame.
+							pixelValue = (data - state->apsCurrentResetFrame[pixelPositionAbs]);
 						}
 						else {
 							pixelValue = (state->apsCurrentResetFrame[pixelPositionAbs] - data);
 						}
 
 						// Normalize the ADC value to 16bit generic depth and check for underflow.
+						pixelValue = (pixelValue < 0) ? (0) : (pixelValue);
 						pixelValue = pixelValue << (16 - DAVIS_ADC_DEPTH);
-						caerFrameEventGetPixelArrayUnsafe(currentFrameEvent)[pixelPosition] = htole16(
-							U16T((pixelValue < 0) ? (0) : (pixelValue)));
+
+						caerFrameEventGetPixelArrayUnsafe(currentFrameEvent)[pixelPosition] = htole16(U16T(pixelValue));
 					}
 
 					caerLog(LOG_DEBUG, state->sourceSubSystemString,
@@ -1174,19 +1137,19 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 									break;
 
 								case 2: {
-									uint16_t accelX = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t accelX = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelX(currentIMU6Event, accelX / state->imuAccelScale);
 									break;
 								}
 
 								case 4: {
-									uint16_t accelY = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t accelY = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelY(currentIMU6Event, accelY / state->imuAccelScale);
 									break;
 								}
 
 								case 6: {
-									uint16_t accelZ = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t accelZ = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelZ(currentIMU6Event, accelZ / state->imuAccelScale);
 									break;
 								}
@@ -1194,25 +1157,25 @@ static void dataTranslator(davisCommonState state, uint8_t *buffer, size_t bytes
 									// Temperature is signed. Formula for converting to °C:
 									// (SIGNED_VAL / 340) + 36.53
 								case 8: {
-									int16_t temp = (int16_t) U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t temp = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetTemp(currentIMU6Event, (temp / 340.0f) + 36.53f);
 									break;
 								}
 
 								case 10: {
-									uint16_t gyroX = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroX = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroX(currentIMU6Event, gyroX / state->imuGyroScale);
 									break;
 								}
 
 								case 12: {
-									uint16_t gyroY = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroY = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroY(currentIMU6Event, gyroY / state->imuGyroScale);
 									break;
 								}
 
 								case 14: {
-									uint16_t gyroZ = U16T((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroZ = (int16_t) ((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroZ(currentIMU6Event, gyroZ / state->imuGyroScale);
 									break;
 								}

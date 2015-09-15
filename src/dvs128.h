@@ -8,12 +8,18 @@
 #include <libusb.h>
 #include <stdatomic.h>
 
-#define DVS128_VID 0x152A
-#define DVS128_PID 0x8400
-#define DVS128_DID_TYPE 0x00
+#define DEVICE_NAME "DVS128"
 
-#define DVS128_ARRAY_SIZE_X 128
-#define DVS128_ARRAY_SIZE_Y 128
+#define DEVICE_VID 0x152A
+#define DEVICE_PID 0x8400
+#define DEVICE_DID_TYPE 0x00
+
+#define REQUIRED_LOGIC_REVISION 1
+
+#define DVS_ARRAY_SIZE_X 128
+#define DVS_ARRAY_SIZE_Y 128
+
+#define EVENT_TYPES 2
 
 #define DATA_ENDPOINT 0x86
 
@@ -27,7 +33,6 @@
 #define BIAS_LENGTH 3
 
 struct dvs128_state {
-	uint16_t deviceID;
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
 	atomic_uint_fast32_t dataExchangeBufferSize;
