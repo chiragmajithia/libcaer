@@ -529,6 +529,8 @@ static void LIBUSB_CALL dvs128LibUsbCallback(struct libusb_transfer *transfer) {
 	libusb_free_transfer(transfer);
 }
 
+#define DVS128_TIMESTAMP_WRAP_MASK 0x80
+#define DVS128_TIMESTAMP_RESET_MASK 0x40
 #define DVS128_POLARITY_SHIFT 0
 #define DVS128_POLARITY_MASK 0x0001
 #define DVS128_Y_ADDR_SHIFT 8
@@ -536,6 +538,7 @@ static void LIBUSB_CALL dvs128LibUsbCallback(struct libusb_transfer *transfer) {
 #define DVS128_X_ADDR_SHIFT 1
 #define DVS128_X_ADDR_MASK 0x007F
 #define DVS128_SYNC_EVENT_MASK 0x8000
+#define TS_WRAP_ADD 0x4000
 
 static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t bytesSent) {
 	dvs128State state = &handle->state;
@@ -550,16 +553,19 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 	for (size_t i = 0; i < bytesSent; i += 4) {
 		bool forcePacketCommit = false;
 
-		if ((buffer[i + 3] & 0x80) == 0x80) {
+		if ((buffer[i + 3] & DVS128_TIMESTAMP_WRAP_MASK) == DVS128_TIMESTAMP_WRAP_MASK) {
 			// timestamp bit 15 is one -> wrap: now we need to increment
 			// the wrapAdd, uses only 14 bit timestamps
-			state->wrapAdd += 0x4000;
+			state->wrapAdd += TS_WRAP_ADD;
 
 			// Detect big timestamp wrap-around.
-			if (state->wrapAdd == 0) {
+			if (state->wrapAdd == (INT32_MAX - TS_WRAP_ADD)) {
 				// Reset lastTimestamp to zero at this point, so we can again
 				// start detecting overruns of the 32bit value.
 				state->lastTimestamp = 0;
+
+				// Increment TSOverflow counter.
+				state->wrapOverflow++;
 
 				caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
 					state->currentSpecialPacketPosition++);
@@ -571,7 +577,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				forcePacketCommit = true;
 			}
 		}
-		else if ((buffer[i + 3] & 0x40) == 0x40) {
+		else if ((buffer[i + 3] & DVS128_TIMESTAMP_RESET_MASK) == DVS128_TIMESTAMP_RESET_MASK) {
 			// timestamp bit 14 is one -> wrapAdd reset: this firmware
 			// version uses reset events to reset timestamps
 			state->wrapAdd = 0;
