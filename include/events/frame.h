@@ -77,7 +77,7 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 	return (packet->events + n);
 }
 
-static inline void caerFrameEventPacketFreePixels(caerEventPacketHeader header) {
+void caerFrameEventPacketFreePixels(caerEventPacketHeader header) {
 	if (header == NULL || caerEventPacketHeaderGetEventType(header) != FRAME_EVENT) {
 		return;
 	}

@@ -50,7 +50,7 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 }
 
 // Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
-static inline void caerFrameEventPacketFreePixels(caerEventPacketHeader header);
+extern void caerFrameEventPacketFreePixels(caerEventPacketHeader header);
 
 static inline void caerEventPacketFree(caerEventPacketHeader header) {
 	if (header == NULL) {
