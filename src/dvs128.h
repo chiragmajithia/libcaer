@@ -54,24 +54,24 @@ struct dvs128_state {
 	size_t dataTransfersLength;
 	size_t activeDataTransfers;
 	// Timestamp fields
-	uint32_t wrapOverflow;
-	uint32_t wrapAdd;
-	uint32_t lastTimestamp;
-	uint32_t currentTimestamp;
+	int32_t wrapOverflow;
+	int32_t wrapAdd;
+	int32_t lastTimestamp;
+	int32_t currentTimestamp;
 	// Packet Container state
 	caerEventPacketContainer currentPacketContainer;
-	atomic_uint_fast32_t maxPacketContainerSize;
-	atomic_uint_fast32_t maxPacketContainerInterval;
+	atomic_int_fast32_t maxPacketContainerSize;
+	atomic_int_fast32_t maxPacketContainerInterval;
 	// Polarity Packet State
 	caerPolarityEventPacket currentPolarityPacket;
-	uint32_t currentPolarityPacketPosition;
-	atomic_uint_fast32_t maxPolarityPacketSize;
-	atomic_uint_fast32_t maxPolarityPacketInterval;
+	int32_t currentPolarityPacketPosition;
+	atomic_int_fast32_t maxPolarityPacketSize;
+	atomic_int_fast32_t maxPolarityPacketInterval;
 	// Special Packet State
 	caerSpecialEventPacket currentSpecialPacket;
-	uint32_t currentSpecialPacketPosition;
-	atomic_uint_fast32_t maxSpecialPacketSize;
-	atomic_uint_fast32_t maxSpecialPacketInterval;
+	int32_t currentSpecialPacketPosition;
+	atomic_int_fast32_t maxSpecialPacketSize;
+	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Camera bias and settings memory (for getter operations)
 	// TODO: replace with real device calls once DVS128 logic rewritten.
 	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];

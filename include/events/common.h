@@ -28,24 +28,33 @@ enum caer_event_types {
 	EAR_EVENT = 6,
 };
 
+// Use signed integers for maximum compatibility with other languages.
 struct caer_event_packet_header {
-	uint16_t eventType; // Numerical type ID, unique to each event type (see enum).
-	uint16_t eventSource; // Numerical source ID, unique inside a process.
-	uint32_t eventSize; // Size of one event in bytes.
-	uint32_t eventTSOffset; // Offset in bytes at which the main 32bit time-stamp can be found.
-	uint32_t eventTSOverflow; // Overflow counter for the standard 32bit event time-stamp.
-	uint32_t eventCapacity; // Maximum number of events this packet can store.
-	uint32_t eventNumber; // Total number of events present in this packet (valid + invalid).
-	uint32_t eventValid; // Total number of valid events present in this packet.
+	int16_t eventType; // Numerical type ID, unique to each event type (see enum).
+	int16_t eventSource; // Numerical source ID, unique inside a process.
+	int32_t eventSize; // Size of one event in bytes.
+	int32_t eventTSOffset; // Offset in bytes at which the main 32bit time-stamp can be found.
+	int32_t eventTSOverflow; // Overflow counter for the standard 32bit event time-stamp.
+	int32_t eventCapacity; // Maximum number of events this packet can store.
+	int32_t eventNumber; // Total number of events present in this packet (valid + invalid).
+	int32_t eventValid; // Total number of valid events present in this packet.
 }__attribute__((__packed__));
 
 typedef struct caer_event_packet_header *caerEventPacketHeader;
 
-static inline uint16_t caerEventPacketHeaderGetEventType(caerEventPacketHeader header) {
+static inline int16_t caerEventPacketHeaderGetEventType(caerEventPacketHeader header) {
 	return (le16toh(header->eventType));
 }
 
-static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader header, uint16_t eventType) {
+static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader header, int16_t eventType) {
+	if (eventType < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventType() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventType = htole16(eventType);
 }
 
@@ -66,40 +75,67 @@ static inline void caerEventPacketFree(caerEventPacketHeader header) {
 	free(header);
 }
 
-static inline uint16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
+static inline int16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
 	return (le16toh(header->eventSource));
 }
 
-static inline void caerEventPacketHeaderSetEventSource(caerEventPacketHeader header, uint16_t eventSource) {
+static inline void caerEventPacketHeaderSetEventSource(caerEventPacketHeader header, int16_t eventSource) {
+	if (eventSource < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventSource() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventSource = htole16(eventSource);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventSize(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventSize(caerEventPacketHeader header) {
 	return (le32toh(header->eventSize));
 }
 
-static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader header, uint32_t eventSize) {
+static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader header, int32_t eventSize) {
+	if (eventSize < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventSize() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventSize = htole32(eventSize);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventTSOffset(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventTSOffset(caerEventPacketHeader header) {
 	return (le32toh(header->eventTSOffset));
 }
 
-static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader header, uint32_t eventTSOffset) {
+static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader header, int32_t eventTSOffset) {
+	if (eventTSOffset < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventTSOffset() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventTSOffset = htole32(eventTSOffset);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventTSOverflow(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventTSOverflow(caerEventPacketHeader header) {
 	return (le32toh(header->eventTSOverflow));
 }
 
 // Limit TSOverflow to 31 bits for compatibility with languages that have no unsigned integer (Java).
 static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader header, int32_t eventTSOverflow) {
 	if (eventTSOverflow < 0) {
-		// Negative means using the 31st bit!
+		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Packet Header", "Called caerEventPacketHeaderSetEventTSOverflow() with negative value!");
+		caerLog(LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventTSOverflow() with negative value!");
 #endif
 		return;
 	}
@@ -107,36 +143,62 @@ static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader
 	header->eventTSOverflow = htole32(eventTSOverflow);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventCapacity(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventCapacity(caerEventPacketHeader header) {
 	return (le32toh(header->eventCapacity));
 }
 
-static inline void caerEventPacketHeaderSetEventCapacity(caerEventPacketHeader header, uint32_t eventsCapacity) {
+static inline void caerEventPacketHeaderSetEventCapacity(caerEventPacketHeader header, int32_t eventsCapacity) {
+	if (eventsCapacity < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventCapacity() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventCapacity = htole32(eventsCapacity);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventNumber(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventNumber(caerEventPacketHeader header) {
 	return (le32toh(header->eventNumber));
 }
 
-static inline void caerEventPacketHeaderSetEventNumber(caerEventPacketHeader header, uint32_t eventsNumber) {
+static inline void caerEventPacketHeaderSetEventNumber(caerEventPacketHeader header, int32_t eventsNumber) {
+	if (eventsNumber < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventNumber() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventNumber = htole32(eventsNumber);
 }
 
-static inline uint32_t caerEventPacketHeaderGetEventValid(caerEventPacketHeader header) {
+static inline int32_t caerEventPacketHeaderGetEventValid(caerEventPacketHeader header) {
 	return (le32toh(header->eventValid));
 }
 
-static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader header, uint32_t eventsValid) {
+static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader header, int32_t eventsValid) {
+	if (eventsValid < 0) {
+		// Negative numbers (bit 31 set) are not allowed!
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventValid() with negative value!");
+#endif
+		return;
+	}
+
 	header->eventValid = htole32(eventsValid);
 }
 
-static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, uint32_t n) {
+static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(headerPtr)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(headerPtr)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Generic Event",
-			"Called caerGenericEventGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerGenericEventGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketHeaderGetEventCapacity(headerPtr));
 #endif
 		return (NULL);
@@ -144,16 +206,16 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, ui
 
 	// Return a pointer to the specified event.
 	return (((uint8_t *) headerPtr)
-		+ (sizeof(struct caer_event_packet_header) + (n * caerEventPacketHeaderGetEventSize(headerPtr))));
+		+ (sizeof(struct caer_event_packet_header) + U64T(n * caerEventPacketHeaderGetEventSize(headerPtr))));
 }
 
-static inline uint32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
-	return (le32toh(*((uint32_t *) (((uint8_t *) eventPtr) + caerEventPacketHeaderGetEventTSOffset(headerPtr)))));
+static inline int32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
+	return (le32toh(*((int32_t *) (((uint8_t *) eventPtr) + caerEventPacketHeaderGetEventTSOffset(headerPtr)))));
 }
 
-static inline uint64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr)));
+static inline int64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr))));
 }
 
 static inline bool caerGenericEventIsValid(void *eventPtr) {

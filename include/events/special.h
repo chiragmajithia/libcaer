@@ -26,7 +26,7 @@ enum caer_special_event_types {
 
 struct caer_special_event {
 	uint32_t data; // First because of valid mark.
-	uint32_t timestamp;
+	int32_t timestamp;
 }__attribute__((__packed__));
 
 typedef struct caer_special_event *caerSpecialEvent;
@@ -38,9 +38,9 @@ struct caer_special_event_packet {
 
 typedef struct caer_special_event_packet *caerSpecialEventPacket;
 
-static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(uint32_t eventCapacity, uint16_t eventSource) {
-	uint32_t eventSize = sizeof(struct caer_special_event);
-	size_t eventPacketSize = sizeof(struct caer_special_event_packet) + (eventCapacity * eventSize);
+static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+	size_t eventSize = sizeof(struct caer_special_event);
+	size_t eventPacketSize = sizeof(struct caer_special_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerSpecialEventPacket packet = calloc(1, eventPacketSize);
@@ -48,7 +48,7 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(uint32_t eve
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Special Event",
 			"Failed to allocate %zu bytes of memory for Special Event Packet of capacity %"
-			PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
 #endif
 		return (NULL);
@@ -57,19 +57,19 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(uint32_t eve
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SPECIAL_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_special_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
 }
 
-static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPacket packet, uint32_t n) {
+static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Special Event",
-			"Called caerSpecialEventPacketGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerSpecialEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
 		return (NULL);
@@ -79,13 +79,13 @@ static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPa
 	return (packet->events + n);
 }
 
-static inline uint32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
+static inline int32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline uint64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, caerSpecialEventPacket packet) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerSpecialEventGetTimestamp(event)));
+static inline int64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, caerSpecialEventPacket packet) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerSpecialEventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

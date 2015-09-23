@@ -12,7 +12,7 @@
 
 struct caer_imu9_event {
 	uint16_t info; // First because of valid mark.
-	uint32_t timestamp;
+	int32_t timestamp;
 	float accel_x;
 	float accel_y;
 	float accel_z;
@@ -34,16 +34,16 @@ struct caer_imu9_event_packet {
 
 typedef struct caer_imu9_event_packet *caerIMU9EventPacket;
 
-static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(uint32_t eventCapacity, uint16_t eventSource) {
-	uint32_t eventSize = sizeof(struct caer_imu9_event);
-	size_t eventPacketSize = sizeof(struct caer_imu9_event_packet) + (eventCapacity * eventSize);
+static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+	size_t eventSize = sizeof(struct caer_imu9_event);
+	size_t eventPacketSize = sizeof(struct caer_imu9_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerIMU9EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "IMU9 Event", "Failed to allocate %zu bytes of memory for IMU9 Event Packet of capacity %"
-		PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 		errno);
 #endif
 		return (NULL);
@@ -52,19 +52,19 @@ static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(uint32_t eventCapa
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU9_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t)eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu9_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
 }
 
-static inline caerIMU9Event caerIMU9EventPacketGetEvent(caerIMU9EventPacket packet, uint32_t n) {
+static inline caerIMU9Event caerIMU9EventPacketGetEvent(caerIMU9EventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "IMU9 Event",
-			"Called caerIMU9EventPacketGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerIMU9EventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
 		return (NULL);
@@ -74,13 +74,13 @@ static inline caerIMU9Event caerIMU9EventPacketGetEvent(caerIMU9EventPacket pack
 	return (packet->events + n);
 }
 
-static inline uint32_t caerIMU9EventGetTimestamp(caerIMU9Event event) {
+static inline int32_t caerIMU9EventGetTimestamp(caerIMU9Event event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline uint64_t caerIMU9EventGetTimestamp64(caerIMU9Event event, caerIMU9EventPacket packet) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerIMU9EventGetTimestamp(event)));
+static inline int64_t caerIMU9EventGetTimestamp64(caerIMU9Event event, caerIMU9EventPacket packet) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerIMU9EventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -135,7 +135,7 @@ static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPac
 }
 
 static inline float caerIMU9EventGetAccelX(caerIMU9Event event) {
-	return le32toh(event->accel_x);
+	return (le32toh(event->accel_x));
 }
 
 static inline void caerIMU9EventSetAccelX(caerIMU9Event event, float accelX) {
@@ -143,7 +143,7 @@ static inline void caerIMU9EventSetAccelX(caerIMU9Event event, float accelX) {
 }
 
 static inline float caerIMU9EventGetAccelY(caerIMU9Event event) {
-	return le32toh(event->accel_y);
+	return (le32toh(event->accel_y));
 }
 
 static inline void caerIMU9EventSetAccelY(caerIMU9Event event, float accelY) {
@@ -151,7 +151,7 @@ static inline void caerIMU9EventSetAccelY(caerIMU9Event event, float accelY) {
 }
 
 static inline float caerIMU9EventGetAccelZ(caerIMU9Event event) {
-	return le32toh(event->accel_z);
+	return (le32toh(event->accel_z));
 }
 
 static inline void caerIMU9EventSetAccelZ(caerIMU9Event event, float accelZ) {
@@ -159,7 +159,7 @@ static inline void caerIMU9EventSetAccelZ(caerIMU9Event event, float accelZ) {
 }
 
 static inline float caerIMU9EventGetGyroX(caerIMU9Event event) {
-	return le32toh(event->gyro_x);
+	return (le32toh(event->gyro_x));
 }
 
 static inline void caerIMU9EventSetGyroX(caerIMU9Event event, float gyroX) {
@@ -167,7 +167,7 @@ static inline void caerIMU9EventSetGyroX(caerIMU9Event event, float gyroX) {
 }
 
 static inline float caerIMU9EventGetGyroY(caerIMU9Event event) {
-	return le32toh(event->gyro_y);
+	return (le32toh(event->gyro_y));
 }
 
 static inline void caerIMU9EventSetGyroY(caerIMU9Event event, float gyroY) {
@@ -175,7 +175,7 @@ static inline void caerIMU9EventSetGyroY(caerIMU9Event event, float gyroY) {
 }
 
 static inline float caerIMU9EventGetGyroZ(caerIMU9Event event) {
-	return le32toh(event->gyro_z);
+	return (le32toh(event->gyro_z));
 }
 
 static inline void caerIMU9EventSetGyroZ(caerIMU9Event event, float gyroZ) {
@@ -183,7 +183,7 @@ static inline void caerIMU9EventSetGyroZ(caerIMU9Event event, float gyroZ) {
 }
 
 static inline float caerIMU9EventGetCompX(caerIMU9Event event) {
-	return le32toh(event->comp_x);
+	return (le32toh(event->comp_x));
 }
 
 static inline void caerIMU9EventSetCompX(caerIMU9Event event, float compX) {
@@ -191,7 +191,7 @@ static inline void caerIMU9EventSetCompX(caerIMU9Event event, float compX) {
 }
 
 static inline float caerIMU9EventGetCompY(caerIMU9Event event) {
-	return le32toh(event->comp_y);
+	return (le32toh(event->comp_y));
 }
 
 static inline void caerIMU9EventSetCompY(caerIMU9Event event, float compY) {
@@ -199,7 +199,7 @@ static inline void caerIMU9EventSetCompY(caerIMU9Event event, float compY) {
 }
 
 static inline float caerIMU9EventGetCompZ(caerIMU9Event event) {
-	return le32toh(event->comp_z);
+	return (le32toh(event->comp_z));
 }
 
 static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
@@ -207,7 +207,7 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
 }
 
 static inline float caerIMU9EventGetTemp(caerIMU9Event event) {
-	return le32toh(event->temp);
+	return (le32toh(event->temp));
 }
 
 static inline void caerIMU9EventSetTemp(caerIMU9Event event, float temp) {

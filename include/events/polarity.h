@@ -19,7 +19,7 @@
 
 struct caer_polarity_event {
 	uint32_t data; // First because of valid mark.
-	uint32_t timestamp;
+	int32_t timestamp;
 }__attribute__((__packed__));
 
 typedef struct caer_polarity_event *caerPolarityEvent;
@@ -31,9 +31,9 @@ struct caer_polarity_event_packet {
 
 typedef struct caer_polarity_event_packet *caerPolarityEventPacket;
 
-static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(uint32_t eventCapacity, uint16_t eventSource) {
-	uint32_t eventSize = sizeof(struct caer_polarity_event);
-	size_t eventPacketSize = sizeof(struct caer_polarity_event_packet) + (eventCapacity * eventSize);
+static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+	size_t eventSize = sizeof(struct caer_polarity_event);
+	size_t eventPacketSize = sizeof(struct caer_polarity_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerPolarityEventPacket packet = calloc(1, eventPacketSize);
@@ -41,7 +41,7 @@ static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(uint32_t e
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Polarity Event",
 			"Failed to allocate %zu bytes of memory for Polarity Event Packet of capacity %"
-			PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
 #endif
 		return (NULL);
@@ -50,19 +50,19 @@ static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(uint32_t e
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, POLARITY_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader,(int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_polarity_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
 }
 
-static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEventPacket packet, uint32_t n) {
+static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Polarity Event",
-			"Called caerPolarityEventPacketGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerPolarityEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
 		return (NULL);
@@ -72,13 +72,13 @@ static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEven
 	return (packet->events + n);
 }
 
-static inline uint32_t caerPolarityEventGetTimestamp(caerPolarityEvent event) {
+static inline int32_t caerPolarityEventGetTimestamp(caerPolarityEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline uint64_t caerPolarityEventGetTimestamp64(caerPolarityEvent event, caerPolarityEventPacket packet) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerPolarityEventGetTimestamp(event)));
+static inline int64_t caerPolarityEventGetTimestamp64(caerPolarityEvent event, caerPolarityEventPacket packet) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerPolarityEventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

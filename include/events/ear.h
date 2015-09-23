@@ -21,7 +21,7 @@
 
 struct caer_ear_event {
 	uint32_t data; // First because of valid mark.
-	uint32_t timestamp;
+	int32_t timestamp;
 }__attribute__((__packed__));
 
 typedef struct caer_ear_event *caerEarEvent;
@@ -33,16 +33,16 @@ struct caer_ear_event_packet {
 
 typedef struct caer_ear_event_packet *caerEarEventPacket;
 
-static inline caerEarEventPacket caerEarEventPacketAllocate(uint32_t eventCapacity, uint16_t eventSource) {
-	uint32_t eventSize = sizeof(struct caer_ear_event);
-	size_t eventPacketSize = sizeof(struct caer_ear_event_packet) + (eventCapacity * eventSize);
+static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+	size_t eventSize = sizeof(struct caer_ear_event);
+	size_t eventPacketSize = sizeof(struct caer_ear_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerEarEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Ear Event", "Failed to allocate %zu bytes of memory for Ear Event Packet of capacity %"
-		PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 		errno);
 #endif
 		return (NULL);
@@ -51,19 +51,19 @@ static inline caerEarEventPacket caerEarEventPacketAllocate(uint32_t eventCapaci
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, EAR_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t)eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_ear_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
 }
 
-static inline caerEarEvent caerEarEventPacketGetEvent(caerEarEventPacket packet, uint32_t n) {
+static inline caerEarEvent caerEarEventPacketGetEvent(caerEarEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "Ear Event",
-			"Called caerEarEventPacketGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerEarEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
 		return (NULL);
@@ -73,13 +73,13 @@ static inline caerEarEvent caerEarEventPacketGetEvent(caerEarEventPacket packet,
 	return (packet->events + n);
 }
 
-static inline uint32_t caerEarEventGetTimestamp(caerEarEvent event) {
+static inline int32_t caerEarEventGetTimestamp(caerEarEvent event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline uint64_t caerEarEventGetTimestamp64(caerEarEvent event, caerEarEventPacket packet) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerEarEventGetTimestamp(event)));
+static inline int64_t caerEarEventGetTimestamp64(caerEarEvent event, caerEarEventPacket packet) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerEarEventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

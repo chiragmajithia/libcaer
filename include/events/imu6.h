@@ -12,7 +12,7 @@
 
 struct caer_imu6_event {
 	uint16_t info; // First because of valid mark.
-	uint32_t timestamp;
+	int32_t timestamp;
 	float accel_x;
 	float accel_y;
 	float accel_z;
@@ -31,16 +31,16 @@ struct caer_imu6_event_packet {
 
 typedef struct caer_imu6_event_packet *caerIMU6EventPacket;
 
-static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(uint32_t eventCapacity, uint16_t eventSource) {
-	uint32_t eventSize = sizeof(struct caer_imu6_event);
-	size_t eventPacketSize = sizeof(struct caer_imu6_event_packet) + (eventCapacity * eventSize);
+static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+	size_t eventSize = sizeof(struct caer_imu6_event);
+	size_t eventPacketSize = sizeof(struct caer_imu6_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerIMU6EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "IMU6 Event", "Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
-		PRIu32 " from source %" PRIu16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 		errno);
 #endif
 		return (NULL);
@@ -49,19 +49,19 @@ static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(uint32_t eventCapa
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU6_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t)eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu6_event, timestamp));
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
 }
 
-static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket packet, uint32_t n) {
+static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
-	if (n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
+	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(LOG_CRITICAL, "IMU6 Event",
-			"Called caerIMU6EventPacketGetEvent() with invalid event offset %" PRIu32 ", while maximum allowed value is %" PRIu32 ".",
+			"Called caerIMU6EventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
 		return (NULL);
@@ -71,13 +71,13 @@ static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket pack
 	return (packet->events + n);
 }
 
-static inline uint32_t caerIMU6EventGetTimestamp(caerIMU6Event event) {
+static inline int32_t caerIMU6EventGetTimestamp(caerIMU6Event event) {
 	return (le32toh(event->timestamp));
 }
 
-static inline uint64_t caerIMU6EventGetTimestamp64(caerIMU6Event event, caerIMU6EventPacket packet) {
-	return ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerIMU6EventGetTimestamp(event)));
+static inline int64_t caerIMU6EventGetTimestamp64(caerIMU6Event event, caerIMU6EventPacket packet) {
+	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+		| U64T(caerIMU6EventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -132,7 +132,7 @@ static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPac
 }
 
 static inline float caerIMU6EventGetAccelX(caerIMU6Event event) {
-	return le32toh(event->accel_x);
+	return (le32toh(event->accel_x));
 }
 
 static inline void caerIMU6EventSetAccelX(caerIMU6Event event, float accelX) {
@@ -140,7 +140,7 @@ static inline void caerIMU6EventSetAccelX(caerIMU6Event event, float accelX) {
 }
 
 static inline float caerIMU6EventGetAccelY(caerIMU6Event event) {
-	return le32toh(event->accel_y);
+	return (le32toh(event->accel_y));
 }
 
 static inline void caerIMU6EventSetAccelY(caerIMU6Event event, float accelY) {
@@ -148,7 +148,7 @@ static inline void caerIMU6EventSetAccelY(caerIMU6Event event, float accelY) {
 }
 
 static inline float caerIMU6EventGetAccelZ(caerIMU6Event event) {
-	return le32toh(event->accel_z);
+	return (le32toh(event->accel_z));
 }
 
 static inline void caerIMU6EventSetAccelZ(caerIMU6Event event, float accelZ) {
@@ -156,7 +156,7 @@ static inline void caerIMU6EventSetAccelZ(caerIMU6Event event, float accelZ) {
 }
 
 static inline float caerIMU6EventGetGyroX(caerIMU6Event event) {
-	return le32toh(event->gyro_x);
+	return (le32toh(event->gyro_x));
 }
 
 static inline void caerIMU6EventSetGyroX(caerIMU6Event event, float gyroX) {
@@ -164,7 +164,7 @@ static inline void caerIMU6EventSetGyroX(caerIMU6Event event, float gyroX) {
 }
 
 static inline float caerIMU6EventGetGyroY(caerIMU6Event event) {
-	return le32toh(event->gyro_y);
+	return (le32toh(event->gyro_y));
 }
 
 static inline void caerIMU6EventSetGyroY(caerIMU6Event event, float gyroY) {
@@ -172,7 +172,7 @@ static inline void caerIMU6EventSetGyroY(caerIMU6Event event, float gyroY) {
 }
 
 static inline float caerIMU6EventGetGyroZ(caerIMU6Event event) {
-	return le32toh(event->gyro_z);
+	return (le32toh(event->gyro_z));
 }
 
 static inline void caerIMU6EventSetGyroZ(caerIMU6Event event, float gyroZ) {
@@ -180,7 +180,7 @@ static inline void caerIMU6EventSetGyroZ(caerIMU6Event event, float gyroZ) {
 }
 
 static inline float caerIMU6EventGetTemp(caerIMU6Event event) {
-	return le32toh(event->temp);
+	return (le32toh(event->temp));
 }
 
 static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {

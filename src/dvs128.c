@@ -569,7 +569,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
 					state->currentSpecialPacketPosition++);
-				caerSpecialEventSetTimestamp(currentEvent, UINT32_MAX);
+				caerSpecialEventSetTimestamp(currentEvent, INT32_MAX);
 				caerSpecialEventSetType(currentEvent, TIMESTAMP_WRAP);
 				caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 
@@ -580,13 +580,15 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		else if ((buffer[i + 3] & DVS128_TIMESTAMP_RESET_MASK) == DVS128_TIMESTAMP_RESET_MASK) {
 			// timestamp bit 14 is one -> wrapAdd reset: this firmware
 			// version uses reset events to reset timestamps
+			state->wrapOverflow = 0;
 			state->wrapAdd = 0;
 			state->lastTimestamp = 0;
+			state->currentTimestamp = 0;
 
 			// Create timestamp reset event.
 			caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
 				state->currentSpecialPacketPosition++);
-			caerSpecialEventSetTimestamp(currentEvent, UINT32_MAX);
+			caerSpecialEventSetTimestamp(currentEvent, INT32_MAX);
 			caerSpecialEventSetType(currentEvent, TIMESTAMP_RESET);
 			caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 
@@ -602,22 +604,24 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			uint16_t timestampUSB = le16toh(*((uint16_t *) (&buffer[i + 2])));
 
 			// Expand to 32 bits. (Tick is 1µs already.)
-			int32_t timestamp = timestampUSB + state->wrapAdd;
+			state->lastTimestamp = state->currentTimestamp;
+			state->currentTimestamp =state->wrapAdd + timestampUSB;
 
 			// Check monotonicity of timestamps.
-			if (timestamp < state->lastTimestamp) {
+			if (state->currentTimestamp < state->lastTimestamp) {
 				caerLog(LOG_ALERT, handle->info.deviceString,
-					"non-monotonic time-stamp detected: lastTimestamp=%" PRIu32 ", timestamp=%" PRIu32 ".",
-					state->lastTimestamp, timestamp);
+					"Timestamps: non strictly-monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
+					state->lastTimestamp, state->currentTimestamp,
+					state->lastTimestamp - state->currentTimestamp);
 			}
 
-			state->lastTimestamp = timestamp;
+			state->lastTimestamp = state->currentTimestamp;
 
 			if ((addressUSB & DVS128_SYNC_EVENT_MASK) != 0) {
 				// Special Trigger Event (MSB is set)
 				caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
 					state->currentSpecialPacketPosition++);
-				caerSpecialEventSetTimestamp(currentEvent, timestamp);
+				caerSpecialEventSetTimestamp(currentEvent, state->currentTimestamp);
 				caerSpecialEventSetType(currentEvent, EXTERNAL_INPUT_RISING_EDGE);
 				caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 			}
@@ -641,7 +645,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				caerPolarityEvent currentEvent = caerPolarityEventPacketGetEvent(state->currentPolarityPacket,
 					state->currentPolarityPacketPosition++);
-				caerPolarityEventSetTimestamp(currentEvent, timestamp);
+				caerPolarityEventSetTimestamp(currentEvent, state->currentTimestamp);
 				caerPolarityEventSetPolarity(currentEvent, polarity);
 				caerPolarityEventSetY(currentEvent, y);
 				caerPolarityEventSetX(currentEvent, x);

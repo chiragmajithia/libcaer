@@ -46,12 +46,12 @@ struct davis_state {
 	size_t dataTransfersLength;
 	size_t activeDataTransfers;
 	// Timestamp fields
-	uint32_t wrapOverflow;
-	uint32_t wrapAdd;
-	uint32_t lastTimestamp;
-	uint32_t currentTimestamp;
+	int32_t wrapOverflow;
+	int32_t wrapAdd;
+	int32_t lastTimestamp;
+	int32_t currentTimestamp;
 	// DVS specific fields
-	uint32_t dvsTimestamp;
+	int32_t dvsTimestamp;
 	uint16_t dvsLastY;
 	bool dvsGotY;
 	bool dvsInvertXY;
@@ -78,28 +78,28 @@ struct davis_state {
 	float imuGyroScale;
 	// Packet Container state
 	caerEventPacketContainer currentPacketContainer;
-	atomic_uint_fast32_t maxPacketContainerSize;
-	atomic_uint_fast32_t maxPacketContainerInterval;
+	atomic_int_fast32_t maxPacketContainerSize;
+	atomic_int_fast32_t maxPacketContainerInterval;
 	// Polarity Packet state
 	caerPolarityEventPacket currentPolarityPacket;
-	uint32_t currentPolarityPacketPosition;
-	atomic_uint_fast32_t maxPolarityPacketSize;
-	atomic_uint_fast32_t maxPolarityPacketInterval;
+	int32_t currentPolarityPacketPosition;
+	atomic_int_fast32_t maxPolarityPacketSize;
+	atomic_int_fast32_t maxPolarityPacketInterval;
 	// Frame Packet state
 	caerFrameEventPacket currentFramePacket;
-	uint32_t currentFramePacketPosition;
-	atomic_uint_fast32_t maxFramePacketSize;
-	atomic_uint_fast32_t maxFramePacketInterval;
+	int32_t currentFramePacketPosition;
+	atomic_int_fast32_t maxFramePacketSize;
+	atomic_int_fast32_t maxFramePacketInterval;
 	// IMU6 Packet state
 	caerIMU6EventPacket currentIMU6Packet;
-	uint32_t currentIMU6PacketPosition;
-	atomic_uint_fast32_t maxIMU6PacketSize;
-	atomic_uint_fast32_t maxIMU6PacketInterval;
+	int32_t currentIMU6PacketPosition;
+	atomic_int_fast32_t maxIMU6PacketSize;
+	atomic_int_fast32_t maxIMU6PacketInterval;
 	// Special Packet state
 	caerSpecialEventPacket currentSpecialPacket;
-	uint32_t currentSpecialPacketPosition;
-	atomic_uint_fast32_t maxSpecialPacketSize;
-	atomic_uint_fast32_t maxSpecialPacketInterval;
+	int32_t currentSpecialPacketPosition;
+	atomic_int_fast32_t maxSpecialPacketSize;
+	atomic_int_fast32_t maxSpecialPacketInterval;
 };
 
 typedef struct davis_state *davisState;
