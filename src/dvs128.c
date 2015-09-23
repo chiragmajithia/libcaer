@@ -10,6 +10,15 @@ static void dvs128SendBiases(dvs128State state);
 static void *dvs128DataAcquisitionThread(void *inPtr);
 static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle);
 
+static inline void checkMonotonicTimestamp(dvs128Handle handle) {
+	if (handle->state.currentTimestamp < handle->state.lastTimestamp) {
+		caerLog(LOG_ALERT, handle->info.deviceString,
+			"Timestamps: non monotonic timestamp detected: lastTimestamp=%" PRIi32 ", currentTimestamp=%" PRIi32 ", difference=%" PRIi32 ".",
+			handle->state.lastTimestamp, handle->state.currentTimestamp,
+			(handle->state.lastTimestamp - handle->state.currentTimestamp));
+	}
+}
+
 static inline void freeAllDataMemory(dvs128State state) {
 	if (state->dataExchangeBuffer != NULL) {
 		ringBufferFree(state->dataExchangeBuffer);
@@ -553,15 +562,14 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		bool forcePacketCommit = false;
 
 		if ((buffer[i + 3] & DVS128_TIMESTAMP_WRAP_MASK) == DVS128_TIMESTAMP_WRAP_MASK) {
-			// timestamp bit 15 is one -> wrap: now we need to increment
-			// the wrapAdd, uses only 14 bit timestamps
-			state->wrapAdd += TS_WRAP_ADD;
-
 			// Detect big timestamp wrap-around.
-			if (state->wrapAdd == (INT32_MAX - TS_WRAP_ADD)) {
-				// Reset lastTimestamp to zero at this point, so we can again
+			if (state->wrapAdd == (INT32_MAX - (TS_WRAP_ADD + 1))) {
+				// Reset wrapAdd to zero at this point, so we can again
 				// start detecting overruns of the 32bit value.
+				state->wrapAdd = 0;
+
 				state->lastTimestamp = 0;
+				state->currentTimestamp = 0;
 
 				// Increment TSOverflow counter.
 				state->wrapOverflow++;
@@ -574,6 +582,17 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				// Commit packets to separate before wrap from after cleanly.
 				forcePacketCommit = true;
+			}
+			else {
+				// timestamp bit 15 is one -> wrap: now we need to increment
+				// the wrapAdd, uses only 14 bit timestamps. Each wrap is 2^14 µs (~16ms).
+				state->wrapAdd += TS_WRAP_ADD;
+
+				state->lastTimestamp = state->currentTimestamp;
+				state->currentTimestamp = state->wrapAdd;
+
+				// Check monotonicity of timestamps.
+				checkMonotonicTimestamp(handle);
 			}
 		}
 		else if ((buffer[i + 3] & DVS128_TIMESTAMP_RESET_MASK) == DVS128_TIMESTAMP_RESET_MASK) {
@@ -607,11 +626,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->currentTimestamp = state->wrapAdd + timestampUSB;
 
 			// Check monotonicity of timestamps.
-			if (state->currentTimestamp < state->lastTimestamp) {
-				caerLog(LOG_ALERT, handle->info.deviceString,
-					"Timestamps: non monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
-					state->lastTimestamp, state->currentTimestamp, state->lastTimestamp - state->currentTimestamp);
-			}
+			checkMonotonicTimestamp(handle);
 
 			if ((addressUSB & DVS128_SYNC_EVENT_MASK) != 0) {
 				// Special Trigger Event (MSB is set)

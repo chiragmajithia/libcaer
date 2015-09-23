@@ -3,10 +3,10 @@
 static libusb_device_handle *deviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID, uint8_t devType,
 	uint8_t busNumber, uint8_t devAddress);
 
-static inline void checkMonotonicTimestamp(davisHandle handle) {
+static inline void checkStrictMonotonicTimestamp(davisHandle handle) {
 	if (handle->state.currentTimestamp <= handle->state.lastTimestamp) {
 		caerLog(LOG_ALERT, handle->info.deviceString,
-			"Timestamps: non strictly-monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
+			"Timestamps: non strictly-monotonic timestamp detected: lastTimestamp=%" PRIi32 ", currentTimestamp=%" PRIi32 ", difference=%" PRIi32 ".",
 			handle->state.lastTimestamp, handle->state.currentTimestamp,
 			(handle->state.lastTimestamp - handle->state.currentTimestamp));
 	}
