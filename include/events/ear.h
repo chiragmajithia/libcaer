@@ -10,14 +10,14 @@
 
 #include "common.h"
 
-#define EAR_SHIFT 8
-#define EAR_MASK 0x00000007
-#define GANGLION_SHIFT 11
-#define GANGLION_MASK 0x0000007F
-#define FILTER_SHIFT 18
-#define FILTER_MASK 0x0000003F
-#define CHANNEL_SHIFT 24
-#define CHANNEL_MASK 0x000000FF
+#define EAR_SHIFT 1
+#define EAR_MASK 0x0000000F
+#define GANGLION_SHIFT 5
+#define GANGLION_MASK 0x000000FF
+#define FILTER_SHIFT 13
+#define FILTER_MASK 0x000000FF
+#define CHANNEL_SHIFT 21
+#define CHANNEL_MASK 0x000007FF
 
 struct caer_ear_event {
 	uint32_t data; // First because of valid mark.
@@ -157,11 +157,11 @@ static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
 	event->data |= htole32((U32T(filter) & FILTER_MASK) << FILTER_SHIFT);
 }
 
-static inline uint8_t caerEarEventGetChannel(caerEarEvent event) {
+static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
 	return U8T((le32toh(event->data) >> CHANNEL_SHIFT) & CHANNEL_MASK);
 }
 
-static inline void caerEarEventSetChannel(caerEarEvent event, uint8_t channel) {
+static inline void caerEarEventSetChannel(caerEarEvent event, uint16_t channel) {
 	event->data |= htole32((U32T(channel) & CHANNEL_MASK) << CHANNEL_SHIFT);
 }
 

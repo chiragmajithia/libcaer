@@ -13,7 +13,7 @@
 // All pixels are always normalized to 16bit depth.
 // Multiple channels (such as RGB) are possible.
 #define CHANNEL_NUMBER_SHIFT 1
-#define CHANNEL_NUMBER_MASK 0x0000001F
+#define CHANNEL_NUMBER_MASK 0x0000007F
 
 struct caer_frame_event {
 	uint32_t info; // First because of valid mark.

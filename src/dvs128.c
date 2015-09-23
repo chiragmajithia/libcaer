@@ -615,8 +615,6 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 					state->lastTimestamp - state->currentTimestamp);
 			}
 
-			state->lastTimestamp = state->currentTimestamp;
-
 			if ((addressUSB & DVS128_SYNC_EVENT_MASK) != 0) {
 				// Special Trigger Event (MSB is set)
 				caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
