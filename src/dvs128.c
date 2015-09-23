@@ -240,7 +240,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
-		handle->info.deviceID);
+		(int16_t) handle->info.deviceID, 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -249,7 +249,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
-		handle->info.deviceID);
+		(int16_t) handle->info.deviceID, 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -305,8 +305,7 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 	dvs128State state = &handle->state;
 	caerEventPacketContainer container = NULL;
 
-retry:
-	container = ringBufferGet(state->dataExchangeBuffer);
+	retry: container = ringBufferGet(state->dataExchangeBuffer);
 
 	if (container != NULL) {
 		// Found an event container, return it and signal this piece of data
@@ -605,14 +604,13 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 			// Expand to 32 bits. (Tick is 1µs already.)
 			state->lastTimestamp = state->currentTimestamp;
-			state->currentTimestamp =state->wrapAdd + timestampUSB;
+			state->currentTimestamp = state->wrapAdd + timestampUSB;
 
 			// Check monotonicity of timestamps.
 			if (state->currentTimestamp < state->lastTimestamp) {
 				caerLog(LOG_ALERT, handle->info.deviceString,
 					"Timestamps: non monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
-					state->lastTimestamp, state->currentTimestamp,
-					state->lastTimestamp - state->currentTimestamp);
+					state->lastTimestamp, state->currentTimestamp, state->lastTimestamp - state->currentTimestamp);
 			}
 
 			if ((addressUSB & DVS128_SYNC_EVENT_MASK) != 0) {
@@ -625,7 +623,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			}
 			else {
 				// Invert x values (flip along the x axis).
-				uint16_t x = (uint16_t) (127 - ((uint16_t) ((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK)));
+				uint16_t x = (uint16_t) ((DVS_ARRAY_SIZE_X - 1)
+					- ((uint16_t) ((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK)));
 				uint16_t y = (uint16_t) ((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK);
 				bool polarity = (((addressUSB >> DVS128_POLARITY_SHIFT) & DVS128_POLARITY_MASK) == 0) ? (1) : (0);
 
@@ -673,7 +672,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 			// Allocate new packet for next iteration.
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
-				handle->info.deviceID);
+				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			state->currentPolarityPacketPosition = 0;
 		}
 
@@ -706,7 +705,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 			// Allocate new packet for next iteration.
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
-				handle->info.deviceID);
+				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			state->currentSpecialPacketPosition = 0;
 		}
 	}

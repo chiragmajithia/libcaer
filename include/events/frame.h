@@ -36,7 +36,8 @@ struct caer_frame_event_packet {
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
 
 // Need pixel info too here, so storage requirement for pixel data can be determined.
-static inline caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+static inline caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
+	int32_t tsOverflow) {
 	size_t eventSize = sizeof(struct caer_frame_event);
 	size_t eventPacketSize = sizeof(struct caer_frame_event_packet) + ((size_t) eventCapacity * eventSize);
 
@@ -57,6 +58,7 @@ static inline caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCap
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_frame_event, ts_startexposure));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
@@ -418,8 +420,8 @@ static inline void caerFrameEventSetPixelUnsafe(caerFrameEvent event, int32_t xA
 	event->pixels[(yAddress * caerFrameEventGetLengthX(event)) + xAddress] = htole16(pixelValue);
 }
 
-static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress,
-	int32_t yAddress, uint8_t channel) {
+static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
+	uint8_t channel) {
 	// Get pixel value at specified position.
 	return (le16toh(
 		event->pixels[(((yAddress * caerFrameEventGetLengthX(event)) + xAddress) * caerFrameEventGetChannelNumber(event))

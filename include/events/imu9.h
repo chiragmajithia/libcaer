@@ -34,7 +34,8 @@ struct caer_imu9_event_packet {
 
 typedef struct caer_imu9_event_packet *caerIMU9EventPacket;
 
-static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
+	int32_t tsOverflow) {
 	size_t eventSize = sizeof(struct caer_imu9_event);
 	size_t eventPacketSize = sizeof(struct caer_imu9_event_packet) + ((size_t) eventCapacity * eventSize);
 
@@ -52,8 +53,9 @@ static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapac
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU9_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t)eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu9_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);

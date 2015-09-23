@@ -33,7 +33,8 @@ struct caer_ear_event_packet {
 
 typedef struct caer_ear_event_packet *caerEarEventPacket;
 
-static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
+	int32_t tsOverflow) {
 	size_t eventSize = sizeof(struct caer_ear_event);
 	size_t eventPacketSize = sizeof(struct caer_ear_event_packet) + ((size_t) eventCapacity * eventSize);
 
@@ -51,8 +52,9 @@ static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacit
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, EAR_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t)eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_ear_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);

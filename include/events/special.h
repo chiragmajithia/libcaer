@@ -38,7 +38,8 @@ struct caer_special_event_packet {
 
 typedef struct caer_special_event_packet *caerSpecialEventPacket;
 
-static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource) {
+static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
+	int32_t tsOverflow) {
 	size_t eventSize = sizeof(struct caer_special_event);
 	size_t eventPacketSize = sizeof(struct caer_special_event_packet) + ((size_t) eventCapacity * eventSize);
 
@@ -59,6 +60,7 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t even
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_special_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
