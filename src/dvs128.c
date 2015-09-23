@@ -610,7 +610,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			// Check monotonicity of timestamps.
 			if (state->currentTimestamp < state->lastTimestamp) {
 				caerLog(LOG_ALERT, handle->info.deviceString,
-					"Timestamps: non strictly-monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
+					"Timestamps: non monotonic timestamp detected: lastTimestamp=%" PRIu32 ", currentTimestamp=%" PRIu32 ", difference=%" PRIu32 ".",
 					state->lastTimestamp, state->currentTimestamp,
 					state->lastTimestamp - state->currentTimestamp);
 			}
