@@ -1,34 +1,13 @@
 #include "davis_fx2.h"
 
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict) {
-	// Allocate memory for device structures.
-	davisFX2Handle handle = ccalloc(1, sizeof(*handle));
-	if (handle == NULL) {
-		caerLog(LOG_CRITICAL, "DAVIS FX2", "Failed to allocate memory.");
-		return (NULL);
-	}
+	const char *serialNumberRestrict);
 
-	// Open device.
-	davisOpen(&handle->h, DAVIS_FX2_VID, DAVIS_FX2_PID, DAVIS_FX2_DID_TYPE,
-		busNumberRestrict, devAddressRestrict, serialNumberRestrict);
-
-	// Fill out info data structure.
-	davisInfoInitialize(&handle->h);
-
-	// Initialize state and configuration.
-	davisStateInitialize(&handle->h);
-
-	return (handle);
-}
-
-bool caerDavisFX2Close(caerDavisFX2Handle handle);
-caerDavisInfo caerDavisFX2InfoGet(caerDavisFX2Handle handle);
-bool caerDavisFX2ConfigSet(caerDavisFX2Handle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
-bool caerDavisFX2ConfigGet(caerDavisFX2Handle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
-bool caerDavisFX2DataStart(caerDavisFX2Handle handle);
-bool caerDavisFX2DataStop(caerDavisFX2Handle handle);
-caerEventPacketContainer caerDavisFX2DataGet(caerDavisFX2Handle handle);
+bool davisFX2SendDefaultConfig(caerDeviceHandle handle);
+// Negative addresses are used for host-side configuration.
+// Positive addresses (including zero) are used for device-side configuration.
+bool davisFX2ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
+bool davisFX2ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
 static void *dataAcquisitionThread(void *inPtr);
 static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
@@ -53,6 +32,18 @@ static bool caerInputDAVISFX2Init(caerModuleData moduleData) {
 	// First, we need to connect to the device and ask it what chip it's got,
 	// and retain that information for later stages.
 	if (!deviceOpenInfo(moduleData, cstate, DAVIS_FX2_VID, DAVIS_FX2_PID, DAVIS_FX2_DID_TYPE)) {
+		return (false);
+	}
+
+	// Verify FX2 device logic version.
+	sshsNode sourceInfoNode = sshsGetRelativeNode(moduleData->moduleNode, "sourceInfo/");
+	uint16_t currentLogicVersion = sshsNodeGetShort(sourceInfoNode, "logicVersion");
+
+	if (currentLogicVersion < REQUIRED_LOGIC_REVISION) {
+		// Logic too old, notify and quit.
+		caerLog(LOG_ERROR, moduleData->moduleSubSystemString,
+			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+			currentLogicVersion, REQUIRED_LOGIC_REVISION);
 		return (false);
 	}
 
@@ -141,7 +132,7 @@ static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint1
 	bias[1] = U8T(biasValue >> 0);
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+	VR_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
 }
 
 static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
@@ -280,5 +271,5 @@ static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
 
 	libusb_control_transfer(cstate->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+		VR_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
 }

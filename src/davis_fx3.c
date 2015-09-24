@@ -1,34 +1,13 @@
 #include "davis_fx3.h"
 
 caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict) {
-	// Allocate memory for device structures.
-	caerDavisFX3Handle handle = ccalloc(1, sizeof(*handle));
-	if (handle == NULL) {
-		caerLog(LOG_CRITICAL, "DAVIS FX3", "Failed to allocate memory.");
-		return (NULL);
-	}
+	const char *serialNumberRestrict);
 
-	// Open device.
-	davisOpen(&handle->h, DAVIS_FX3_VID, DAVIS_FX3_PID, DAVIS_FX3_DID_TYPE,
-		busNumberRestrict, devAddressRestrict, serialNumberRestrict);
-
-	// Fill out info data structure.
-	davisInfoInitialize(&handle->h);
-
-	// Initialize state and configuration.
-	davisStateInitialize(&handle->h);
-
-	return (handle);
-}
-
-bool caerDavisFX3Close(caerDavisFX3Handle handle);
-caerDavisInfo caerDavisFX3InfoGet(caerDavisFX3Handle handle);
-bool caerDavisFX3ConfigSet(caerDavisFX3Handle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
-bool caerDavisFX3ConfigGet(caerDavisFX3Handle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
-bool caerDavisFX3DataStart(caerDavisFX3Handle handle);
-bool caerDavisFX3DataStop(caerDavisFX3Handle handle);
-caerEventPacketContainer caerDavisFX3DataGet(caerDavisFX3Handle handle);
+bool davisFX3SendDefaultConfig(caerDeviceHandle handle);
+// Negative addresses are used for host-side configuration.
+// Positive addresses (including zero) are used for device-side configuration.
+bool davisFX3ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
+bool davisFX3ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
 static void *dataAcquisitionThread(void *inPtr);
 static void allocateDebugTransfers(davisFX3State state);
@@ -68,6 +47,18 @@ static bool caerInputDAVISFX3Init(caerModuleData moduleData) {
 		return (false);
 	}
 
+	// Verify FX3 device logic version.
+	sshsNode sourceInfoNode = sshsGetRelativeNode(moduleData->moduleNode, "sourceInfo/");
+	uint16_t currentLogicVersion = sshsNodeGetShort(sourceInfoNode, "logicVersion");
+
+	if (currentLogicVersion < REQUIRED_LOGIC_REVISION) {
+		// Logic too old, notify and quit.
+		caerLog(LOG_ERROR, moduleData->moduleSubSystemString,
+			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+			currentLogicVersion, REQUIRED_LOGIC_REVISION);
+		return (false);
+	}
+
 	// Create common default value configuration.
 	createCommonConfiguration(moduleData, cstate);
 
@@ -92,6 +83,7 @@ static bool caerInputDAVISFX3Init(caerModuleData moduleData) {
 	sshsNodePutShortIfAbsent(dvsNode, "FilterPixel7Column", cstate->apsSizeX);
 	sshsNodePutBoolIfAbsent(dvsNode, "FilterBackgroundActivity", 0);
 	sshsNodePutIntIfAbsent(dvsNode, "FilterBackgroundActivityDeltaTime", 20000);
+	sshsNodePutBoolIfAbsent(dvsNode, "TestEventGeneratorEnable", 0);
 
 	// Subsystem 2: APS ADC (Quad-ROI support present only in FX3)
 	sshsNode apsNode = sshsGetRelativeNode(moduleData->moduleNode, "aps/");
@@ -421,4 +413,193 @@ static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
 	if (sshsNodeAttrExists(apsNode, "GlobalShutter", BOOL)) {
 		spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, 142, sshsNodeGetBool(apsNode, "GlobalShutter"));
 	}
+}
+
+static void DVSFilterConfigListener(sshsNode node, void *userData, enum sshs_node_attribute_events event,
+	const char *changeKey, enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
+	UNUSED_ARGUMENT(node);
+
+	libusb_device_handle *devHandle = userData;
+
+	if (event == ATTRIBUTE_MODIFIED) {
+		if (changeType == SHORT && str_equals(changeKey, "FilterPixel0Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 12, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel0Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 13, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel1Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 14, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel1Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 15, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel2Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 16, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel2Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 17, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel3Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 18, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel3Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 19, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel4Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 20, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel4Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 21, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel5Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 22, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel5Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 23, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel6Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 24, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel6Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 25, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel7Row")) {
+			spiConfigSend(devHandle, FPGA_DVS, 26, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "FilterPixel7Column")) {
+			spiConfigSend(devHandle, FPGA_DVS, 27, changeValue.ushort);
+		}
+		else if (changeType == BOOL && str_equals(changeKey, "FilterBackgroundActivity")) {
+			spiConfigSend(devHandle, FPGA_DVS, 29, changeValue.boolean);
+		}
+		else if (changeType == INT && str_equals(changeKey, "FilterBackgroundActivityDeltaTime")) {
+			spiConfigSend(devHandle, FPGA_DVS, 30, changeValue.uint);
+		}
+		else if (changeType == BOOL && str_equals(changeKey, "TestEventGeneratorEnable")) {
+			spiConfigSend(devHandle, FPGA_DVS, 32, changeValue.boolean);
+		}
+	}
+}
+
+static void sendDVSFilterConfig(sshsNode moduleNode, libusb_device_handle *devHandle) {
+	sshsNode dvsNode = sshsGetRelativeNode(moduleNode, "dvs/");
+
+	spiConfigSend(devHandle, FPGA_DVS, 12, sshsNodeGetShort(dvsNode, "FilterPixel0Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 13, sshsNodeGetShort(dvsNode, "FilterPixel0Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 14, sshsNodeGetShort(dvsNode, "FilterPixel1Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 15, sshsNodeGetShort(dvsNode, "FilterPixel1Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 16, sshsNodeGetShort(dvsNode, "FilterPixel2Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 17, sshsNodeGetShort(dvsNode, "FilterPixel2Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 18, sshsNodeGetShort(dvsNode, "FilterPixel3Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 19, sshsNodeGetShort(dvsNode, "FilterPixel3Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 20, sshsNodeGetShort(dvsNode, "FilterPixel4Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 21, sshsNodeGetShort(dvsNode, "FilterPixel4Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 22, sshsNodeGetShort(dvsNode, "FilterPixel5Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 23, sshsNodeGetShort(dvsNode, "FilterPixel5Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 24, sshsNodeGetShort(dvsNode, "FilterPixel6Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 25, sshsNodeGetShort(dvsNode, "FilterPixel6Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 26, sshsNodeGetShort(dvsNode, "FilterPixel7Row"));
+	spiConfigSend(devHandle, FPGA_DVS, 27, sshsNodeGetShort(dvsNode, "FilterPixel7Column"));
+	spiConfigSend(devHandle, FPGA_DVS, 29, sshsNodeGetBool(dvsNode, "FilterBackgroundActivity"));
+	spiConfigSend(devHandle, FPGA_DVS, 30, sshsNodeGetInt(dvsNode, "FilterBackgroundActivityDeltaTime"));
+	spiConfigSend(devHandle, FPGA_DVS, 32, sshsNodeGetBool(dvsNode, "TestEventGeneratorEnable"));
+}
+
+static void APSQuadROIConfigListener(sshsNode node, void *userData, enum sshs_node_attribute_events event,
+	const char *changeKey, enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
+	UNUSED_ARGUMENT(node);
+
+	libusb_device_handle *devHandle = userData;
+
+	if (event == ATTRIBUTE_MODIFIED) {
+		if (changeType == SHORT && str_equals(changeKey, "StartColumn1")) {
+			spiConfigSend(devHandle, FPGA_APS, 20, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "StartRow1")) {
+			spiConfigSend(devHandle, FPGA_APS, 21, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndColumn1")) {
+			spiConfigSend(devHandle, FPGA_APS, 22, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndRow1")) {
+			spiConfigSend(devHandle, FPGA_APS, 23, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "StartColumn2")) {
+			spiConfigSend(devHandle, FPGA_APS, 24, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "StartRow2")) {
+			spiConfigSend(devHandle, FPGA_APS, 25, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndColumn2")) {
+			spiConfigSend(devHandle, FPGA_APS, 26, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndRow2")) {
+			spiConfigSend(devHandle, FPGA_APS, 27, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "StartColumn3")) {
+			spiConfigSend(devHandle, FPGA_APS, 28, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "StartRow3")) {
+			spiConfigSend(devHandle, FPGA_APS, 29, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndColumn3")) {
+			spiConfigSend(devHandle, FPGA_APS, 30, changeValue.ushort);
+		}
+		else if (changeType == SHORT && str_equals(changeKey, "EndRow3")) {
+			spiConfigSend(devHandle, FPGA_APS, 31, changeValue.ushort);
+		}
+	}
+}
+
+static void sendAPSQuadROIConfig(sshsNode moduleNode, libusb_device_handle *devHandle) {
+	sshsNode apsNode = sshsGetRelativeNode(moduleNode, "aps/");
+
+	spiConfigSend(devHandle, FPGA_APS, 20, sshsNodeGetShort(apsNode, "StartColumn1"));
+	spiConfigSend(devHandle, FPGA_APS, 21, sshsNodeGetShort(apsNode, "StartRow1"));
+	spiConfigSend(devHandle, FPGA_APS, 22, sshsNodeGetShort(apsNode, "EndColumn1"));
+	spiConfigSend(devHandle, FPGA_APS, 23, sshsNodeGetShort(apsNode, "EndRow1"));
+	spiConfigSend(devHandle, FPGA_APS, 24, sshsNodeGetShort(apsNode, "StartColumn2"));
+	spiConfigSend(devHandle, FPGA_APS, 25, sshsNodeGetShort(apsNode, "StartRow2"));
+	spiConfigSend(devHandle, FPGA_APS, 26, sshsNodeGetShort(apsNode, "EndColumn2"));
+	spiConfigSend(devHandle, FPGA_APS, 27, sshsNodeGetShort(apsNode, "EndRow2"));
+	spiConfigSend(devHandle, FPGA_APS, 28, sshsNodeGetShort(apsNode, "StartColumn3"));
+	spiConfigSend(devHandle, FPGA_APS, 29, sshsNodeGetShort(apsNode, "StartRow3"));
+	spiConfigSend(devHandle, FPGA_APS, 30, sshsNodeGetShort(apsNode, "EndColumn3"));
+	spiConfigSend(devHandle, FPGA_APS, 31, sshsNodeGetShort(apsNode, "EndRow3"));
+}
+
+static void ExternalInputGeneratorConfigListener(sshsNode node, void *userData, enum sshs_node_attribute_events event,
+	const char *changeKey, enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
+	UNUSED_ARGUMENT(node);
+
+	libusb_device_handle *devHandle = userData;
+
+	if (event == ATTRIBUTE_MODIFIED) {
+		if (changeType == BOOL && str_equals(changeKey, "RunGenerator")) {
+			spiConfigSend(devHandle, FPGA_EXTINPUT, 7, changeValue.boolean);
+		}
+		else if (changeType == BOOL && str_equals(changeKey, "GenerateUseCustomSignal")) {
+			spiConfigSend(devHandle, FPGA_EXTINPUT, 8, changeValue.boolean);
+		}
+		else if (changeType == BOOL && str_equals(changeKey, "GeneratePulsePolarity")) {
+			spiConfigSend(devHandle, FPGA_EXTINPUT, 9, changeValue.boolean);
+		}
+		else if (changeType == INT && str_equals(changeKey, "GeneratePulseInterval")) {
+			spiConfigSend(devHandle, FPGA_EXTINPUT, 10, changeValue.uint);
+		}
+		else if (changeType == INT && str_equals(changeKey, "GeneratePulseLength")) {
+			spiConfigSend(devHandle, FPGA_EXTINPUT, 11, changeValue.uint);
+		}
+	}
+}
+
+static void sendExternalInputGeneratorConfig(sshsNode moduleNode, libusb_device_handle *devHandle) {
+	sshsNode extNode = sshsGetRelativeNode(moduleNode, "externalInput/");
+
+	spiConfigSend(devHandle, FPGA_EXTINPUT, 8, sshsNodeGetBool(extNode, "GenerateUseCustomSignal"));
+	spiConfigSend(devHandle, FPGA_EXTINPUT, 9, sshsNodeGetBool(extNode, "GeneratePulsePolarity"));
+	spiConfigSend(devHandle, FPGA_EXTINPUT, 10, sshsNodeGetInt(extNode, "GeneratePulseInterval"));
+	spiConfigSend(devHandle, FPGA_EXTINPUT, 11, sshsNodeGetInt(extNode, "GeneratePulseLength"));
+	spiConfigSend(devHandle, FPGA_EXTINPUT, 7, sshsNodeGetBool(extNode, "RunGenerator"));
 }
