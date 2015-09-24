@@ -559,7 +559,34 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 	}
 
 	for (size_t i = 0; i < bytesSent; i += 4) {
-		bool forcePacketCommit = false;
+		// Allocate new packets for next iteration as needed.
+		if (state->currentPacketContainer == NULL) {
+			state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
+			if (state->currentPacketContainer == NULL) {
+				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
+				return;
+			}
+		}
+
+		if (state->currentPolarityPacket == NULL) {
+			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
+				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			if (state->currentPolarityPacket == NULL) {
+				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
+				return;
+			}
+		}
+
+		if (state->currentSpecialPacket == NULL) {
+			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
+				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			if (state->currentSpecialPacket == NULL) {
+				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
+				return;
+			}
+		}
+
+		bool forceCommit = false;
 
 		if ((buffer[i + 3] & DVS128_TIMESTAMP_WRAP_MASK) == DVS128_TIMESTAMP_WRAP_MASK) {
 			// Detect big timestamp wrap-around.
@@ -581,7 +608,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 
 				// Commit packets to separate before wrap from after cleanly.
-				forcePacketCommit = true;
+				forceCommit = true;
 			}
 			else {
 				// timestamp bit 15 is one -> wrap: now we need to increment
@@ -611,7 +638,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 
 			// Commit packets when doing a reset to clearly separate them.
-			forcePacketCommit = true;
+			forceCommit = true;
 		}
 		else {
 			// address is LSB MSB (USB is LE)
@@ -665,63 +692,88 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			}
 		}
 
-		// Commit packet to the ring-buffer, so they can be processed by the
-		// main-loop, when their stated conditions are met.
-		if (forcePacketCommit
-			|| (state->currentPolarityPacketPosition
-				>= caerEventPacketHeaderGetEventCapacity(&state->currentPolarityPacket->packetHeader))
-			|| ((state->currentPolarityPacketPosition > 1)
-				&& (caerPolarityEventGetTimestamp(
-					caerPolarityEventPacketGetEvent(state->currentPolarityPacket,
-						state->currentPolarityPacketPosition - 1))
-					- caerPolarityEventGetTimestamp(caerPolarityEventPacketGetEvent(state->currentPolarityPacket, 0))
-					>= state->maxPolarityPacketInterval))) {
-			if (!ringBufferPut(state->dataExchangeBuffer, state->currentPolarityPacket)) {
-				// Failed to forward packet, drop it.
-				free(state->currentPolarityPacket);
-				caerLog(LOG_INFO, handle->info.deviceString, "Dropped Polarity Event Packet because ring-buffer full!");
-			}
-			else {
-				state->dataNotifyIncrease(state->dataNotifyUserPtr);
+		// Thresholds on which to trigger packet container commit.
+		// forceCommit is already defined above.
+		int32_t polaritySize = state->currentPolarityPacketPosition;
+		int32_t polarityInterval =
+			(polaritySize > 1) ?
+				(caerPolarityEventGetTimestamp(
+					caerPolarityEventPacketGetEvent(state->currentPolarityPacket, polaritySize - 1))
+					- caerPolarityEventGetTimestamp(caerPolarityEventPacketGetEvent(state->currentPolarityPacket, 0))) :
+				(0);
+
+		int32_t specialSize = state->currentSpecialPacketPosition;
+		int32_t specialInterval =
+			(specialSize > 1) ?
+				(caerSpecialEventGetTimestamp(
+					caerSpecialEventPacketGetEvent(state->currentSpecialPacket, specialSize - 1))
+					- caerSpecialEventGetTimestamp(caerSpecialEventPacketGetEvent(state->currentSpecialPacket, 0))) :
+				(0);
+
+		// Trigger if any of the global container-wide thresholds are met.
+		bool containerCommit = (((polaritySize + specialSize) >= atomic_load(&state->maxPacketContainerSize))
+			|| ((polarityInterval + specialInterval) >= atomic_load(&state->maxPacketContainerInterval)));
+
+		// Trigger if any of the packet-specific thresholds are met.
+		bool polarityPacketCommit = ((polaritySize
+			>= caerEventPacketHeaderGetEventCapacity(&state->currentPolarityPacket->packetHeader))
+			|| (polarityInterval >= atomic_load(&state->maxPolarityPacketInterval)));
+
+		// Trigger if any of the packet-specific thresholds are met.
+		bool specialPacketCommit = ((specialSize
+			>= caerEventPacketHeaderGetEventCapacity(&state->currentSpecialPacket->packetHeader))
+			|| (specialInterval >= atomic_load(&state->maxSpecialPacketInterval)));
+
+		// Commit packet containers to the ring-buffer, so they can be processed by the
+		// main-loop, when any of the required conditions are met.
+		if (forceCommit || containerCommit || polarityPacketCommit || specialPacketCommit) {
+			// One or more of the commit triggers are hit. Set the packet container up to contain
+			// any non-empty packets. Empty packets are not forwarded to save memory.
+			if (polaritySize > 0) {
+				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT,
+					(caerEventPacketHeader) state->currentPolarityPacket);
+
+				state->currentPolarityPacket = NULL;
+				state->currentPolarityPacketPosition = 0;
 			}
 
-			// Allocate new packet for next iteration.
-			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
-			state->currentPolarityPacketPosition = 0;
-		}
+			if (specialSize > 0) {
+				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT,
+					(caerEventPacketHeader) state->currentSpecialPacket);
 
-		if (forcePacketCommit
-			|| (state->currentSpecialPacketPosition
-				>= caerEventPacketHeaderGetEventCapacity(&state->currentSpecialPacket->packetHeader))
-			|| ((state->currentSpecialPacketPosition > 1)
-				&& (caerSpecialEventGetTimestamp(
-					caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
-						state->currentSpecialPacketPosition - 1))
-					- caerSpecialEventGetTimestamp(caerSpecialEventPacketGetEvent(state->currentSpecialPacket, 0))
-					>= state->maxSpecialPacketInterval))) {
-			retry_special: if (!ringBufferPut(state->dataExchangeBuffer, state->currentSpecialPacket)) {
-				// Failed to forward packet, drop it, unless it contains a timestamp
+				state->currentSpecialPacket = NULL;
+				state->currentSpecialPacketPosition = 0;
+			}
+
+			retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
+				// Failed to forward packet container, drop it, unless it contains a timestamp
 				// related change, those are critical, so we just spin until we can
-				// deliver that one. (Easily detected by forcePacketCommit!)
-				if (forcePacketCommit) {
-					goto retry_special;
+				// deliver that one. (Easily detected by forceCommit!)
+				if (forceCommit) {
+					goto retry_important;
 				}
 				else {
-					// Failed to forward packet, drop it.
-					free(state->currentSpecialPacket);
+					// Failed to forward packet container, just drop it, it doesn't contain
+					// any critical information anyway.
 					caerLog(LOG_INFO, handle->info.deviceString,
-						"Dropped Special Event Packet because ring-buffer full!");
+						"Dropped EventPacket Container because ring-buffer full!");
+
+					// Re-use the event-packet container to avoid having to reallocate it.
+					// The contained event packets do have to be dropped first!
+					caerEventPacketFree(
+						caerEventPacketContainerGetEventPacket(state->currentPacketContainer, POLARITY_EVENT));
+					caerEventPacketFree(
+						caerEventPacketContainerGetEventPacket(state->currentPacketContainer, SPECIAL_EVENT));
+
+					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT, NULL);
+					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT, NULL);
 				}
 			}
 			else {
 				state->dataNotifyIncrease(state->dataNotifyUserPtr);
-			}
 
-			// Allocate new packet for next iteration.
-			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
-			state->currentSpecialPacketPosition = 0;
+				state->currentPacketContainer = NULL;
+			}
 		}
 	}
 }
@@ -749,6 +801,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	libusb_control_transfer(state->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 		VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
+	state->dvsRunning = true;
 
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
@@ -770,6 +823,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	libusb_control_transfer(state->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 		VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
+	state->dvsRunning = false;
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);
@@ -784,7 +838,7 @@ static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle) {
 
 	// Get the current value to examine by atomic exchange, since we don't
 	// want there to be any possible store between a load/store pair.
-	uintptr_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
+	uint32_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
 
 	if (configUpdate & (0x01 << 0)) {
 		// Bias update required.
