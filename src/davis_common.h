@@ -105,9 +105,10 @@ struct davis_state {
 typedef struct davis_state *davisState;
 
 struct davis_handle {
+	uint16_t deviceType;
 	// Information fields
 	struct caer_davis_info info;
-	// State for data management, common to all DAVISes.
+	// State for data management, common to all DAVIS.
 	struct davis_state state;
 };
 

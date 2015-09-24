@@ -15,7 +15,6 @@
 #define VENDOR_REQUEST_CHIP_DIAG 0xC1
 
 struct davis_fx2_handle {
-	uint16_t deviceType;
 	// Common info and state structure (handle).
 	struct davis_handle h;
 };

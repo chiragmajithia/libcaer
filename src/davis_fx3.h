@@ -16,7 +16,6 @@
 #define DEBUG_TRANSFER_SIZE 64
 
 struct davis_fx3_handle {
-	uint16_t deviceType;
 	// Common info and state structure (handle).
 	struct davis_handle h;
 	// Debug transfer support (FX3 only).
