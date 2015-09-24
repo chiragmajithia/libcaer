@@ -35,7 +35,7 @@
 struct dvs128_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;
-	atomic_uint_fast32_t dataExchangeBufferSize;
+	atomic_uint_fast32_t dataExchangeBufferSize; // Only takes effect on DataStart() calls!
 	atomic_bool dataExchangeBlocking;
 	void (*dataNotifyIncrease)(void *ptr);
 	void (*dataNotifyDecrease)(void *ptr);

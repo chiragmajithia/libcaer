@@ -212,12 +212,343 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
 
+	switch (modAddr) {
+		case HOST_CONFIG_USB:
+			switch (paramAddr) {
+				case HOST_CONFIG_USB_BUFFER_NUMBER:
+					atomic_store(&state->usbBufferNumber, param);
+
+					// Notify data acquisition thread to change buffers.
+					atomic_store(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					break;
+
+				case HOST_CONFIG_USB_BUFFER_SIZE:
+					atomic_store(&state->usbBufferSize, param);
+
+					// Notify data acquisition thread to change buffers.
+					atomic_store(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case HOST_CONFIG_DATAEXCHANGE:
+			switch (paramAddr) {
+				case HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+					atomic_store(&state->dataExchangeBufferSize, param);
+					break;
+
+				case HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+					atomic_store(&state->dataExchangeBlocking, param);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case HOST_CONFIG_PACKETS:
+			switch (paramAddr) {
+				case HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+					atomic_store(&state->maxPacketContainerSize, param);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+					atomic_store(&state->maxPacketContainerInterval, param);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+					atomic_store(&state->maxPolarityPacketSize, param);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+					atomic_store(&state->maxPolarityPacketInterval, param);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+					atomic_store(&state->maxSpecialPacketSize, param);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+					atomic_store(&state->maxSpecialPacketInterval, param);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DVS128_CONFIG_DVS:
+			switch (paramAddr) {
+				case DVS128_CONFIG_DVS_RUN:
+					if (param) {
+						libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
+						state->dvsRunning = true;
+					}
+					else {
+						libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
+						state->dvsRunning = false;
+					}
+					break;
+
+				case DVS128_CONFIG_DVS_TIMESTAMP_RESET:
+					if (param) {
+						libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_RESET_TS, 0, 0, NULL, 0, 0);
+					}
+					break;
+
+				case DVS128_CONFIG_DVS_ARRAY_RESET:
+					if (param) {
+						libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_RESET_ARRAY, 0, 0, NULL, 0, 0);
+					}
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DVS128_CONFIG_BIAS:
+			switch (paramAddr) {
+				case DVS128_CONFIG_BIAS_CAS:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_INJGND:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_PUX:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_PUY:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_REQPD:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_REQ:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_FOLL:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_PR:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_REFR:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFF:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFFON:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFFOFF:
+					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					dvs128SendBiases(state);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		default:
+			return (false);
+			break;
+	}
+
 	return (true);
 }
 
 bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
+
+	switch (modAddr) {
+		case HOST_CONFIG_USB:
+			switch (paramAddr) {
+				case HOST_CONFIG_USB_BUFFER_NUMBER:
+					*param = atomic_load(&state->usbBufferNumber);
+					break;
+
+				case HOST_CONFIG_USB_BUFFER_SIZE:
+					*param = atomic_load(&state->usbBufferSize);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case HOST_CONFIG_DATAEXCHANGE:
+			switch (paramAddr) {
+				case HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+					*param = atomic_load(&state->dataExchangeBufferSize);
+					break;
+
+				case HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+					*param = atomic_load(&state->dataExchangeBlocking);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case HOST_CONFIG_PACKETS:
+			switch (paramAddr) {
+				case HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+					*param = atomic_load(&state->maxPacketContainerSize);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+					*param = atomic_load(&state->maxPacketContainerInterval);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+					*param = atomic_load(&state->maxPolarityPacketSize);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+					*param = atomic_load(&state->maxPolarityPacketInterval);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+					*param = atomic_load(&state->maxSpecialPacketSize);
+					break;
+
+				case HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+					*param = atomic_load(&state->maxSpecialPacketInterval);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DVS128_CONFIG_DVS:
+			switch (paramAddr) {
+				case DVS128_CONFIG_DVS_RUN:
+					*param = state->dvsRunning;
+					break;
+
+				case DVS128_CONFIG_DVS_TIMESTAMP_RESET:
+					// Always false because it's an impulse, it resets itself automatically
+					*param = false;
+					break;
+
+				case DVS128_CONFIG_DVS_ARRAY_RESET:
+					// Always false because it's an impulse, it resets itself automatically.
+					*param = false;
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DVS128_CONFIG_BIAS:
+			switch (paramAddr) {
+				case DVS128_CONFIG_BIAS_CAS:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_INJGND:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_PUX:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_PUY:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_REQPD:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_REQ:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_FOLL:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_PR:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_REFR:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFF:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFFON:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+					break;
+
+				case DVS128_CONFIG_BIAS_DIFFOFF:
+					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		default:
+			return (false);
+			break;
+	}
 
 	return (true);
 }
@@ -267,6 +598,8 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	// Start data acquisition thread.
+	atomic_store(&state->dataAcquisitionThreadRun, true);
+
 	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &dvs128DataAcquisitionThread, handle)) != 0) {
 		freeAllDataMemory(state);
 
@@ -280,6 +613,9 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 bool dvs128DataStop(caerDeviceHandle cdh) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
+
+	// Stop data acquisition thread.
+	atomic_store(&state->dataAcquisitionThreadRun, false);
 
 	// Wait for data acquisition thread to terminate...
 	if ((errno = pthread_join(state->dataAcquisitionThread, NULL)) != 0) {
@@ -781,7 +1117,6 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 static void dvs128SendBiases(dvs128State state) {
 	// Biases are already stored in an array with the same format as expected by
 	// the device, we can thus send it directly.
-
 	libusb_control_transfer(state->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 		VENDOR_REQUEST_SEND_BIASES, 0, 0, (uint8_t *) state->biases, BIAS_NUMBER * BIAS_LENGTH, 0);
@@ -798,10 +1133,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
 
 	// Enable AER data transfer on USB end-point 6.
-	libusb_control_transfer(state->deviceHandle,
-		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
-	state->dvsRunning = true;
+	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, 1);
 
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
@@ -820,10 +1152,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	caerLog(LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
 	// Disable AER data transfer on USB end-point 6.
-	libusb_control_transfer(state->deviceHandle,
-		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
-	state->dvsRunning = false;
+	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, 0);
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);
@@ -840,12 +1169,7 @@ static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle) {
 	// want there to be any possible store between a load/store pair.
 	uint32_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
 
-	if (configUpdate & (0x01 << 0)) {
-		// Bias update required.
-		dvs128SendBiases(state);
-	}
-
-	if (configUpdate & (0x01 << 1)) {
+	if ((configUpdate >> 0) & 0x01) {
 		// Do buffer size change: cancel all and recreate them.
 		dvs128DeallocateTransfers(handle);
 		dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
