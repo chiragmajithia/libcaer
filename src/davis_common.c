@@ -1,11 +1,32 @@
 #include "davis_common.h"
 
-bool davisCommonClose(caerDeviceHandle handle);
+bool davisCommonClose(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
 
-bool davisCommonDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
-	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
-bool davisCommonDataStop(caerDeviceHandle handle);
-caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
+}
+
+caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
+
+	// Return a link to the device information.
+	return (&handle->info);
+}
+
+bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr),
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+bool davisCommonDataStop(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
 
 void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
 uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr);

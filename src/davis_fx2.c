@@ -1,13 +1,24 @@
 #include "davis_fx2.h"
 
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict);
+	const char *serialNumberRestrict) {
 
-bool davisFX2SendDefaultConfig(caerDeviceHandle handle);
-// Negative addresses are used for host-side configuration.
-// Positive addresses (including zero) are used for device-side configuration.
-bool davisFX2ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
-bool davisFX2ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
+}
+
+bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+bool davisFX2ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
 
 static void *dataAcquisitionThread(void *inPtr);
 static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);

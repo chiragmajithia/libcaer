@@ -1,13 +1,24 @@
 #include "davis_fx3.h"
 
 caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
-	const char *serialNumberRestrict);
+	const char *serialNumberRestrict) {
 
-bool davisFX3SendDefaultConfig(caerDeviceHandle handle);
-// Negative addresses are used for host-side configuration.
-// Positive addresses (including zero) are used for device-side configuration.
-bool davisFX3ConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
-bool davisFX3ConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
+}
+
+bool davisFX3SendDefaultConfig(caerDeviceHandle cdh) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+bool davisFX3ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
+
+bool davisFX3ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+	davisHandle handle = (davisHandle) cdh;
+
+}
 
 static void *dataAcquisitionThread(void *inPtr);
 static void allocateDebugTransfers(davisFX3State state);
