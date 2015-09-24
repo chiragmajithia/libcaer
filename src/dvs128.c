@@ -563,7 +563,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		if ((buffer[i + 3] & DVS128_TIMESTAMP_WRAP_MASK) == DVS128_TIMESTAMP_WRAP_MASK) {
 			// Detect big timestamp wrap-around.
-			if (state->wrapAdd == (INT32_MAX - (TS_WRAP_ADD + 1))) {
+			if (state->wrapAdd == (INT32_MAX - (TS_WRAP_ADD - 1))) {
 				// Reset wrapAdd to zero at this point, so we can again
 				// start detecting overruns of the 32bit value.
 				state->wrapAdd = 0;
