@@ -79,22 +79,6 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 	return (packet->events + n);
 }
 
-void caerFrameEventPacketFreePixels(caerEventPacketHeader header) {
-	if (header == NULL || caerEventPacketHeaderGetEventType(header) != FRAME_EVENT) {
-		return;
-	}
-
-	// Frame also needs all pixel memory freed!
-	for (int32_t i = 0; i < caerEventPacketHeaderGetEventNumber(header); i++) {
-		caerFrameEvent frame = caerFrameEventPacketGetEvent((caerFrameEventPacket) header, i);
-
-		if (frame != NULL && frame->pixels != NULL) {
-			free(frame->pixels);
-			frame->pixels = NULL;
-		}
-	}
-}
-
 // Allocate effective pixel memory for frame event.
 static inline void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY,
 	uint8_t channelNumber) {
