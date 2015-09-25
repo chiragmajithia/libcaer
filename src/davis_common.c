@@ -500,14 +500,6 @@ bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE,
 	return (true);
 }
 
-bool davisInfoInitialize(davisHandle handle) {
-
-}
-
-bool davisStateInitialize(davisHandle handle) {
-
-}
-
 static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
 	uint8_t devType, uint8_t busNumber, uint8_t devAddress) {
 	libusb_device_handle *devHandle = NULL;
@@ -732,7 +724,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 			state->currentTimestamp = state->wrapAdd + (event & 0x7FFF);
 
 			// Check monotonicity of timestamps.
-			checkMonotonicTimestamp(state);
+			checkStrictMonotonicTimestamp(state);
 		}
 		else {
 			// Get all current events, so we don't have to duplicate code in every branch.
@@ -1313,7 +1305,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					state->currentTimestamp = state->wrapAdd;
 
 					// Check monotonicity of timestamps.
-					checkMonotonicTimestamp(state);
+					checkStrictMonotonicTimestamp(state);
 
 					caerLog(LOG_DEBUG, state->sourceSubSystemString,
 						"Timestamp wrap event received with multiplier of %" PRIu16 ".", data);
@@ -1442,5 +1434,59 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(state->maxSpecialPacketSize, state->sourceID);
 			state->currentSpecialPacketPosition = 0;
 		}
+	}
+}
+
+static void *davisDataAcquisitionThread(void *inPtr) {
+	// inPtr is a pointer to device handle.
+	davisHandle handle = inPtr;
+	davisState state = &handle->state;
+
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
+
+	// Create buffers as specified in config file.
+	davisAllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
+
+	// Enable data transfer on USB end-point 2.
+	// TODO: enable data transfer.
+
+	// Handle USB events (1 second timeout).
+	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
+
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
+
+	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
+		// Check config refresh, in this case to adjust buffer sizes.
+		if (atomic_load(&state->dataAcquisitionThreadConfigUpdate) != 0) {
+			davisDataAcquisitionThreadConfig(handle);
+		}
+
+		libusb_handle_events_timeout(state->deviceContext, &te);
+	}
+
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
+
+	// Disable data transfer on USB end-point 2.
+	// TODO: disable data transfer.
+
+	// Cancel all transfers and handle them.
+	davisDeallocateTransfers(handle);
+
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
+
+	return (NULL);
+}
+
+static void davisDataAcquisitionThreadConfig(davisHandle handle) {
+	davisState state = &handle->state;
+
+	// Get the current value to examine by atomic exchange, since we don't
+	// want there to be any possible store between a load/store pair.
+	uint32_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
+
+	if ((configUpdate >> 0) & 0x01) {
+		// Do buffer size change: cancel all and recreate them.
+		davisDeallocateTransfers(handle);
+		davisAllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
 	}
 }

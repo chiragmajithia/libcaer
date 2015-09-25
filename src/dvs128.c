@@ -1144,8 +1144,8 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// Create buffers as specified in config file.
 	dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
 
-	// Enable AER data transfer on USB end-point 6.
-	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, 1);
+	// Enable data transfer on USB end-point 6.
+	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
 
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
@@ -1163,8 +1163,8 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
-	// Disable AER data transfer on USB end-point 6.
-	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, 0);
+	// Disable data transfer on USB end-point 6.
+	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);

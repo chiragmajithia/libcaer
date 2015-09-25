@@ -131,7 +131,5 @@ uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, u
 bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
 	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
 	uint16_t requiredLogicRevision);
-bool davisInfoInitialize(davisHandle handle);
-bool davisStateInitialize(davisHandle handle);
 
 #endif /* LIBCAER_SRC_DAVIS_COMMON_H_ */
