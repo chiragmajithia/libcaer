@@ -452,6 +452,7 @@ struct caer_davis_info {
 	uint16_t dvsSizeY;
 	bool dvsHasPixelFilter;
 	bool dvsHasBackgroundActivityFilter;
+	bool dvsHasTestEventGenerator;
 	// APS specific fields
 	uint16_t apsSizeX;
 	uint16_t apsSizeY;

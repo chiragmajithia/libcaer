@@ -54,8 +54,13 @@ struct davis_state {
 	int32_t dvsTimestamp;
 	uint16_t dvsLastY;
 	bool dvsGotY;
+	uint16_t dvsSizeX;
+	uint16_t dvsSizeY;
 	bool dvsInvertXY;
 	// APS specific fields
+	uint16_t apsSizeX;
+	uint16_t apsSizeY;
+	uint8_t apsChannels;
 	bool apsInvertXY;
 	bool apsFlipX;
 	bool apsFlipY;
@@ -123,8 +128,9 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
 
 void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
 uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr);
-bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, uint8_t busNumberRestrict,
-	uint8_t devAddressRestrict, const char *serialNumberRestrict);
+bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
+	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
+	uint16_t requiredLogicRevision);
 bool davisInfoInitialize(davisHandle handle);
 bool davisStateInitialize(davisHandle handle);
 

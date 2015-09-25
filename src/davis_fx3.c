@@ -2,7 +2,17 @@
 
 caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
 
+	davisFX3Handle handle = calloc(1, sizeof(*handle));
+	if (handle == NULL) {
+		// Failed to allocate memory for device handle!
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to allocate memory for device handle.");
+		return (NULL);
+	}
+
+	davisOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME, deviceID, busNumberRestrict,
+		devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
 }
 
 bool davisFX3SendDefaultConfig(caerDeviceHandle cdh) {
@@ -184,11 +194,9 @@ static void *dataAcquisitionThread(void *inPtr) {
 
 	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Shutting down data acquisition thread ...");
 
-
 	// Disable all data transfer on USB end-point.
 	spiConfigSend(cstate->deviceHandle, FPGA_EXTINPUT, 7, 0); // FX3 only.
 	sendDisableDataConfig(cstate->deviceHandle);
-
 
 	// Cancel all transfers and handle them.
 	deallocateDataTransfers(cstate);

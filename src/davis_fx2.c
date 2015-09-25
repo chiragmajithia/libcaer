@@ -2,7 +2,17 @@
 
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
 
+	davisFX2Handle handle = calloc(1, sizeof(*handle));
+	if (handle == NULL) {
+		// Failed to allocate memory for device handle!
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to allocate memory for device handle.");
+		return (NULL);
+	}
+
+	davisOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME, deviceID, busNumberRestrict,
+		devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
 }
 
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
@@ -121,14 +131,10 @@ static void *dataAcquisitionThread(void *inPtr) {
 		libusb_handle_events_timeout(cstate->deviceContext, &te);
 	}
 
-
-
 	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Shutting down data acquisition thread ...");
-
 
 	// Disable all data transfer on USB end-point.
 	sendDisableDataConfig(cstate->deviceHandle);
-
 
 	// Cancel all transfers and handle them.
 	deallocateDataTransfers(cstate);
@@ -150,7 +156,7 @@ static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint1
 	bias[1] = U8T(biasValue >> 0);
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VR_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+		VR_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
 }
 
 static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
@@ -288,6 +294,6 @@ static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
 	}
 
 	libusb_control_transfer(cstate->deviceHandle,
-		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VR_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, VR_CHIP_DIAG, 0, 0, chipSR,
+		sizeof(chipSR), 0);
 }

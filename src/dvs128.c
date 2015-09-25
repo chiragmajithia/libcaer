@@ -97,7 +97,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open " DEVICE_NAME " device.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", DEVICE_NAME);
 		return (NULL);
 	}
 
