@@ -1,5 +1,5 @@
-#ifndef DAVIS_COMMON_H_
-#define DAVIS_COMMON_H_
+#ifndef LIBCAER_SRC_DAVIS_COMMON_H_
+#define LIBCAER_SRC_DAVIS_COMMON_H_
 
 #include "devices/davis.h"
 #include "ringbuffer/ringbuffer.h"
@@ -134,4 +134,4 @@ bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE,
 bool davisInfoInitialize(davisHandle handle);
 bool davisStateInitialize(davisHandle handle);
 
-#endif /* DAVIS_COMMON_H_ */
+#endif /* LIBCAER_SRC_DAVIS_COMMON_H_ */
