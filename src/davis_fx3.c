@@ -184,6 +184,12 @@ static void *dataAcquisitionThread(void *inPtr) {
 
 	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Shutting down data acquisition thread ...");
 
+
+	// Disable all data transfer on USB end-point.
+	spiConfigSend(cstate->deviceHandle, FPGA_EXTINPUT, 7, 0); // FX3 only.
+	sendDisableDataConfig(cstate->deviceHandle);
+
+
 	// Cancel all transfers and handle them.
 	deallocateDataTransfers(cstate);
 	deallocateDebugTransfers(state);

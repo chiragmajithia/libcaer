@@ -121,7 +121,14 @@ static void *dataAcquisitionThread(void *inPtr) {
 		libusb_handle_events_timeout(cstate->deviceContext, &te);
 	}
 
+
+
 	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Shutting down data acquisition thread ...");
+
+
+	// Disable all data transfer on USB end-point.
+	sendDisableDataConfig(cstate->deviceHandle);
+
 
 	// Cancel all transfers and handle them.
 	deallocateDataTransfers(cstate);

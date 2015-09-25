@@ -1,6 +1,7 @@
 #include "dvs128.h"
 
-static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint8_t busNumber, uint8_t devAddress);
+static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress);
 static void dvs128DeviceClose(libusb_device_handle *devHandle);
 static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uint32_t bufferSize);
 static void dvs128DeallocateTransfers(dvs128Handle handle);
@@ -90,7 +91,8 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	}
 
 	// Try to open a DVS128 device on a specific USB port.
-	state->deviceHandle = dvs128DeviceOpen(state->deviceContext, busNumberRestrict, devAddressRestrict);
+	state->deviceHandle = dvs128DeviceOpen(state->deviceContext, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE,
+		busNumberRestrict, devAddressRestrict);
 	if (state->deviceHandle == NULL) {
 		libusb_exit(state->deviceContext);
 		free(handle);
@@ -679,7 +681,8 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 	return (NULL);
 }
 
-static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint8_t busNumber, uint8_t devAddress) {
+static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress) {
 	libusb_device_handle *devHandle = NULL;
 	libusb_device **devicesList;
 
@@ -695,8 +698,8 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint8_
 			}
 
 			// Check if this is the device we want (VID/PID).
-			if (devDesc.idVendor == DEVICE_VID && devDesc.idProduct == DEVICE_PID
-				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == DEVICE_DID_TYPE) {
+			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
+				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType) {
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
 					continue;
