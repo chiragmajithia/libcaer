@@ -11,9 +11,9 @@
 #include "common.h"
 
 #define TYPE_SHIFT 1
-#define TYPE_MASK 0x0000001F
-#define DATA_SHIFT 6
-#define DATA_MASK 0x03FFFFFF
+#define TYPE_MASK 0x0000007F
+#define DATA_SHIFT 8
+#define DATA_MASK 0x00FFFFFF
 
 enum caer_special_event_types {
 	TIMESTAMP_WRAP = 0,

@@ -11,8 +11,8 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	davisOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME, deviceID, busNumberRestrict,
-		devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
+	davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME, deviceID,
+		busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
 }
 
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {

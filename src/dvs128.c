@@ -228,14 +228,14 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_store(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_store(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				default:
@@ -901,8 +901,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 	// Truncate off any extra partial event.
 	if ((bytesSent & 0x03) != 0) {
-		caerLog(CAER_LOG_ALERT, handle->info.deviceString, "%zu bytes sent via USB, which is not a multiple of four.",
-			bytesSent);
+		caerLog(CAER_LOG_ALERT, handle->info.deviceString,
+			"%zu bytes received via USB, which is not a multiple of four.", bytesSent);
 		bytesSent &= (size_t) ~0x03;
 	}
 
@@ -1060,7 +1060,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		// Trigger if any of the global container-wide thresholds are met.
 		bool containerCommit = (((polaritySize + specialSize) >= atomic_load(&state->maxPacketContainerSize))
-			|| ((polarityInterval + specialInterval) >= atomic_load(&state->maxPacketContainerInterval)));
+			|| (polarityInterval >= atomic_load(&state->maxPacketContainerInterval))
+			|| (specialInterval >= atomic_load(&state->maxPacketContainerInterval)));
 
 		// Trigger if any of the packet-specific thresholds are met.
 		bool polarityPacketCommit = ((polaritySize

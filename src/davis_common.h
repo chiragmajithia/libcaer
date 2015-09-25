@@ -15,6 +15,8 @@
 #define APS_DEBUG_FRAME 0
 // Use 1 for reset frame only, 2 for signal frame only
 
+#define APS_ADC_DEPTH 10
+
 #define IMU6_COUNT 15
 #define IMU9_COUNT 21
 
@@ -60,7 +62,6 @@ struct davis_state {
 	// APS specific fields
 	uint16_t apsSizeX;
 	uint16_t apsSizeY;
-	uint8_t apsChannels;
 	bool apsInvertXY;
 	bool apsFlipX;
 	bool apsFlipY;
@@ -105,6 +106,9 @@ struct davis_state {
 	int32_t currentSpecialPacketPosition;
 	atomic_int_fast32_t maxSpecialPacketSize;
 	atomic_int_fast32_t maxSpecialPacketInterval;
+	// Current composite events, for later copy, to not loose them on commits.
+	struct caer_frame_event currentFrameEvent;
+	struct caer_imu6_event currentIMU6Event;
 };
 
 typedef struct davis_state *davisState;
@@ -119,6 +123,9 @@ struct davis_handle {
 
 typedef struct davis_handle *davisHandle;
 
+bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
+	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
+	uint16_t requiredLogicRevision);
 bool davisCommonClose(caerDeviceHandle handle);
 
 bool davisCommonDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
@@ -128,8 +135,5 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
 
 void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
 uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr);
-bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
-	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
-	uint16_t requiredLogicRevision);
 
 #endif /* LIBCAER_SRC_DAVIS_COMMON_H_ */
