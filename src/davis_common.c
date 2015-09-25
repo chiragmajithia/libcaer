@@ -1367,6 +1367,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 				case 7: // Timestamp wrap
 					// Detect big timestamp wrap-around.
+					// TODO: detect big TS also considering big wrap jumps due to wrap counter.
 					if (state->wrapAdd == (INT32_MAX - (TS_WRAP_ADD - 1))) {
 						// Reset wrapAdd to zero at this point, so we can again
 						// start detecting overruns of the 32bit value.
@@ -1567,6 +1568,9 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	davisState state = &handle->state;
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
+
+	// Reset configuration update, so as to not re-do work afterwards.
+	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
 	// Create buffers as specified in config file.
 	davisAllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));

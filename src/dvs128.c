@@ -1142,6 +1142,9 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
 
+	// Reset configuration update, so as to not re-do work afterwards.
+	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
+
 	// Create buffers as specified in config file.
 	dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
 
