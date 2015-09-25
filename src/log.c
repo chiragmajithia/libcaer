@@ -11,7 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 
-static atomic_uint_fast8_t caerLogLevel = ATOMIC_VAR_INIT(LOG_ERROR);
+static atomic_uint_fast8_t caerLogLevel = ATOMIC_VAR_INIT(CAER_LOG_ERROR);
 
 void caerLogLevelSet(uint8_t logLevel) {
 	atomic_store(&caerLogLevel, logLevel);
@@ -24,7 +24,7 @@ uint8_t caerLogLevelGet(void) {
 void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 	// Check that subSystem and format are defined correctly.
 	if (subSystem == NULL || format == NULL) {
-		caerLog(LOG_ERROR, "Logger", "Missing subSystem or format strings. Neither can be NULL.");
+		caerLog(CAER_LOG_ERROR, "Logger", "Missing subSystem or format strings. Neither can be NULL.");
 		return;
 	}
 
@@ -45,35 +45,35 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 		// Prepend debug level as a string to format.
 		const char *logLevelString;
 		switch (logLevel) {
-			case LOG_EMERGENCY:
+			case CAER_LOG_EMERGENCY:
 				logLevelString = "EMERGENCY";
 				break;
 
-			case LOG_ALERT:
+			case CAER_LOG_ALERT:
 				logLevelString = "ALERT";
 				break;
 
-			case LOG_CRITICAL:
+			case CAER_LOG_CRITICAL:
 				logLevelString = "CRITICAL";
 				break;
 
-			case LOG_ERROR:
+			case CAER_LOG_ERROR:
 				logLevelString = "ERROR";
 				break;
 
-			case LOG_WARNING:
+			case CAER_LOG_WARNING:
 				logLevelString = "WARNING";
 				break;
 
-			case LOG_NOTICE:
+			case CAER_LOG_NOTICE:
 				logLevelString = "NOTICE";
 				break;
 
-			case LOG_INFO:
+			case CAER_LOG_INFO:
 				logLevelString = "INFO";
 				break;
 
-			case LOG_DEBUG:
+			case CAER_LOG_DEBUG:
 				logLevelString = "DEBUG";
 				break;
 

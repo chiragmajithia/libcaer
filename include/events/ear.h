@@ -42,7 +42,7 @@ static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacit
 	caerEarEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Ear Event", "Failed to allocate %zu bytes of memory for Ear Event Packet of capacity %"
+		caerLog(CAER_LOG_CRITICAL, "Ear Event", "Failed to allocate %zu bytes of memory for Ear Event Packet of capacity %"
 		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 		errno);
 #endif
@@ -64,7 +64,7 @@ static inline caerEarEvent caerEarEventPacketGetEvent(caerEarEventPacket packet,
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Ear Event",
+		caerLog(CAER_LOG_CRITICAL, "Ear Event",
 			"Called caerEarEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
@@ -89,7 +89,7 @@ static inline void caerEarEventSetTimestamp(caerEarEvent event, int32_t timestam
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Ear Event", "Called caerEarEventSetTimestamp() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "Ear Event", "Called caerEarEventSetTimestamp() with negative value!");
 #endif
 		return;
 	}
@@ -114,7 +114,7 @@ static inline void caerEarEventValidate(caerEarEvent event, caerEarEventPacket p
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Ear Event", "Called caerEarEventValidate() on already valid event.");
+		caerLog(CAER_LOG_CRITICAL, "Ear Event", "Called caerEarEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -130,7 +130,7 @@ static inline void caerEarEventInvalidate(caerEarEvent event, caerEarEventPacket
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Ear Event", "Called caerEarEventInvalidate() on already invalid event.");
+		caerLog(CAER_LOG_CRITICAL, "Ear Event", "Called caerEarEventInvalidate() on already invalid event.");
 #endif
 	}
 }

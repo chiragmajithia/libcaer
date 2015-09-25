@@ -40,7 +40,7 @@ static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t ev
 	caerPolarityEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event",
+		caerLog(CAER_LOG_CRITICAL, "Polarity Event",
 			"Failed to allocate %zu bytes of memory for Polarity Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
@@ -63,7 +63,7 @@ static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEven
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event",
+		caerLog(CAER_LOG_CRITICAL, "Polarity Event",
 			"Called caerPolarityEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
@@ -88,7 +88,7 @@ static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, int32_
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventSetTimestamp() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventSetTimestamp() with negative value!");
 #endif
 		return;
 	}
@@ -113,7 +113,7 @@ static inline void caerPolarityEventValidate(caerPolarityEvent event, caerPolari
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventValidate() on already valid event.");
+		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -129,7 +129,7 @@ static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPola
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventInvalidate() on already invalid event.");
+		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventInvalidate() on already invalid event.");
 #endif
 	}
 }

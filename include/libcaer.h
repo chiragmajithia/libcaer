@@ -35,7 +35,7 @@ extern "C" {
 #define MASK_NUMBITS64(X) U64T(U64T(U64T(1) << X) - 1)
 #define SWAP_VAR(type, x, y) { type tmpv; tmpv = (x); (x) = (y); (y) = tmpv; }
 
-static inline bool str_equals(const char *s1, const char *s2) {
+static inline bool caerStrEquals(const char *s1, const char *s2) {
 	if (s1 == NULL || s2 == NULL) {
 		return (false);
 	}
@@ -47,7 +47,7 @@ static inline bool str_equals(const char *s1, const char *s2) {
 	return (false);
 }
 
-static inline bool str_equals_upto(const char *s1, const char *s2, size_t len) {
+static inline bool caerStrEqualsUpTo(const char *s1, const char *s2, size_t len) {
 	if (s1 == NULL || s2 == NULL || len == 0) {
 		return (false);
 	}
@@ -59,7 +59,7 @@ static inline bool str_equals_upto(const char *s1, const char *s2, size_t len) {
 	return (false);
 }
 
-static inline void bitArrayCopy(uint8_t *src, size_t srcPos, uint8_t *dest, size_t destPos, size_t length) {
+static inline void caerBitArrayCopy(uint8_t *src, size_t srcPos, uint8_t *dest, size_t destPos, size_t length) {
 	size_t copyOffset = 0;
 
 	while (copyOffset < length) {
@@ -84,7 +84,7 @@ static inline void bitArrayCopy(uint8_t *src, size_t srcPos, uint8_t *dest, size
 	}
 }
 
-static inline void integerToByteArray(uint32_t integer, uint8_t *byteArray, uint8_t byteArrayLength) {
+static inline void caerIntegerToByteArray(uint32_t integer, uint8_t *byteArray, uint8_t byteArrayLength) {
 	switch (byteArrayLength) {
 		case 4:
 			byteArray[0] = U8T(integer >> 24);
@@ -113,7 +113,7 @@ static inline void integerToByteArray(uint32_t integer, uint8_t *byteArray, uint
 	}
 }
 
-static inline uint32_t byteArrayToInteger(uint8_t *byteArray, uint8_t byteArrayLength) {
+static inline uint32_t caerByteArrayToInteger(uint8_t *byteArray, uint8_t byteArrayLength) {
 	uint32_t integer = 0;
 
 	switch (byteArrayLength) {

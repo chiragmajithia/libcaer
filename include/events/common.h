@@ -18,7 +18,7 @@
 // Timestamps have 31 significant bits, so TSOverflow needs to be shifted by that amount.
 #define TS_OVERFLOW_SHIFT 31
 
-enum caer_event_types {
+enum caer_default_event_types {
 	SPECIAL_EVENT = 0,
 	POLARITY_EVENT = 1,
 	FRAME_EVENT = 2,
@@ -50,7 +50,7 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	if (eventType < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventType() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventType() with negative value!");
 #endif
 		return;
 	}
@@ -83,7 +83,7 @@ static inline void caerEventPacketHeaderSetEventSource(caerEventPacketHeader hea
 	if (eventSource < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
 			"Called caerEventPacketHeaderSetEventSource() with negative value!");
 #endif
 		return;
@@ -100,7 +100,7 @@ static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader heade
 	if (eventSize < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventSize() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventSize() with negative value!");
 #endif
 		return;
 	}
@@ -116,7 +116,7 @@ static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader h
 	if (eventTSOffset < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
 			"Called caerEventPacketHeaderSetEventTSOffset() with negative value!");
 #endif
 		return;
@@ -134,7 +134,7 @@ static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader
 	if (eventTSOverflow < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
 			"Called caerEventPacketHeaderSetEventTSOverflow() with negative value!");
 #endif
 		return;
@@ -151,7 +151,7 @@ static inline void caerEventPacketHeaderSetEventCapacity(caerEventPacketHeader h
 	if (eventsCapacity < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
 			"Called caerEventPacketHeaderSetEventCapacity() with negative value!");
 #endif
 		return;
@@ -168,7 +168,7 @@ static inline void caerEventPacketHeaderSetEventNumber(caerEventPacketHeader hea
 	if (eventsNumber < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
 			"Called caerEventPacketHeaderSetEventNumber() with negative value!");
 #endif
 		return;
@@ -185,7 +185,7 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 	if (eventsValid < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventValid() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventValid() with negative value!");
 #endif
 		return;
 	}
@@ -197,7 +197,7 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, in
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(headerPtr)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Generic Event",
+		caerLog(CAER_LOG_CRITICAL, "Generic Event",
 			"Called caerGenericEventGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketHeaderGetEventCapacity(headerPtr));
 #endif

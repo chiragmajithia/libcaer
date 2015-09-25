@@ -28,12 +28,26 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 
 }
 
-void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
-uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr);
+void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param) {
+
+}
+
+uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr) {
+
+}
+
 bool davisOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, uint8_t busNumberRestrict,
-	uint8_t devAddressRestrict, const char *serialNumberRestrict);
-bool davisInfoInitialize(davisHandle handle);
-bool davisStateInitialize(davisHandle handle);
+	uint8_t devAddressRestrict, const char *serialNumberRestrict) {
+
+}
+
+bool davisInfoInitialize(davisHandle handle) {
+
+}
+
+bool davisStateInitialize(davisHandle handle) {
+
+}
 
 static void freeAllMemory(davisCommonState state);
 static void createVDACBiasSetting(biasDescriptor *chipBiases, sshsNode biasNode, const char *biasName,

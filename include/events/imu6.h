@@ -40,7 +40,7 @@ static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapac
 	caerIMU6EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event", "Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
+		caerLog(CAER_LOG_CRITICAL, "IMU6 Event", "Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
 		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 		errno);
 #endif
@@ -62,7 +62,7 @@ static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket pack
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event",
+		caerLog(CAER_LOG_CRITICAL, "IMU6 Event",
 			"Called caerIMU6EventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
@@ -87,7 +87,7 @@ static inline void caerIMU6EventSetTimestamp(caerIMU6Event event, int32_t timest
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventSetTimestamp() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventSetTimestamp() with negative value!");
 #endif
 		return;
 	}
@@ -112,7 +112,7 @@ static inline void caerIMU6EventValidate(caerIMU6Event event, caerIMU6EventPacke
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventValidate() on already valid event.");
+		caerLog(CAER_LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventValidate() on already valid event.");
 #endif
 	}
 }
@@ -128,7 +128,7 @@ static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPac
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventInvalidate() on already invalid event.");
+		caerLog(CAER_LOG_CRITICAL, "IMU6 Event", "Called caerIMU6EventInvalidate() on already invalid event.");
 #endif
 	}
 }

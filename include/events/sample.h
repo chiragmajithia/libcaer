@@ -38,7 +38,7 @@ static inline caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventC
 	caerSampleEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event",
+		caerLog(CAER_LOG_CRITICAL, "Sample Event",
 			"Failed to allocate %zu bytes of memory for Sample Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
@@ -61,7 +61,7 @@ static inline caerSampleEvent caerSampleEventPacketGetEvent(caerSampleEventPacke
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event",
+		caerLog(CAER_LOG_CRITICAL, "Sample Event",
 			"Called caerSampleEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
@@ -86,7 +86,7 @@ static inline void caerSampleEventSetTimestamp(caerSampleEvent event, int32_t ti
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventSetTimestamp() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "Sample Event", "Called caerSampleEventSetTimestamp() with negative value!");
 #endif
 		return;
 	}
@@ -111,7 +111,7 @@ static inline void caerSampleEventValidate(caerSampleEvent event, caerSampleEven
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventValidate() on already valid event.");
+		caerLog(CAER_LOG_CRITICAL, "Sample Event", "Called caerSampleEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -127,7 +127,7 @@ static inline void caerSampleEventInvalidate(caerSampleEvent event, caerSampleEv
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Sample Event", "Called caerSampleEventInvalidate() on already invalid event.");
+		caerLog(CAER_LOG_CRITICAL, "Sample Event", "Called caerSampleEventInvalidate() on already invalid event.");
 #endif
 	}
 }

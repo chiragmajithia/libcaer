@@ -9,14 +9,14 @@
 #define LIBCAER_LOG_H_
 
 // Debug severity levels
-#define LOG_EMERGENCY (0)
-#define LOG_ALERT     (1)
-#define LOG_CRITICAL  (2)
-#define LOG_ERROR     (3)
-#define LOG_WARNING   (4)
-#define LOG_NOTICE    (5)
-#define LOG_INFO      (6)
-#define LOG_DEBUG     (7)
+#define CAER_LOG_EMERGENCY (0)
+#define CAER_LOG_ALERT     (1)
+#define CAER_LOG_CRITICAL  (2)
+#define CAER_LOG_ERROR     (3)
+#define CAER_LOG_WARNING   (4)
+#define CAER_LOG_NOTICE    (5)
+#define CAER_LOG_INFO      (6)
+#define CAER_LOG_DEBUG     (7)
 
 void caerLogLevelSet(uint8_t logLevel);
 uint8_t caerLogLevelGet(void);

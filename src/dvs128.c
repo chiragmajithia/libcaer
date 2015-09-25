@@ -12,7 +12,7 @@ static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle);
 
 static inline void checkMonotonicTimestamp(dvs128Handle handle) {
 	if (handle->state.currentTimestamp < handle->state.lastTimestamp) {
-		caerLog(LOG_ALERT, handle->info.deviceString,
+		caerLog(CAER_LOG_ALERT, handle->info.deviceString,
 			"Timestamps: non monotonic timestamp detected: lastTimestamp=%" PRIi32 ", currentTimestamp=%" PRIi32 ", difference=%" PRIi32 ".",
 			handle->state.lastTimestamp, handle->state.currentTimestamp,
 			(handle->state.lastTimestamp - handle->state.currentTimestamp));
@@ -54,12 +54,12 @@ static inline void freeAllDataMemory(dvs128State state) {
 
 caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
-	caerLog(LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
 
 	dvs128Handle handle = calloc(1, sizeof(*handle));
 	if (handle == NULL) {
 		// Failed to allocate memory for device handle!
-		caerLog(LOG_CRITICAL, __func__, "Failed to allocate memory for device handle.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to allocate memory for device handle.");
 		return (NULL);
 	}
 
@@ -85,7 +85,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	if ((errno = libusb_init(&state->deviceContext)) != LIBUSB_SUCCESS) {
 		free(handle);
 
-		caerLog(LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
 		return (NULL);
 	}
 
@@ -95,7 +95,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(LOG_CRITICAL, __func__, "Failed to open " DEVICE_NAME " device.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open " DEVICE_NAME " device.");
 		return (NULL);
 	}
 
@@ -117,7 +117,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(LOG_CRITICAL, __func__, "Unable to allocate memory for device info string.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for device info string.");
 		return (NULL);
 	}
 
@@ -125,12 +125,12 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		deviceID, serialNumber, busNumber, devAddress);
 
 	// Now check if the Serial Number matches.
-	if (!str_equals(serialNumberRestrict, "") && !str_equals(serialNumberRestrict, serialNumber)) {
+	if (!caerStrEquals(serialNumberRestrict, "") && !caerStrEquals(serialNumberRestrict, serialNumber)) {
 		libusb_close(state->deviceHandle);
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(LOG_CRITICAL, fullLogString, "Device Serial Number doesn't match.");
+		caerLog(CAER_LOG_CRITICAL, fullLogString, "Device Serial Number doesn't match.");
 		free(fullLogString);
 
 		return (NULL);
@@ -151,7 +151,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		free(handle);
 
 		// Logic too old, notify and quit.
-		caerLog(LOG_CRITICAL, fullLogString,
+		caerLog(CAER_LOG_CRITICAL, fullLogString,
 			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
 			handle->info.logicVersion, REQUIRED_LOGIC_REVISION);
 		free(fullLogString);
@@ -159,7 +159,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		return (NULL);
 	}
 
-	caerLog(LOG_DEBUG, fullLogString, "Initialized device successfully with USB Bus=%" PRIu8 ":Addr=%" PRIu8 ".",
+	caerLog(CAER_LOG_DEBUG, fullLogString, "Initialized device successfully with USB Bus=%" PRIu8 ":Addr=%" PRIu8 ".",
 		busNumber, devAddress);
 
 	return ((caerDeviceHandle) handle);
@@ -175,7 +175,7 @@ bool dvs128Close(caerDeviceHandle cdh) {
 	// Destroy libusb context.
 	libusb_exit(state->deviceContext);
 
-	caerLog(LOG_DEBUG, handle->info.deviceString, "Shutdown successful.");
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Shutdown successful.");
 
 	// Free memory.
 	free(handle->info.deviceString);
@@ -196,18 +196,18 @@ bool dvs128SendDefaultConfig(caerDeviceHandle cdh) {
 	dvs128State state = &handle->state;
 
 	// Set all biases to default value.
-	integerToByteArray(1992, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
-	integerToByteArray(1108364, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
-	integerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
-	integerToByteArray(8159221, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
-	integerToByteArray(132, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
-	integerToByteArray(309590, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
-	integerToByteArray(969, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
-	integerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
-	integerToByteArray(209996, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
-	integerToByteArray(13125, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
-	integerToByteArray(271, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
-	integerToByteArray(217, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+	caerIntegerToByteArray(1992, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+	caerIntegerToByteArray(1108364, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+	caerIntegerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+	caerIntegerToByteArray(8159221, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+	caerIntegerToByteArray(132, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+	caerIntegerToByteArray(309590, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+	caerIntegerToByteArray(969, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+	caerIntegerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+	caerIntegerToByteArray(209996, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+	caerIntegerToByteArray(13125, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+	caerIntegerToByteArray(271, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+	caerIntegerToByteArray(217, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
 
 	// Send biases to device.
 	dvs128SendBiases(state);
@@ -220,16 +220,16 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 	dvs128State state = &handle->state;
 
 	switch (modAddr) {
-		case HOST_CONFIG_USB:
+		case CAER_HOST_CONFIG_USB:
 			switch (paramAddr) {
-				case HOST_CONFIG_USB_BUFFER_NUMBER:
+				case CAER_HOST_CONFIG_USB_BUFFER_NUMBER:
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
 					atomic_store(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
-				case HOST_CONFIG_USB_BUFFER_SIZE:
+				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
@@ -242,13 +242,13 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 			}
 			break;
 
-		case HOST_CONFIG_DATAEXCHANGE:
+		case CAER_HOST_CONFIG_DATAEXCHANGE:
 			switch (paramAddr) {
-				case HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
 					atomic_store(&state->dataExchangeBufferSize, param);
 					break;
 
-				case HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
 					atomic_store(&state->dataExchangeBlocking, param);
 					break;
 
@@ -258,29 +258,29 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 			}
 			break;
 
-		case HOST_CONFIG_PACKETS:
+		case CAER_HOST_CONFIG_PACKETS:
 			switch (paramAddr) {
-				case HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
 					atomic_store(&state->maxPacketContainerSize, param);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
 					atomic_store(&state->maxPacketContainerInterval, param);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
 					atomic_store(&state->maxPolarityPacketSize, param);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
 					atomic_store(&state->maxPolarityPacketInterval, param);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
 					atomic_store(&state->maxSpecialPacketSize, param);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
 					atomic_store(&state->maxSpecialPacketInterval, param);
 					break;
 
@@ -332,62 +332,62 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_BIAS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_BIAS_CAS:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_INJGND:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_PUX:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_PUY:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_REQPD:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_REQ:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_FOLL:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_PR:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_REFR:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFF:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFON:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFOFF:
-					integerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
 					dvs128SendBiases(state);
 					break;
 
@@ -410,13 +410,13 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 	dvs128State state = &handle->state;
 
 	switch (modAddr) {
-		case HOST_CONFIG_USB:
+		case CAER_HOST_CONFIG_USB:
 			switch (paramAddr) {
-				case HOST_CONFIG_USB_BUFFER_NUMBER:
+				case CAER_HOST_CONFIG_USB_BUFFER_NUMBER:
 					*param = atomic_load(&state->usbBufferNumber);
 					break;
 
-				case HOST_CONFIG_USB_BUFFER_SIZE:
+				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					*param = atomic_load(&state->usbBufferSize);
 					break;
 
@@ -426,13 +426,13 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 			}
 			break;
 
-		case HOST_CONFIG_DATAEXCHANGE:
+		case CAER_HOST_CONFIG_DATAEXCHANGE:
 			switch (paramAddr) {
-				case HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
 					*param = atomic_load(&state->dataExchangeBufferSize);
 					break;
 
-				case HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
 					*param = atomic_load(&state->dataExchangeBlocking);
 					break;
 
@@ -442,29 +442,29 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 			}
 			break;
 
-		case HOST_CONFIG_PACKETS:
+		case CAER_HOST_CONFIG_PACKETS:
 			switch (paramAddr) {
-				case HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
 					*param = atomic_load(&state->maxPacketContainerSize);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
 					*param = atomic_load(&state->maxPacketContainerInterval);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
 					*param = atomic_load(&state->maxPolarityPacketSize);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
 					*param = atomic_load(&state->maxPolarityPacketInterval);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
 					*param = atomic_load(&state->maxSpecialPacketSize);
 					break;
 
-				case HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
 					*param = atomic_load(&state->maxSpecialPacketInterval);
 					break;
 
@@ -499,51 +499,51 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_BIAS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_BIAS_CAS:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_INJGND:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_PUX:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_PUY:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_REQPD:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_REQ:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_FOLL:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_PR:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_REFR:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFF:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFON:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFOFF:
-					*param = byteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
 					break;
 
 				default:
@@ -573,7 +573,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	// Initialize RingBuffer.
 	state->dataExchangeBuffer = ringBufferInit(atomic_load(&state->dataExchangeBufferSize));
 	if (state->dataExchangeBuffer == NULL) {
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to initialize data exchange buffer.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to initialize data exchange buffer.");
 		return (false);
 	}
 
@@ -582,7 +582,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	if (state->currentPacketContainer == NULL) {
 		freeAllDataMemory(state);
 
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
 		return (false);
 	}
 
@@ -591,7 +591,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
 
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 		return (false);
 	}
 
@@ -600,7 +600,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
 
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 		return (false);
 	}
 
@@ -610,7 +610,8 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &dvs128DataAcquisitionThread, handle)) != 0) {
 		freeAllDataMemory(state);
 
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.", errno);
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.",
+		errno);
 		return (false);
 	}
 
@@ -627,7 +628,8 @@ bool dvs128DataStop(caerDeviceHandle cdh) {
 	// Wait for data acquisition thread to terminate...
 	if ((errno = pthread_join(state->dataAcquisitionThread, NULL)) != 0) {
 		// This should never happen!
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to join data acquisition thread. Error: %d.", errno);
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to join data acquisition thread. Error: %d.",
+		errno);
 		return (false);
 	}
 
@@ -760,7 +762,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 	// Set number of transfers and allocate memory for the main transfer array.
 	state->dataTransfers = calloc(bufferNum, sizeof(struct libusb_transfer *));
 	if (state->dataTransfers == NULL) {
-		caerLog(LOG_CRITICAL, handle->info.deviceString,
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
 			"Failed to allocate memory for %" PRIu32 " libusb transfers. Error: %d.", bufferNum, errno);
 		return;
 	}
@@ -770,7 +772,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 	for (size_t i = 0; i < bufferNum; i++) {
 		state->dataTransfers[i] = libusb_alloc_transfer(0);
 		if (state->dataTransfers[i] == NULL) {
-			caerLog(LOG_CRITICAL, handle->info.deviceString,
+			caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
 				"Unable to allocate further libusb transfers (%zu of %" PRIu32 ").", i, bufferNum);
 			continue;
 		}
@@ -779,7 +781,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 		state->dataTransfers[i]->length = (int) bufferSize;
 		state->dataTransfers[i]->buffer = malloc(bufferSize);
 		if (state->dataTransfers[i]->buffer == NULL) {
-			caerLog(LOG_CRITICAL, handle->info.deviceString,
+			caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
 				"Unable to allocate buffer for libusb transfer %zu. Error: %d.", i, errno);
 
 			libusb_free_transfer(state->dataTransfers[i]);
@@ -801,8 +803,8 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 			state->activeDataTransfers++;
 		}
 		else {
-			caerLog(LOG_CRITICAL, handle->info.deviceString, "Unable to submit libusb transfer %zu. Error: %s (%d).", i,
-				libusb_strerror(errno), errno);
+			caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
+				"Unable to submit libusb transfer %zu. Error: %s (%d).", i, libusb_strerror(errno), errno);
 
 			// The transfer buffer is freed automatically here thanks to
 			// the LIBUSB_TRANSFER_FREE_BUFFER flag set above.
@@ -819,7 +821,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 		state->dataTransfers = NULL;
 		state->dataTransfersLength = 0;
 
-		caerLog(LOG_CRITICAL, handle->info.deviceString, "Unable to allocate any libusb transfers.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Unable to allocate any libusb transfers.");
 	}
 }
 
@@ -831,7 +833,7 @@ static void dvs128DeallocateTransfers(dvs128Handle handle) {
 		if (state->dataTransfers[i] != NULL) {
 			errno = libusb_cancel_transfer(state->dataTransfers[i]);
 			if (errno != LIBUSB_SUCCESS && errno != LIBUSB_ERROR_NOT_FOUND) {
-				caerLog(LOG_CRITICAL, handle->info.deviceString,
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
 					"Unable to cancel libusb transfer %zu. Error: %s (%d).", i, libusb_strerror(errno), errno);
 				// Proceed with trying to cancel all transfers regardless of errors.
 			}
@@ -896,7 +898,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 	// Truncate off any extra partial event.
 	if ((bytesSent & 0x03) != 0) {
-		caerLog(LOG_ALERT, handle->info.deviceString, "%zu bytes sent via USB, which is not a multiple of four.",
+		caerLog(CAER_LOG_ALERT, handle->info.deviceString, "%zu bytes sent via USB, which is not a multiple of four.",
 			bytesSent);
 		bytesSent &= (size_t) ~0x03;
 	}
@@ -906,7 +908,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		if (state->currentPacketContainer == NULL) {
 			state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
 			if (state->currentPacketContainer == NULL) {
-				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
 				return;
 			}
 		}
@@ -915,7 +917,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
 				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
-				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
 			}
 		}
@@ -924,7 +926,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
 				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
-				caerLog(LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
 			}
 		}
@@ -1015,12 +1017,12 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				// Check range conformity.
 				if (x >= DVS_ARRAY_SIZE_X) {
-					caerLog(LOG_ALERT, handle->info.deviceString, "X address out of range (0-%d): %" PRIu16 ".",
+					caerLog(CAER_LOG_ALERT, handle->info.deviceString, "X address out of range (0-%d): %" PRIu16 ".",
 					DVS_ARRAY_SIZE_X - 1, x);
 					continue; // Skip invalid event.
 				}
 				if (y >= DVS_ARRAY_SIZE_Y) {
-					caerLog(LOG_ALERT, handle->info.deviceString, "Y address out of range (0-%d): %" PRIu16 ".",
+					caerLog(CAER_LOG_ALERT, handle->info.deviceString, "Y address out of range (0-%d): %" PRIu16 ".",
 					DVS_ARRAY_SIZE_Y - 1, y);
 					continue; // Skip invalid event.
 				}
@@ -1098,7 +1100,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				else {
 					// Failed to forward packet container, just drop it, it doesn't contain
 					// any critical information anyway.
-					caerLog(LOG_INFO, handle->info.deviceString,
+					caerLog(CAER_LOG_INFO, handle->info.deviceString,
 						"Dropped EventPacket Container because ring-buffer full!");
 
 					// Re-use the event-packet container to avoid having to reallocate it.
@@ -1134,7 +1136,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	dvs128Handle handle = inPtr;
 	dvs128State state = &handle->state;
 
-	caerLog(LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
 
 	// Create buffers as specified in config file.
 	dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
@@ -1145,7 +1147,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
-	caerLog(LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
 
 	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
@@ -1156,7 +1158,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 		libusb_handle_events_timeout(state->deviceContext, &te);
 	}
 
-	caerLog(LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
 	// Disable AER data transfer on USB end-point 6.
 	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, 0);
@@ -1164,7 +1166,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);
 
-	caerLog(LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
 
 	return (NULL);
 }

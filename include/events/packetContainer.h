@@ -28,7 +28,7 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 	if (eventPacketsNumber < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Container",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerSetEventPacketsNumber() with negative value!");
 #endif
 		return;
@@ -43,7 +43,7 @@ static inline caerEventPacketContainer caerEventPacketContainerAllocate(int32_t 
 	caerEventPacketContainer packetContainer = calloc(1, eventPacketContainerSize);
 	if (packetContainer == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Container",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Failed to allocate %zu bytes of memory for Event Packet Container, containing %"
 			PRIi32 " packets. Error: %d.", eventPacketContainerSize, eventPacketsNumber, errno);
 #endif
@@ -61,7 +61,7 @@ static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerE
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Container",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerGetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketContainerGetEventPacketsNumber(container));
 #endif
@@ -77,7 +77,7 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "EventPacket Container",
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerSetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketContainerGetEventPacketsNumber(container));
 #endif

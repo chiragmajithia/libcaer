@@ -47,7 +47,7 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t even
 	caerSpecialEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event",
+		caerLog(CAER_LOG_CRITICAL, "Special Event",
 			"Failed to allocate %zu bytes of memory for Special Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
@@ -70,7 +70,7 @@ static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPa
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event",
+		caerLog(CAER_LOG_CRITICAL, "Special Event",
 			"Called caerSpecialEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
 #endif
@@ -95,7 +95,7 @@ static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t 
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventSetTimestamp() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventSetTimestamp() with negative value!");
 #endif
 		return;
 	}
@@ -120,7 +120,7 @@ static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialE
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventValidate() on already valid event.");
+		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventValidate() on already valid event.");
 #endif
 	}
 }
@@ -136,7 +136,7 @@ static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecia
 	}
 	else {
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(LOG_CRITICAL, "Special Event", "Called caerSpecialEventInvalidate() on already invalid event.");
+		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventInvalidate() on already invalid event.");
 #endif
 	}
 }
