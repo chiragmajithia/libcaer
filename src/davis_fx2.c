@@ -11,8 +11,19 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME, deviceID,
-		busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
+	bool openRetVal = davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME,
+		deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
+	if (!openRetVal) {
+		// Failed to open device and grab basic information!
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open device.");
+		return (NULL);
+	}
+
+	// FX2 specific configuration.
+	davisFX2ConfigSet((caerDeviceHandle) handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_DELAY_ROW, 14);
+	davisFX2ConfigSet((caerDeviceHandle) handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 1);
+
+	return ((caerDeviceHandle) handle);
 }
 
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
@@ -30,7 +41,6 @@ bool davisFX2ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, 
 
 }
 
-static void *dataAcquisitionThread(void *inPtr);
 static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
 static void sendBiases(sshsNode moduleNode, davisCommonState cstate);
 static void sendChipSR(sshsNode moduleNode, davisCommonState cstate);
@@ -38,114 +48,6 @@ static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribu
 	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
 static void ChipSRListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
 	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
-
-static bool caerInputDAVISFX2Init(caerModuleData moduleData) {
-	caerLog(LOG_DEBUG, moduleData->moduleSubSystemString, "Initializing module ...");
-
-	davisFX2State state = moduleData->moduleState;
-	davisCommonState cstate = &state->cstate;
-
-	// Data source is the same as the module ID (but accessible in cstate-space).
-	// Same thing for subSystemString.
-	cstate->sourceID = moduleData->moduleID;
-	cstate->sourceSubSystemString = moduleData->moduleSubSystemString;
-
-	// First, we need to connect to the device and ask it what chip it's got,
-	// and retain that information for later stages.
-	if (!deviceOpenInfo(moduleData, cstate, DAVIS_FX2_VID, DAVIS_FX2_PID, DAVIS_FX2_DID_TYPE)) {
-		return (false);
-	}
-
-	// Verify FX2 device logic version.
-	sshsNode sourceInfoNode = sshsGetRelativeNode(moduleData->moduleNode, "sourceInfo/");
-	uint16_t currentLogicVersion = sshsNodeGetShort(sourceInfoNode, "logicVersion");
-
-	if (currentLogicVersion < REQUIRED_LOGIC_REVISION) {
-		// Logic too old, notify and quit.
-		caerLog(LOG_ERROR, moduleData->moduleSubSystemString,
-			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
-			currentLogicVersion, REQUIRED_LOGIC_REVISION);
-		return (false);
-	}
-
-	// FX2 specific configuration.
-	sshsNode dvsNode = sshsGetRelativeNode(moduleData->moduleNode, "dvs/");
-
-	sshsNodePutByteIfAbsent(dvsNode, "AckDelayRow", 14);
-	sshsNodePutByteIfAbsent(dvsNode, "AckExtensionRow", 1);
-
-	// Create common default value configuration.
-	createCommonConfiguration(moduleData, cstate);
-
-	// Install default listeners to signal configuration updates asynchronously.
-	sshsNodeAddAttrListener(sshsGetRelativeNode(moduleData->moduleNode, "chip/"), moduleData, &ChipSRListener);
-	// The chip SR needs to be updated also when GlobalShutter in APS changes.
-	sshsNodeAddAttrListener(sshsGetRelativeNode(moduleData->moduleNode, "aps/"), moduleData, &ChipSRListener);
-
-	// Walk all bias nodes and install the default handler for changes.
-	size_t numBiasNodes;
-	sshsNode *biasNodes = sshsNodeGetChildren(sshsGetRelativeNode(moduleData->moduleNode, "bias/"), &numBiasNodes);
-
-	for (size_t i = 0; i < numBiasNodes; i++) {
-		sshsNodeAddAttrListener(biasNodes[i], cstate, &BiasesListener);
-	}
-
-	free(biasNodes);
-
-	if (!initializeCommonConfiguration(moduleData, cstate, &dataAcquisitionThread)) {
-		return (false);
-	}
-
-	caerLog(LOG_DEBUG, moduleData->moduleSubSystemString, "Initialized DAVISFX2 module successfully.");
-	return (true);
-}
-
-static void *dataAcquisitionThread(void *inPtr) {
-	// inPtr is a pointer to module data.
-	caerModuleData data = inPtr;
-	davisFX2State state = data->moduleState;
-	davisCommonState cstate = &state->cstate;
-
-	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Initializing data acquisition thread ...");
-
-	// Send default start-up biases and config values to device before enabling it.
-	sendBiases(data->moduleNode, cstate);
-	sendChipSR(data->moduleNode, cstate);
-	sendEnableDataConfig(data->moduleNode, cstate->deviceHandle);
-
-	// Create buffers as specified in config file.
-	sshsNode usbNode = sshsGetRelativeNode(data->moduleNode, "usb/");
-	allocateDataTransfers(cstate, sshsNodeGetInt(usbNode, "BufferNumber"), sshsNodeGetInt(usbNode, "BufferSize"));
-
-	// Handle USB events (1 second timeout).
-	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
-
-	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Data acquisition thread ready to process events.");
-
-	while (atomic_ops_uint_load(&data->running, ATOMIC_OPS_FENCE_NONE) != 0 && cstate->activeDataTransfers > 0) {
-		// Check config refresh, in this case to adjust buffer sizes.
-		if (atomic_ops_uint_load(&data->configUpdate, ATOMIC_OPS_FENCE_NONE) != 0) {
-			dataAcquisitionThreadConfig(data);
-		}
-
-		libusb_handle_events_timeout(cstate->deviceContext, &te);
-	}
-
-	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Shutting down data acquisition thread ...");
-
-	// Disable all data transfer on USB end-point.
-	sendDisableDataConfig(cstate->deviceHandle);
-
-	// Cancel all transfers and handle them.
-	deallocateDataTransfers(cstate);
-
-	// Ensure parent also shuts down (on disconnected device for example).
-	sshsNodePutBool(data->moduleNode, "shutdown", true);
-
-	caerLog(LOG_DEBUG, data->moduleSubSystemString, "Data acquisition thread shut down.");
-
-	return (NULL);
-}
 
 static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue) {
 	// All biases are two byte quantities.
