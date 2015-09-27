@@ -17,8 +17,8 @@ caerDeviceHandle (*constructors[SUPPORTED_DEVICES_NUMBER])(uint16_t deviceID, ui
 
 bool (*destructors[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle) = {
 	[CAER_DEVICE_DVS128] = &dvs128Close,
-	[CAER_DEVICE_DAVIS_FX2] = &davisCommonClose,
-	[CAER_DEVICE_DAVIS_FX3] = &davisCommonClose
+	[CAER_DEVICE_DAVIS_FX2] = &davisFX2Close,
+	[CAER_DEVICE_DAVIS_FX3] = &davisFX3Close
 };
 
 bool (*defaultConfigSenders[SUPPORTED_DEVICES_NUMBER])(caerDeviceHandle handle) = {

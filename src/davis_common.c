@@ -255,8 +255,7 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	return (true);
 }
 
-bool davisCommonClose(caerDeviceHandle cdh) {
-	davisHandle handle = (davisHandle) cdh;
+bool davisCommonClose(davisHandle handle) {
 	davisState state = &handle->state;
 
 	// Finally, close the device fully.

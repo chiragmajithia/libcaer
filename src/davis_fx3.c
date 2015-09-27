@@ -1,5 +1,10 @@
 #include "davis_fx3.h"
 
+static void allocateDebugTransfers(davisFX3Handle handle);
+static void deallocateDebugTransfers(davisFX3Handle handle);
+static void LIBUSB_CALL libUsbDebugCallback(struct libusb_transfer *transfer);
+static void debugTranslator(davisFX3Handle handle, uint8_t *buffer, size_t bytesSent);
+
 caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
 	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
@@ -22,9 +27,15 @@ caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	// TODO: allocate/deallocate debug transfers.
+	allocateDebugTransfers(handle);
 
 	return ((caerDeviceHandle) handle);
+}
+
+bool davisFX3Close(caerDeviceHandle cdh) {
+	deallocateDebugTransfers((davisFX3Handle) cdh);
+
+	return (davisCommonClose((davisHandle) cdh));
 }
 
 bool davisFX3SendDefaultConfig(caerDeviceHandle cdh) {
@@ -41,11 +52,6 @@ bool davisFX3ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, 
 	davisHandle handle = (davisHandle) cdh;
 
 }
-
-static void allocateDebugTransfers(davisFX3Handle handle);
-static void deallocateDebugTransfers(davisFX3Handle handle);
-static void LIBUSB_CALL libUsbDebugCallback(struct libusb_transfer *transfer);
-static void debugTranslator(davisFX3Handle handle, uint8_t *buffer, size_t bytesSent);
 
 static void allocateDebugTransfers(davisFX3Handle handle) {
 	// Set number of transfers and allocate memory for the main transfer array.

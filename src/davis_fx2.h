@@ -24,6 +24,7 @@ typedef struct davis_fx2_handle *davisFX2Handle;
 
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict);
+bool davisFX2Close(caerDeviceHandle handle);
 
 bool davisFX2SendDefaultConfig(caerDeviceHandle handle);
 // Negative addresses are used for host-side configuration.

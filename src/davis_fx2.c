@@ -29,6 +29,10 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 	return ((caerDeviceHandle) handle);
 }
 
+bool davisFX2Close(caerDeviceHandle cdh) {
+	return (davisCommonClose((davisHandle) cdh));
+}
+
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
