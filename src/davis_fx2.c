@@ -12,8 +12,11 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 	}
 
 	bool openRetVal = davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME,
-		deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION);
+		deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION,
+		REQUIRED_FIRMWARE_VERSION);
 	if (!openRetVal) {
+		free(handle);
+
 		// Failed to open device and grab basic information!
 		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open device.");
 		return (NULL);

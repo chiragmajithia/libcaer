@@ -1,7 +1,8 @@
 #include "davis_common.h"
 
 static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
-	uint8_t devType, uint8_t busNumber, uint8_t devAddress);
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress, const char *serialNumber, uint16_t requiredLogicRevision,
+	uint16_t requiredFirmwareVersion);
 static void davisDeviceClose(libusb_device_handle *devHandle);
 static void davisAllocateTransfers(davisHandle handle, uint32_t bufferNum, uint32_t bufferSize);
 static void davisDeallocateTransfers(davisHandle handle);
@@ -119,7 +120,7 @@ static inline void freeAllDataMemory(davisState state) {
 
 bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
 	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
-	uint16_t requiredLogicRevision) {
+	uint16_t requiredLogicRevision, uint16_t requiredFirmwareVersion) {
 	davisState state = &handle->state;
 
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
@@ -129,7 +130,7 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	atomic_store(&state->usbBufferSize, 4096);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store(&state->maxPacketContainerSize, 4096 + 128);
+	atomic_store(&state->maxPacketContainerSize, 4096 + 128 + 4 + 8);
 	atomic_store(&state->maxPacketContainerInterval, 5000);
 	atomic_store(&state->maxPolarityPacketSize, 4096);
 	atomic_store(&state->maxPolarityPacketInterval, 5000);
@@ -144,18 +145,15 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	// Initialize libusb using a separate context for each device.
 	// This is to correctly support one thread per device.
 	if ((errno = libusb_init(&state->deviceContext)) != LIBUSB_SUCCESS) {
-		free(handle);
-
 		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
 		return (false);
 	}
 
-	// Try to open a DVS128 device on a specific USB port.
+	// Try to open a DAVIS device on a specific USB port.
 	state->deviceHandle = davisDeviceOpen(state->deviceContext, VID, PID, DID_TYPE, busNumberRestrict,
-		devAddressRestrict);
+		devAddressRestrict, serialNumberRestrict, requiredLogicRevision, requiredFirmwareVersion);
 	if (state->deviceHandle == NULL) {
 		libusb_exit(state->deviceContext);
-		free(handle);
 
 		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", DEVICE_NAME);
 		return (false);
@@ -175,28 +173,15 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 
 	char *fullLogString = malloc(fullLogStringLength + 1);
 	if (fullLogString == NULL) {
-		libusb_close(state->deviceHandle);
+		davisDeviceClose(state->deviceHandle);
 		libusb_exit(state->deviceContext);
-		free(handle);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for device info string.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", DEVICE_NAME);
 		return (false);
 	}
 
 	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", DEVICE_NAME,
 		deviceID, serialNumber, busNumber, devAddress);
-
-	// Now check if the Serial Number matches.
-	if (!caerStrEquals(serialNumberRestrict, "") && !caerStrEquals(serialNumberRestrict, serialNumber)) {
-		libusb_close(state->deviceHandle);
-		libusb_exit(state->deviceContext);
-		free(handle);
-
-		caerLog(CAER_LOG_CRITICAL, fullLogString, "Device Serial Number doesn't match.");
-		free(fullLogString);
-
-		return (false);
-	}
 
 	// Populate info variables based on data from device.
 	handle->info.deviceID = deviceID;
@@ -264,21 +249,6 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 		handle->info.apsSizeY = state->apsSizeY;
 	}
 
-	// Verify device logic version.
-	if (handle->info.logicVersion < requiredLogicRevision) {
-		libusb_close(state->deviceHandle);
-		libusb_exit(state->deviceContext);
-		free(handle);
-
-		// Logic too old, notify and quit.
-		caerLog(CAER_LOG_CRITICAL, fullLogString,
-			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
-			handle->info.logicVersion, requiredLogicRevision);
-		free(fullLogString);
-
-		return (false);
-	}
-
 	caerLog(CAER_LOG_DEBUG, fullLogString, "Initialized device successfully with USB Bus=%" PRIu8 ":Addr=%" PRIu8 ".",
 		busNumber, devAddress);
 
@@ -337,7 +307,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
+	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
@@ -346,7 +316,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
+	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
@@ -355,7 +325,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentFramePacket = caerFrameEventPacketAllocate(atomic_load(&state->maxFramePacketSize),
+	state->currentFramePacket = caerFrameEventPacketAllocate(I32T(atomic_load(&state->maxFramePacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentFramePacket == NULL) {
 		freeAllDataMemory(state);
@@ -364,7 +334,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentIMU6Packet = caerIMU6EventPacketAllocate(atomic_load(&state->maxIMU6PacketSize),
+	state->currentIMU6Packet = caerIMU6EventPacketAllocate(I32T(atomic_load(&state->maxIMU6PacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentIMU6Packet == NULL) {
 		freeAllDataMemory(state);
@@ -505,7 +475,8 @@ uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, u
 }
 
 static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
-	uint8_t devType, uint8_t busNumber, uint8_t devAddress) {
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress, const char *serialNumber, uint16_t requiredLogicRevision,
+	uint16_t requiredFirmwareVersion) {
 	libusb_device_handle *devHandle = NULL;
 	libusb_device **devicesList;
 
@@ -522,7 +493,8 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType) {
+				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType
+				&& (uint8_t) (devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
 					continue;
@@ -536,6 +508,29 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 					devHandle = NULL;
 
 					continue;
+				}
+
+				// Check the serial number restriction, if any is present.
+				if (serialNumber != NULL && !caerStrEquals(serialNumber, "")) {
+					char deviceSerialNumber[8 + 1] = { 0 };
+					int getStringDescResult = libusb_get_string_descriptor_ascii(devHandle, devDesc.iSerialNumber,
+						(unsigned char *) deviceSerialNumber, 8);
+
+					// Check serial number success and length.
+					if (getStringDescResult < 0 || getStringDescResult > 8) {
+						libusb_close(devHandle);
+						devHandle = NULL;
+
+						continue;
+					}
+
+					// Now check if the Serial Number matches.
+					if (!caerStrEquals(serialNumber, deviceSerialNumber)) {
+						libusb_close(devHandle);
+						devHandle = NULL;
+
+						continue;
+					}
 				}
 
 				// Check that the active configuration is set to number 1. If not, do so.
@@ -558,6 +553,19 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 
 				// Claim interface 0 (default).
 				if (libusb_claim_interface(devHandle, 0) != LIBUSB_SUCCESS) {
+					libusb_close(devHandle);
+					devHandle = NULL;
+
+					continue;
+				}
+
+				// Communication with device open, get logic version information.
+				uint16_t logicVersion = U16T(
+					spiConfigReceive(devHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION));
+
+				// Verify device logic version.
+				if (logicVersion < requiredLogicRevision) {
+					libusb_release_interface(devHandle, 0);
 					libusb_close(devHandle);
 					devHandle = NULL;
 
@@ -731,8 +739,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		}
 
 		if (state->currentPolarityPacket == NULL) {
-			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
+				I32T(atomic_load(&state->maxPolarityPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
@@ -740,8 +748,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		}
 
 		if (state->currentSpecialPacket == NULL) {
-			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
+				I32T(atomic_load(&state->maxSpecialPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
@@ -749,7 +757,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		}
 
 		if (state->currentFramePacket == NULL) {
-			state->currentFramePacket = caerFrameEventPacketAllocate(atomic_load(&state->maxFramePacketSize),
+			state->currentFramePacket = caerFrameEventPacketAllocate(I32T(atomic_load(&state->maxFramePacketSize)),
 				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentFramePacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate frame event packet.");
@@ -758,7 +766,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		}
 
 		if (state->currentIMU6Packet == NULL) {
-			state->currentIMU6Packet = caerIMU6EventPacketAllocate(atomic_load(&state->maxIMU6PacketSize),
+			state->currentIMU6Packet = caerIMU6EventPacketAllocate(I32T(atomic_load(&state->maxIMU6PacketSize)),
 				(int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentIMU6Packet == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate IMU6 event packet.");
@@ -1573,7 +1581,8 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
 	// Create buffers as specified in config file.
-	davisAllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
+	davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
+		U32T(atomic_load(&state->usbBufferSize)));
 
 	// Enable data transfer on USB end-point 2.
 	// TODO: enable data transfer.
@@ -1610,12 +1619,13 @@ static void davisDataAcquisitionThreadConfig(davisHandle handle) {
 
 	// Get the current value to examine by atomic exchange, since we don't
 	// want there to be any possible store between a load/store pair.
-	uint32_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
+	uint32_t configUpdate = U32T(atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0));
 
 	if ((configUpdate >> 0) & 0x01) {
 		// Do buffer size change: cancel all and recreate them.
 		davisDeallocateTransfers(handle);
-		davisAllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
+		davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
+			U32T(atomic_load(&state->usbBufferSize)));
 	}
 
 	if ((configUpdate >> 1) & 0x01) {

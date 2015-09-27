@@ -1,7 +1,7 @@
 #include "dvs128.h"
 
 static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
-	uint8_t devType, uint8_t busNumber, uint8_t devAddress);
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress, const char *serialNumber, uint16_t requiredFirmwareVersion);
 static void dvs128DeviceClose(libusb_device_handle *devHandle);
 static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uint32_t bufferSize);
 static void dvs128DeallocateTransfers(dvs128Handle handle);
@@ -92,7 +92,8 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 
 	// Try to open a DVS128 device on a specific USB port.
 	state->deviceHandle = dvs128DeviceOpen(state->deviceContext, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE,
-		busNumberRestrict, devAddressRestrict);
+		busNumberRestrict, devAddressRestrict, serialNumberRestrict,
+		REQUIRED_FIRMWARE_VERSION);
 	if (state->deviceHandle == NULL) {
 		libusb_exit(state->deviceContext);
 		free(handle);
@@ -115,51 +116,24 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 
 	char *fullLogString = malloc(fullLogStringLength + 1);
 	if (fullLogString == NULL) {
-		libusb_close(state->deviceHandle);
+		dvs128DeviceClose(state->deviceHandle);
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for device info string.");
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", DEVICE_NAME);
 		return (NULL);
 	}
 
 	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", DEVICE_NAME,
 		deviceID, serialNumber, busNumber, devAddress);
 
-	// Now check if the Serial Number matches.
-	if (!caerStrEquals(serialNumberRestrict, "") && !caerStrEquals(serialNumberRestrict, serialNumber)) {
-		libusb_close(state->deviceHandle);
-		libusb_exit(state->deviceContext);
-		free(handle);
-
-		caerLog(CAER_LOG_CRITICAL, fullLogString, "Device Serial Number doesn't match.");
-		free(fullLogString);
-
-		return (NULL);
-	}
-
 	// Populate info variables based on data from device.
 	handle->info.deviceID = deviceID;
 	handle->info.deviceString = fullLogString;
-	handle->info.logicVersion = 1;
+	handle->info.logicVersion = 1; // TODO: real logic revision, once that information is exposed by new logic.
 	handle->info.deviceIsMaster = true; // TODO: master/slave support.
 	handle->info.dvsSizeX = DVS_ARRAY_SIZE_X;
 	handle->info.dvsSizeY = DVS_ARRAY_SIZE_Y;
-
-	// Verify device logic version.
-	if (handle->info.logicVersion < REQUIRED_LOGIC_REVISION) {
-		libusb_close(state->deviceHandle);
-		libusb_exit(state->deviceContext);
-		free(handle);
-
-		// Logic too old, notify and quit.
-		caerLog(CAER_LOG_CRITICAL, fullLogString,
-			"Device logic revision too old. You have revision %u; but at least revision %u is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
-			handle->info.logicVersion, REQUIRED_LOGIC_REVISION);
-		free(fullLogString);
-
-		return (NULL);
-	}
 
 	caerLog(CAER_LOG_DEBUG, fullLogString, "Initialized device successfully with USB Bus=%" PRIu8 ":Addr=%" PRIu8 ".",
 		busNumber, devAddress);
@@ -415,11 +389,11 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case CAER_HOST_CONFIG_USB:
 			switch (paramAddr) {
 				case CAER_HOST_CONFIG_USB_BUFFER_NUMBER:
-					*param = atomic_load(&state->usbBufferNumber);
+					*param = U32T(atomic_load(&state->usbBufferNumber));
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
-					*param = atomic_load(&state->usbBufferSize);
+					*param = U32T(atomic_load(&state->usbBufferSize));
 					break;
 
 				default:
@@ -431,7 +405,7 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case CAER_HOST_CONFIG_DATAEXCHANGE:
 			switch (paramAddr) {
 				case CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
-					*param = atomic_load(&state->dataExchangeBufferSize);
+					*param = U32T(atomic_load(&state->dataExchangeBufferSize));
 					break;
 
 				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
@@ -447,27 +421,27 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case CAER_HOST_CONFIG_PACKETS:
 			switch (paramAddr) {
 				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
-					*param = atomic_load(&state->maxPacketContainerSize);
+					*param = U32T(atomic_load(&state->maxPacketContainerSize));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
-					*param = atomic_load(&state->maxPacketContainerInterval);
+					*param = U32T(atomic_load(&state->maxPacketContainerInterval));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
-					*param = atomic_load(&state->maxPolarityPacketSize);
+					*param = U32T(atomic_load(&state->maxPolarityPacketSize));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
-					*param = atomic_load(&state->maxPolarityPacketInterval);
+					*param = U32T(atomic_load(&state->maxPolarityPacketInterval));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
-					*param = atomic_load(&state->maxSpecialPacketSize);
+					*param = U32T(atomic_load(&state->maxSpecialPacketSize));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
-					*param = atomic_load(&state->maxSpecialPacketInterval);
+					*param = U32T(atomic_load(&state->maxSpecialPacketInterval));
 					break;
 
 				default:
@@ -588,7 +562,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
+	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
@@ -597,7 +571,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
+	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
 		(int16_t) handle->info.deviceID, 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
@@ -682,7 +656,7 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 }
 
 static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
-	uint8_t devType, uint8_t busNumber, uint8_t devAddress) {
+	uint8_t devType, uint8_t busNumber, uint8_t devAddress, const char *serialNumber, uint16_t requiredFirmwareVersion) {
 	libusb_device_handle *devHandle = NULL;
 	libusb_device **devicesList;
 
@@ -699,7 +673,8 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType) {
+				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType
+				&& (uint8_t) (devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
 					continue;
@@ -713,6 +688,29 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 					devHandle = NULL;
 
 					continue;
+				}
+
+				// Check the serial number restriction, if any is present.
+				if (serialNumber != NULL && !caerStrEquals(serialNumber, "")) {
+					char deviceSerialNumber[8 + 1] = { 0 };
+					int getStringDescResult = libusb_get_string_descriptor_ascii(devHandle, devDesc.iSerialNumber,
+						(unsigned char *) deviceSerialNumber, 8);
+
+					// Check serial number success and length.
+					if (getStringDescResult < 0 || getStringDescResult > 8) {
+						libusb_close(devHandle);
+						devHandle = NULL;
+
+						continue;
+					}
+
+					// Now check if the Serial Number matches.
+					if (!caerStrEquals(serialNumber, deviceSerialNumber)) {
+						libusb_close(devHandle);
+						devHandle = NULL;
+
+						continue;
+					}
 				}
 
 				// Check that the active configuration is set to number 1. If not, do so.
@@ -740,6 +738,8 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 
 					continue;
 				}
+
+				// TODO: check logic revision, once that information is exposed by new logic.
 
 				// Found and configured it!
 				break;
@@ -917,8 +917,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		}
 
 		if (state->currentPolarityPacket == NULL) {
-			state->currentPolarityPacket = caerPolarityEventPacketAllocate(atomic_load(&state->maxPolarityPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
+				I32T(atomic_load(&state->maxPolarityPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
@@ -926,8 +926,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		}
 
 		if (state->currentSpecialPacket == NULL) {
-			state->currentSpecialPacket = caerSpecialEventPacketAllocate(atomic_load(&state->maxSpecialPacketSize),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
+				I32T(atomic_load(&state->maxSpecialPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
@@ -1146,7 +1146,8 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
 	// Create buffers as specified in config file.
-	dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
+	dvs128AllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
+		U32T(atomic_load(&state->usbBufferSize)));
 
 	// Enable data transfer on USB end-point 6.
 	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
@@ -1183,11 +1184,12 @@ static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle) {
 
 	// Get the current value to examine by atomic exchange, since we don't
 	// want there to be any possible store between a load/store pair.
-	uint32_t configUpdate = atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0);
+	uint32_t configUpdate = U32T(atomic_exchange(&state->dataAcquisitionThreadConfigUpdate, 0));
 
 	if ((configUpdate >> 0) & 0x01) {
 		// Do buffer size change: cancel all and recreate them.
 		dvs128DeallocateTransfers(handle);
-		dvs128AllocateTransfers(handle, atomic_load(&state->usbBufferNumber), atomic_load(&state->usbBufferSize));
+		dvs128AllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
+			U32T(atomic_load(&state->usbBufferSize)));
 	}
 }
