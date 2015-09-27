@@ -280,6 +280,238 @@ caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
 	return (&handle->info);
 }
 
+bool davisSendDefaultConfig(davisHandle handle) {
+	davisState state = &handle->state;
+
+	return (true);
+}
+
+bool davisConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+	davisState state = &handle->state;
+
+	switch (modAddr) {
+		case CAER_HOST_CONFIG_USB:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_USB_BUFFER_NUMBER:
+					atomic_store(&state->usbBufferNumber, param);
+
+					// Notify data acquisition thread to change buffers.
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					break;
+
+				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
+					atomic_store(&state->usbBufferSize, param);
+
+					// Notify data acquisition thread to change buffers.
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case CAER_HOST_CONFIG_DATAEXCHANGE:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+					atomic_store(&state->dataExchangeBufferSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+					atomic_store(&state->dataExchangeBlocking, param);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case CAER_HOST_CONFIG_PACKETS:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+					atomic_store(&state->maxPacketContainerSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+					atomic_store(&state->maxPacketContainerInterval, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+					atomic_store(&state->maxPolarityPacketSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+					atomic_store(&state->maxPolarityPacketInterval, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+					atomic_store(&state->maxSpecialPacketSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+					atomic_store(&state->maxSpecialPacketInterval, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_SIZE:
+					atomic_store(&state->maxFramePacketSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_INTERVAL:
+					atomic_store(&state->maxFramePacketInterval, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_SIZE:
+					atomic_store(&state->maxIMU6PacketSize, param);
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL:
+					atomic_store(&state->maxIMU6PacketInterval, param);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_DVS:
+			switch (paramAddr) {
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_BIAS:
+			switch (paramAddr) {
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		default:
+			return (false);
+			break;
+	}
+
+	return (true);
+}
+
+bool davisConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+	davisState state = &handle->state;
+
+	switch (modAddr) {
+		case CAER_HOST_CONFIG_USB:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_USB_BUFFER_NUMBER:
+					*param = U32T(atomic_load(&state->usbBufferNumber));
+					break;
+
+				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
+					*param = U32T(atomic_load(&state->usbBufferSize));
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case CAER_HOST_CONFIG_DATAEXCHANGE:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE:
+					*param = U32T(atomic_load(&state->dataExchangeBufferSize));
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
+					*param = atomic_load(&state->dataExchangeBlocking);
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case CAER_HOST_CONFIG_PACKETS:
+			switch (paramAddr) {
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
+					*param = U32T(atomic_load(&state->maxPacketContainerSize));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
+					*param = U32T(atomic_load(&state->maxPacketContainerInterval));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
+					*param = U32T(atomic_load(&state->maxPolarityPacketSize));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
+					*param = U32T(atomic_load(&state->maxPolarityPacketInterval));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
+					*param = U32T(atomic_load(&state->maxSpecialPacketSize));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
+					*param = U32T(atomic_load(&state->maxSpecialPacketInterval));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_SIZE:
+					*param = U32T(atomic_load(&state->maxFramePacketSize));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_INTERVAL:
+					*param = U32T(atomic_load(&state->maxFramePacketInterval));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_SIZE:
+					*param = U32T(atomic_load(&state->maxIMU6PacketSize));
+					break;
+
+				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL:
+					*param = U32T(atomic_load(&state->maxIMU6PacketInterval));
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_DVS:
+			switch (paramAddr) {
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_BIAS:
+			switch (paramAddr) {
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		default:
+			return (false);
+			break;
+	}
+
+	return (true);
+}
+
 bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr),
 	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) {
 	davisHandle handle = (davisHandle) cdh;

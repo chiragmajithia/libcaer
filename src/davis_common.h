@@ -128,6 +128,10 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	uint16_t requiredLogicRevision, uint16_t requiredFirmwareVersion);
 bool davisCommonClose(davisHandle handle);
 
+bool davisSendDefaultConfig(davisHandle handle);
+bool davisConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
+bool davisConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
+
 bool davisCommonDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
 	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
 bool davisCommonDataStop(caerDeviceHandle handle);
