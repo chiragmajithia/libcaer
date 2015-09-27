@@ -1,8 +1,13 @@
 #include "davis_fx2.h"
 
+static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
+static uint16_t receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress);
+static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param);
+static uint8_t receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr);
+
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
-	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing %s.", DAVIS_FX2_DEVICE_NAME);
 
 	davisFX2Handle handle = calloc(1, sizeof(*handle));
 	if (handle == NULL) {
@@ -11,9 +16,10 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	bool openRetVal = davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME,
-		deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION,
-		REQUIRED_FIRMWARE_VERSION);
+	bool openRetVal = davisCommonOpen((davisHandle) handle, DAVIS_FX2_DEVICE_VID, DAVIS_FX2_DEVICE_PID,
+	DAVIS_FX2_DEVICE_DID_TYPE, DAVIS_FX2_DEVICE_NAME, deviceID, busNumberRestrict, devAddressRestrict,
+		serialNumberRestrict, DAVIS_FX2_REQUIRED_LOGIC_REVISION,
+		DAVIS_FX2_REQUIRED_FIRMWARE_VERSION);
 	if (!openRetVal) {
 		free(handle);
 
@@ -36,173 +42,275 @@ bool davisFX2Close(caerDeviceHandle cdh) {
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonSendDefaultConfig(handle));
 }
 
 bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonConfigSet(handle, modAddr, paramAddr, param));
 }
 
 bool davisFX2ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonConfigGet(handle, modAddr, paramAddr, param));
 }
-
-static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
-static void sendBiases(sshsNode moduleNode, davisCommonState cstate);
-static void sendChipSR(sshsNode moduleNode, davisCommonState cstate);
-static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
-static void ChipSRListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
 
 static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue) {
 	// All biases are two byte quantities.
-	uint8_t bias[2];
+	uint8_t bias[2] = { 0 };
 
 	// Put the value in.
 	bias[0] = U8T(biasValue >> 8);
 	bias[1] = U8T(biasValue >> 0);
 
 	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VR_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
 }
 
-static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
-	UNUSED_ARGUMENT(changeKey);
-	UNUSED_ARGUMENT(changeType);
-	UNUSED_ARGUMENT(changeValue);
+static uint16_t receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress) {
+	// All biases are two byte quantities.
+	uint8_t bias[2] = { 0 };
 
-	davisCommonState cstate = userData;
+	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
 
-	if (event == ATTRIBUTE_MODIFIED) {
-		// Search through all biases for a matching one and send it out.
-		for (size_t i = 0; i < BIAS_MAX_NUM_DESC; i++) {
-			if (cstate->chipBiases[i] == NULL) {
-				// Reached end of valid biases.
-				break;
-			}
+	uint16_t returnedBias = U16T(bias[1] << 0);
+	returnedBias |= U16T(bias[0] << 8);
 
-			if (str_equals(sshsNodeGetName(node), cstate->chipBiases[i]->name)) {
-				// Found it, send it.
-				sendBias(cstate->deviceHandle, cstate->chipBiases[i]->address,
-					(*cstate->chipBiases[i]->generatorFunction)(sshsNodeGetParent(node), cstate->chipBiases[i]->name));
-				break;
-			}
-		}
-	}
+	return (returnedBias);
 }
 
-static void sendBiases(sshsNode moduleNode, davisCommonState cstate) {
-	sshsNode biasNode = sshsGetRelativeNode(moduleNode, "bias/");
-
-	// Go through all the biases and send them all out.
-	for (size_t i = 0; i < BIAS_MAX_NUM_DESC; i++) {
-		if (cstate->chipBiases[i] == NULL) {
-			// Reached end of valid biases.
-			break;
-		}
-
-		sendBias(cstate->deviceHandle, cstate->chipBiases[i]->address,
-			(*cstate->chipBiases[i]->generatorFunction)(biasNode, cstate->chipBiases[i]->name));
-	}
-}
-
-static void ChipSRListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
-	UNUSED_ARGUMENT(changeValue);
-
-	caerModuleData moduleData = userData;
-	sshsNode moduleNode = moduleData->moduleNode;
-	davisCommonState cstate = &((davisFX2State) moduleData->moduleState)->cstate;
-
-	if (event == ATTRIBUTE_MODIFIED) {
-		if (str_equals(sshsNodeGetName(node), "aps")) {
-			if (changeType == BOOL && str_equals(changeKey, "GlobalShutter")) {
-				sendChipSR(moduleNode, cstate);
-			}
-		}
-		else {
-			// If not called from 'aps' node, must be 'chip' node, so we
-			// always send the chip configuration chain in that case.
-			sendChipSR(moduleNode, cstate);
-		}
-	}
-}
-
-static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
+static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param) {
 	// Only DAVIS240 can be used with the FX2 boards.
 	// This generates the full shift register content manually, as the single
 	// configuration options are not addressable like with FX3 boards.
-	sshsNode chipNode = sshsGetRelativeNode(moduleNode, "chip/");
-	sshsNode apsNode = sshsGetRelativeNode(moduleNode, "aps/");
-
 	// A total of 56 bits (7 bytes) of configuration.
 	uint8_t chipSR[7] = { 0 };
 
-	// Debug muxes control.
-	chipSR[0] |= U8T((sshsNodeGetByte(chipNode, "DigitalMux3") & 0x0F) << 4);
-	chipSR[0] |= U8T((sshsNodeGetByte(chipNode, "DigitalMux2") & 0x0F) << 0);
-	chipSR[1] |= U8T((sshsNodeGetByte(chipNode, "DigitalMux1") & 0x0F) << 4);
-	chipSR[1] |= U8T((sshsNodeGetByte(chipNode, "DigitalMux0") & 0x0F) << 0);
+	// Get the current configuration from the device.
+	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
 
-	chipSR[5] |= U8T((sshsNodeGetByte(chipNode, "AnalogMux2") & 0x0F) << 4);
-	chipSR[5] |= U8T((sshsNodeGetByte(chipNode, "AnalogMux1") & 0x0F) << 0);
-	chipSR[6] |= U8T((sshsNodeGetByte(chipNode, "AnalogMux0") & 0x0F) << 4);
-
-	chipSR[6] |= U8T((sshsNodeGetByte(chipNode, "BiasMux0") & 0x0F) << 0);
-
-	// Bytes 2-4 contain the actual 24 configuration bits. 17 are unused.
-	// GS may not exist on chips that don't have it.
-	if (sshsNodeAttrExists(apsNode, "GlobalShutter", BOOL)) {
-		bool globalShutter = sshsNodeGetBool(apsNode, "GlobalShutter");
-		if (globalShutter) {
-			// Flip bit on if enabled.
-			chipSR[4] |= (1 << 6);
+	// Now update the correct configuration value.
+	switch (paramAddr) {
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX0: {
+			uint8_t digMux0 = U8T(param & 0x0F);
+			uint8_t digMux1 = U8T(chipSR[1] & 0xF0);
+			chipSR[1] = U8T(digMux0 | digMux1);
+			break;
 		}
-	}
 
-	bool useAOut = sshsNodeGetBool(chipNode, "UseAOut");
-	if (useAOut) {
-		// Flip bit on if enabled.
-		chipSR[4] |= (1 << 5);
-	}
-
-	bool AERnArow = sshsNodeGetBool(chipNode, "AERnArow");
-	if (AERnArow) {
-		// Flip bit on if enabled.
-		chipSR[4] |= (1 << 4);
-	}
-
-	// Only DAVIS240 A/B have this, C doesn't.
-	if (sshsNodeAttrExists(chipNode, "SpecialPixelControl", BOOL)) {
-		bool specialPixelControl = sshsNodeGetBool(chipNode, "SpecialPixelControl");
-		if (specialPixelControl) {
-			// Flip bit on if enabled.
-			chipSR[4] |= (1 << 3);
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX1: {
+			uint8_t digMux0 = U8T(chipSR[1] & 0x0F);
+			uint8_t digMux1 = U8T((param << 4) & 0xF0);
+			chipSR[1] = U8T(digMux0 | digMux1);
+			break;
 		}
+
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX2: {
+			uint8_t digMux2 = U8T(param & 0x0F);
+			uint8_t digMux3 = U8T(chipSR[0] & 0xF0);
+			chipSR[0] = U8T(digMux2 | digMux3);
+			break;
+		}
+
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX3: {
+			uint8_t digMux2 = U8T(chipSR[0] & 0x0F);
+			uint8_t digMux3 = U8T((param << 4) & 0xF0);
+			chipSR[0] = U8T(digMux2 | digMux3);
+			break;
+		}
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX0: {
+			uint8_t biasMux0 = U8T(chipSR[6] & 0x0F);
+			uint8_t anaMux0 = U8T((param << 4) & 0xF0);
+			chipSR[6] = U8T(biasMux0 | anaMux0);
+			break;
+		}
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX1: {
+			uint8_t anaMux1 = U8T(param & 0x0F);
+			uint8_t anaMux2 = U8T(chipSR[5] & 0xF0);
+			chipSR[5] = U8T(anaMux1 | anaMux2);
+			break;
+		}
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX2: {
+			uint8_t anaMux1 = U8T(chipSR[5] & 0x0F);
+			uint8_t anaMux2 = U8T((param << 4) & 0xF0);
+			chipSR[5] = U8T(anaMux1 | anaMux2);
+			break;
+		}
+
+		case DAVIS240_CONFIG_CHIP_BIASMUX0: {
+			uint8_t biasMux0 = U8T(param & 0x0F);
+			uint8_t anaMux0 = U8T(chipSR[6] & 0xF0);
+			chipSR[6] = U8T(biasMux0 | anaMux0);
+			break;
+		}
+		case DAVIS240_CONFIG_CHIP_RESETCALIBNEURON:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 0);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 0));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 1);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 1));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_RESETTESTPIXEL:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 2);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 2));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 3);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 3));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_AERNAROW:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 4);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 4));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_USEAOUT:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 5);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 5));
+			}
+			break;
+
+		case DAVIS240_CONFIG_CHIP_GLOBALSHUTTER:
+			if (param) {
+				// Flip bit on if enabled.
+				chipSR[4] |= U8T(1 << 6);
+			}
+			else {
+				// Flip bit off if disabled.
+				chipSR[4] &= U8T(~(1 << 6));
+			}
+			break;
+
+		default:
+			break;
 	}
 
-	bool resetTestpixel = sshsNodeGetBool(chipNode, "ResetTestPixel");
-	if (resetTestpixel) {
-		// Flip bit on if enabled.
-		chipSR[4] |= (1 << 2);
+	// Send updated configuration back to device.
+	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+}
+
+static uint8_t receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr) {
+	// A total of 56 bits (7 bytes) of configuration.
+	uint8_t chipSR[7] = { 0 };
+
+	// Get the current configuration from the device.
+	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+
+	uint8_t param = 0;
+
+	// Parse the returned configuration bytes and return the value we're interested in.
+	switch (paramAddr) {
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX0:
+			param = U8T(chipSR[1] & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX1:
+			param = U8T((chipSR[1] >> 4) & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX2:
+			param = U8T(chipSR[0] & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_DIGITALMUX3:
+			param = U8T((chipSR[0] >> 4) & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX0:
+			param = U8T((chipSR[6] >> 4) & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX1:
+			param = U8T(chipSR[5] & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_ANALOGMUX2:
+			param = U8T((chipSR[5] >> 4) & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_BIASMUX0:
+			param = U8T(chipSR[6] & 0x0F);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_RESETCALIBNEURON:
+			param = U8T((chipSR[4] >> 0) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON:
+			param = U8T((chipSR[4] >> 1) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_RESETTESTPIXEL:
+			param = U8T((chipSR[4] >> 2) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL:
+			param = U8T((chipSR[4] >> 3) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_AERNAROW:
+			param = U8T((chipSR[4] >> 4) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_USEAOUT:
+			param = U8T((chipSR[4] >> 5) & 0x01);
+			break;
+
+		case DAVIS240_CONFIG_CHIP_GLOBALSHUTTER:
+			param = U8T((chipSR[4] >> 6) & 0x01);
+			break;
+
+		default:
+			break;
 	}
 
-	bool typeNCalib = sshsNodeGetBool(chipNode, "TypeNCalibNeuron");
-	if (typeNCalib) {
-		// Flip bit on if enabled.
-		chipSR[4] |= (1 << 1);
-	}
-
-	bool resetCalib = sshsNodeGetBool(chipNode, "ResetCalibNeuron");
-	if (resetCalib) {
-		// Flip bit on if enabled.
-		chipSR[4] |= (1 << 0);
-	}
-
-	libusb_control_transfer(cstate->deviceHandle,
-		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, VR_CHIP_DIAG, 0, 0, chipSR,
-		sizeof(chipSR), 0);
+	return (param);
 }

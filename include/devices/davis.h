@@ -470,10 +470,8 @@ typedef struct caer_davis_info *caerDavisInfo;
 caerDavisInfo caerDavisInfoGet(caerDeviceHandle handle);
 
 static inline uint16_t caerBiasGenerateVDAC(uint8_t voltageValue, uint8_t currentValue) {
-	uint16_t biasValue = 0;
-
 	// Build up bias value from all its components.
-	biasValue |= U16T((voltageValue & 0x3F) << 0);
+	uint16_t biasValue = U16T((voltageValue & 0x3F) << 0);
 	biasValue |= U16T((currentValue & 0x07) << 6);
 
 	return (biasValue);

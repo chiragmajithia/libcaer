@@ -55,7 +55,7 @@ static inline void freeAllDataMemory(dvs128State state) {
 
 caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
-	caerLog(CAER_LOG_DEBUG, __func__, "Initializing %s.", DEVICE_NAME);
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing %s.", DVS_DEVICE_NAME);
 
 	dvs128Handle handle = calloc(1, sizeof(*handle));
 	if (handle == NULL) {
@@ -91,14 +91,14 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	}
 
 	// Try to open a DVS128 device on a specific USB port.
-	state->deviceHandle = dvs128DeviceOpen(state->deviceContext, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE,
+	state->deviceHandle = dvs128DeviceOpen(state->deviceContext, DVS_DEVICE_VID, DVS_DEVICE_PID, DVS_DEVICE_DID_TYPE,
 		busNumberRestrict, devAddressRestrict, serialNumberRestrict,
-		REQUIRED_FIRMWARE_VERSION);
+		DVS_REQUIRED_FIRMWARE_VERSION);
 	if (state->deviceHandle == NULL) {
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", DEVICE_NAME);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", DVS_DEVICE_NAME);
 		return (NULL);
 	}
 
@@ -112,7 +112,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	serialNumber[8] = '\0'; // Ensure NUL termination.
 
 	size_t fullLogStringLength = (size_t) snprintf(NULL, 0, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]",
-	DEVICE_NAME, deviceID, serialNumber, busNumber, devAddress);
+	DVS_DEVICE_NAME, deviceID, serialNumber, busNumber, devAddress);
 
 	char *fullLogString = malloc(fullLogStringLength + 1);
 	if (fullLogString == NULL) {
@@ -120,11 +120,11 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		libusb_exit(state->deviceContext);
 		free(handle);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", DEVICE_NAME);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", DVS_DEVICE_NAME);
 		return (NULL);
 	}
 
-	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", DEVICE_NAME,
+	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", DVS_DEVICE_NAME,
 		deviceID, serialNumber, busNumber, devAddress);
 
 	// Populate info variables based on data from device.
@@ -554,7 +554,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	// Allocate packets.
-	state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
+	state->currentPacketContainer = caerEventPacketContainerAllocate(DVS_EVENT_TYPES);
 	if (state->currentPacketContainer == NULL) {
 		freeAllDataMemory(state);
 
@@ -795,7 +795,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 
 		// Initialize Transfer.
 		state->dataTransfers[i]->dev_handle = state->deviceHandle;
-		state->dataTransfers[i]->endpoint = DATA_ENDPOINT;
+		state->dataTransfers[i]->endpoint = DVS_DATA_ENDPOINT;
 		state->dataTransfers[i]->type = LIBUSB_TRANSFER_TYPE_BULK;
 		state->dataTransfers[i]->callback = &dvs128LibUsbCallback;
 		state->dataTransfers[i]->user_data = handle;
@@ -909,7 +909,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 	for (size_t i = 0; i < bytesSent; i += 4) {
 		// Allocate new packets for next iteration as needed.
 		if (state->currentPacketContainer == NULL) {
-			state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
+			state->currentPacketContainer = caerEventPacketContainerAllocate(DVS_EVENT_TYPES);
 			if (state->currentPacketContainer == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
 				return;

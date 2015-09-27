@@ -27,11 +27,11 @@ extern "C" {
 #include "log.h"
 
 // Common macros, useful for everyone.
-#define U8T(X)  ((uint8_t) (X))
+#define U8T(X)  ((uint8_t)  (X))
 #define U16T(X) ((uint16_t) (X))
 #define U32T(X) ((uint32_t) (X))
 #define U64T(X) ((uint64_t) (X))
-#define I8T(X)  ((int8_t) (X))
+#define I8T(X)  ((int8_t)  (X))
 #define I16T(X) ((int16_t) (X))
 #define I32T(X) ((int32_t) (X))
 #define I64T(X) ((int64_t) (X))

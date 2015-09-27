@@ -280,13 +280,13 @@ caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
 	return (&handle->info);
 }
 
-bool davisSendDefaultConfig(davisHandle handle) {
+bool davisCommonSendDefaultConfig(davisHandle handle) {
 	davisState state = &handle->state;
 
 	return (true);
 }
 
-bool davisConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
+bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 	davisState state = &handle->state;
 
 	switch (modAddr) {
@@ -402,7 +402,7 @@ bool davisConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint3
 	return (true);
 }
 
-bool davisConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
+bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 	davisState state = &handle->state;
 
 	switch (modAddr) {
@@ -530,7 +530,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	// Allocate packets.
-	state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
+	state->currentPacketContainer = caerEventPacketContainerAllocate(DAVIS_EVENT_TYPES);
 	if (state->currentPacketContainer == NULL) {
 		freeAllDataMemory(state);
 
@@ -857,7 +857,7 @@ static void davisAllocateTransfers(davisHandle handle, uint32_t bufferNum, uint3
 
 		// Initialize Transfer.
 		state->dataTransfers[i]->dev_handle = state->deviceHandle;
-		state->dataTransfers[i]->endpoint = DATA_ENDPOINT;
+		state->dataTransfers[i]->endpoint = DAVIS_DATA_ENDPOINT;
 		state->dataTransfers[i]->type = LIBUSB_TRANSFER_TYPE_BULK;
 		state->dataTransfers[i]->callback = &davisLibUsbCallback;
 		state->dataTransfers[i]->user_data = handle;
@@ -962,7 +962,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 	for (size_t i = 0; i < bytesSent; i += 2) {
 		// Allocate new packets for next iteration as needed.
 		if (state->currentPacketContainer == NULL) {
-			state->currentPacketContainer = caerEventPacketContainerAllocate(EVENT_TYPES);
+			state->currentPacketContainer = caerEventPacketContainerAllocate(DAVIS_EVENT_TYPES);
 			if (state->currentPacketContainer == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate event packet container.");
 				return;

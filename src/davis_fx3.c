@@ -7,7 +7,7 @@ static void debugTranslator(davisFX3Handle handle, uint8_t *buffer, size_t bytes
 
 caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
-	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing %s.", DAVIS_FX3_DEVICE_NAME);
 
 	davisFX3Handle handle = calloc(1, sizeof(*handle));
 	if (handle == NULL) {
@@ -16,9 +16,10 @@ caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	bool openRetVal = davisCommonOpen((davisHandle) handle, DEVICE_VID, DEVICE_PID, DEVICE_DID_TYPE, DEVICE_NAME,
-		deviceID, busNumberRestrict, devAddressRestrict, serialNumberRestrict, REQUIRED_LOGIC_REVISION,
-		REQUIRED_FIRMWARE_VERSION);
+	bool openRetVal = davisCommonOpen((davisHandle) handle, DAVIS_FX3_DEVICE_VID, DAVIS_FX3_DEVICE_PID,
+		DAVIS_FX3_DEVICE_DID_TYPE, DAVIS_FX3_DEVICE_NAME, deviceID, busNumberRestrict, devAddressRestrict,
+		serialNumberRestrict, DAVIS_FX3_REQUIRED_LOGIC_REVISION,
+		DAVIS_FX3_REQUIRED_FIRMWARE_VERSION);
 	if (!openRetVal) {
 		free(handle);
 
@@ -41,16 +42,19 @@ bool davisFX3Close(caerDeviceHandle cdh) {
 bool davisFX3SendDefaultConfig(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonSendDefaultConfig(handle));
 }
 
 bool davisFX3ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonConfigSet(handle, modAddr, paramAddr, param));
 }
 
 bool davisFX3ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 	davisHandle handle = (davisHandle) cdh;
 
+	return (davisCommonConfigGet(handle, modAddr, paramAddr, param));
 }
 
 static void allocateDebugTransfers(davisFX3Handle handle) {
@@ -170,119 +174,5 @@ static void debugTranslator(davisFX3Handle handle, uint8_t *buffer, size_t bytes
 	else {
 		// Unknown/invalid debug message, log this.
 		caerLog(CAER_LOG_WARNING, handle->h.info.deviceString, "Unknown/invalid debug message.");
-	}
-}
-
-static void sendBiases(sshsNode moduleNode, davisCommonState cstate);
-static void sendChipSR(sshsNode moduleNode, davisCommonState cstate);
-static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
-static void ChipSRListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue);
-
-static void BiasesListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
-	UNUSED_ARGUMENT(changeKey);
-	UNUSED_ARGUMENT(changeType);
-	UNUSED_ARGUMENT(changeValue);
-
-	davisCommonState cstate = userData;
-
-	if (event == ATTRIBUTE_MODIFIED) {
-		// Search through all biases for a matching one and send it out.
-		for (size_t i = 0; i < BIAS_MAX_NUM_DESC; i++) {
-			if (cstate->chipBiases[i] == NULL) {
-				// Reached end of valid biases.
-				break;
-			}
-
-			if (str_equals(sshsNodeGetName(node), cstate->chipBiases[i]->name)) {
-				// Found it, send it.
-				spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipBiases[i]->address,
-					(*cstate->chipBiases[i]->generatorFunction)(sshsNodeGetParent(node), cstate->chipBiases[i]->name));
-				break;
-			}
-		}
-	}
-}
-
-static void sendBiases(sshsNode moduleNode, davisCommonState cstate) {
-	sshsNode biasNode = sshsGetRelativeNode(moduleNode, "bias/");
-
-	// Go through all the biases and send them all out.
-	for (size_t i = 0; i < BIAS_MAX_NUM_DESC; i++) {
-		if (cstate->chipBiases[i] == NULL) {
-			// Reached end of valid biases.
-			break;
-		}
-
-		spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipBiases[i]->address,
-			(*cstate->chipBiases[i]->generatorFunction)(biasNode, cstate->chipBiases[i]->name));
-	}
-}
-
-static void ChipSRListener(sshsNode node, void *userData, enum sshs_node_attribute_events event, const char *changeKey,
-	enum sshs_node_attr_value_type changeType, union sshs_node_attr_value changeValue) {
-	davisCommonState cstate = userData;
-
-	if (event == ATTRIBUTE_MODIFIED) {
-		if (str_equals(sshsNodeGetName(node), "aps")) {
-			if (changeType == BOOL && str_equals(changeKey, "GlobalShutter")) {
-				spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, 142, changeValue.boolean);
-			}
-		}
-		else {
-			// If not called from 'aps' node, must be 'chip' node.
-			// Search through all config-chain settings for a matching one and send it out.
-			for (size_t i = 0; i < CONFIGCHAIN_MAX_NUM_DESC; i++) {
-				if (cstate->chipConfigChain[i] == NULL) {
-					// Reached end of valid config-chain settings.
-					break;
-				}
-
-				if (str_equals(changeKey, cstate->chipConfigChain[i]->name)) {
-					// Found it, send it.
-					if (cstate->chipConfigChain[i]->type == BYTE) {
-						spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipConfigChain[i]->address,
-							changeValue.ubyte);
-					}
-					else {
-						spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipConfigChain[i]->address,
-							changeValue.boolean);
-					}
-					break;
-				}
-			}
-		}
-	}
-}
-
-static void sendChipSR(sshsNode moduleNode, davisCommonState cstate) {
-	sshsNode chipNode = sshsGetRelativeNode(moduleNode, "chip/");
-	sshsNode apsNode = sshsGetRelativeNode(moduleNode, "aps/");
-
-	// Go through all the config-chain settings and send them all out.
-	for (size_t i = 0; i < CONFIGCHAIN_MAX_NUM_DESC; i++) {
-		if (cstate->chipConfigChain[i] == NULL) {
-			// Reached end of valid config-chain settings.
-			break;
-		}
-
-		// Either boolean or byte-wise config-chain settings.
-		if (cstate->chipConfigChain[i]->type == BYTE) {
-			spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipConfigChain[i]->address,
-				sshsNodeGetByte(chipNode, cstate->chipConfigChain[i]->name));
-		}
-		else {
-			spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, cstate->chipConfigChain[i]->address,
-				sshsNodeGetBool(chipNode, cstate->chipConfigChain[i]->name));
-		}
-	}
-
-	// The GlobalShutter setting is sent separately, as it resides
-	// in another configuration node (the APS one) to avoid duplication.
-	// GS may not exist on chips that don't have it.
-	if (sshsNodeAttrExists(apsNode, "GlobalShutter", BOOL)) {
-		spiConfigSend(cstate->deviceHandle, FPGA_CHIPBIAS, 142, sshsNodeGetBool(apsNode, "GlobalShutter"));
 	}
 }
