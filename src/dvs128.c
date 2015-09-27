@@ -55,7 +55,7 @@ static inline void freeAllDataMemory(dvs128State state) {
 
 caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
-	caerLog(CAER_LOG_DEBUG, __func__, "Initializing " DEVICE_NAME ".");
+	caerLog(CAER_LOG_DEBUG, __func__, "Initializing %s.", DEVICE_NAME);
 
 	dvs128Handle handle = calloc(1, sizeof(*handle));
 	if (handle == NULL) {

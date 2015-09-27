@@ -118,7 +118,7 @@ static inline void freeAllDataMemory(davisState state) {
 	free(state->currentFrameEvent.pixels);
 }
 
-bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
+bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *deviceName,
 	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
 	uint16_t requiredLogicRevision, uint16_t requiredFirmwareVersion) {
 	davisState state = &handle->state;
@@ -155,7 +155,7 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	if (state->deviceHandle == NULL) {
 		libusb_exit(state->deviceContext);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", DEVICE_NAME);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open %s device.", deviceName);
 		return (false);
 	}
 
@@ -169,18 +169,18 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	serialNumber[8] = '\0'; // Ensure NUL termination.
 
 	size_t fullLogStringLength = (size_t) snprintf(NULL, 0, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]",
-		DEVICE_NAME, deviceID, serialNumber, busNumber, devAddress);
+		deviceName, deviceID, serialNumber, busNumber, devAddress);
 
 	char *fullLogString = malloc(fullLogStringLength + 1);
 	if (fullLogString == NULL) {
 		davisDeviceClose(state->deviceHandle);
 		libusb_exit(state->deviceContext);
 
-		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", DEVICE_NAME);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to allocate memory for %s device info string.", deviceName);
 		return (false);
 	}
 
-	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", DEVICE_NAME,
+	snprintf(fullLogString, fullLogStringLength + 1, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]", deviceName,
 		deviceID, serialNumber, busNumber, devAddress);
 
 	// Populate info variables based on data from device.

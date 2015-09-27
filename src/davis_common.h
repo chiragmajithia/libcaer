@@ -123,7 +123,7 @@ struct davis_handle {
 
 typedef struct davis_handle *davisHandle;
 
-bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *DEVICE_NAME,
+bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID_TYPE, const char *deviceName,
 	uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict, const char *serialNumberRestrict,
 	uint16_t requiredLogicRevision, uint16_t requiredFirmwareVersion);
 bool davisCommonClose(davisHandle handle);

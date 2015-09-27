@@ -14,8 +14,8 @@
 #undef CACHELINE_ALONE
 
 #if !defined(CACHELINE_SIZE)
-    #define CACHELINE_SIZE 64 // Default (big enough for almost all processors).
-    // Must be power of two!
+	#define CACHELINE_SIZE 64 // Default (big enough for almost all processors).
+	// Must be power of two!
 #endif
 
 #define CACHELINE_ALIGNED alignas(CACHELINE_SIZE)
