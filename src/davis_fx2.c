@@ -36,76 +36,13 @@ bool davisFX2Close(caerDeviceHandle cdh) {
 }
 
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
-	davisHandle handle = (davisHandle) cdh;
-
 	// First send default chip/bias config.
-	// We send the chip/bias configuration separately here for FX2.
-	// FX2 has a different mechanism there, and only supports DAVIS240 chips!
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN,
-		caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN,
-		caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN,
-		caerBiasGenerateCoarseFine(4, 0, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSCASEPC,
-		caerBiasGenerateCoarseFine(5, 185, true, true, false, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFCASBNC,
-		caerBiasGenerateCoarseFine(5, 115, true, true, false, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSROSFBN,
-		caerBiasGenerateCoarseFine(6, 219, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LOCALBUFBN,
-		caerBiasGenerateCoarseFine(5, 164, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PIXINVBN,
-		caerBiasGenerateCoarseFine(5, 129, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
-		caerBiasGenerateCoarseFine(2, 58, true, false, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
-		caerBiasGenerateCoarseFine(1, 16, true, false, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_REFRBP,
-		caerBiasGenerateCoarseFine(4, 25, true, false, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPDBN,
-		caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LCOLTIMEOUTBN,
-		caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUXBP,
-		caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUYBP,
-		caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFTHRBN,
-		caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFREFRBN,
-		caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PADFOLLBN,
-		caerBiasGenerateCoarseFine(7, 215, true, true, true, true));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSOVERFLOWLEVEL,
-		caerBiasGenerateCoarseFine(6, 253, true, true, true, true));
-
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_BIASBUFFER,
-		caerBiasGenerateCoarseFine(5, 254, true, true, true, true));
-
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSP,
-		caerBiasGenerateShiftedSource(33, 20, SHIFTED_SOURCE, SPLIT_GATE));
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSN,
-		caerBiasGenerateShiftedSource(33, 21, SHIFTED_SOURCE, SPLIT_GATE));
-
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX0, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX1, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX2, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX3, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX0, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX1, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX2, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_BIASMUX0, 0);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETCALIBNEURON, true);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON, false);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETTESTPIXEL, true);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL, false);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_AERNAROW, false);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_USEAOUT, false);
-	davisFX2ConfigSet(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_GLOBALSHUTTER, handle->info.apsHasGlobalShutter);
+	if (!davisCommonSendDefaultChipConfig(cdh, &davisFX2ConfigSet)) {
+		return (false);
+	}
 
 	// Send default FPGA config.
-	if (!davisCommonSendDefaultFPGAConfig(handle)) {
+	if (!davisCommonSendDefaultFPGAConfig(cdh, &davisFX2ConfigSet)) {
 		return (false);
 	}
 

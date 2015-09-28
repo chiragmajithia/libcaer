@@ -141,8 +141,10 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	uint16_t requiredLogicRevision, uint16_t requiredFirmwareVersion);
 bool davisCommonClose(davisHandle handle);
 
-bool davisCommonSendDefaultFPGAConfig(davisHandle handle);
-bool davisCommonSendDefaultChipConfig(davisHandle handle);
+bool davisCommonSendDefaultFPGAConfig(caerDeviceHandle cdh,
+	bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param));
+bool davisCommonSendDefaultChipConfig(caerDeviceHandle cdh,
+	bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param));
 
 bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
 bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);

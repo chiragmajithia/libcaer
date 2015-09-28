@@ -298,14 +298,81 @@ caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
 	return (&handle->info);
 }
 
-bool davisCommonSendDefaultFPGAConfig(davisHandle handle) {
-	davisState state = &handle->state;
+bool davisCommonSendDefaultFPGAConfig(caerDeviceHandle cdh,
+bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param)) {
+	davisHandle handle = (davisHandle) cdh;
 
 	return (true);
 }
 
-bool davisCommonSendDefaultChipConfig(davisHandle handle) {
-	davisState state = &handle->state;
+bool davisCommonSendDefaultChipConfig(caerDeviceHandle cdh,
+bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param)) {
+	davisHandle handle = (davisHandle) cdh;
+
+	if (IS_240(handle->info.chipID)) {
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN,
+			caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN,
+			caerBiasGenerateCoarseFine(4, 0, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSCASEPC,
+			caerBiasGenerateCoarseFine(5, 185, true, true, false, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFCASBNC,
+			caerBiasGenerateCoarseFine(5, 115, true, true, false, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSROSFBN,
+			caerBiasGenerateCoarseFine(6, 219, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LOCALBUFBN,
+			caerBiasGenerateCoarseFine(5, 164, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PIXINVBN,
+			caerBiasGenerateCoarseFine(5, 129, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
+			caerBiasGenerateCoarseFine(2, 58, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
+			caerBiasGenerateCoarseFine(1, 16, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_REFRBP,
+			caerBiasGenerateCoarseFine(4, 25, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPDBN,
+			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LCOLTIMEOUTBN,
+			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUXBP,
+			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUYBP,
+			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFTHRBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFREFRBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PADFOLLBN,
+			caerBiasGenerateCoarseFine(7, 215, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSOVERFLOWLEVEL,
+			caerBiasGenerateCoarseFine(6, 253, true, true, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_BIASBUFFER,
+			caerBiasGenerateCoarseFine(5, 254, true, true, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSP,
+			caerBiasGenerateShiftedSource(33, 20, SHIFTED_SOURCE, SPLIT_GATE));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSN,
+			caerBiasGenerateShiftedSource(33, 21, SHIFTED_SOURCE, SPLIT_GATE));
+
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX0, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX1, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX2, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX3, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX0, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX1, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX2, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_BIASMUX0, 0);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETCALIBNEURON, true);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETTESTPIXEL, true);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_AERNAROW, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_USEAOUT, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_GLOBALSHUTTER, handle->info.apsHasGlobalShutter);
+	}
 
 	return (true);
 }
