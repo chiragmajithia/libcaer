@@ -46,7 +46,7 @@ RingBuffer ringBufferInit(size_t size) {
 
 	// Initialize pointers.
 	for (size_t i = 0; i < size; i++) {
-		atomic_store_explicit(&rBuf->elements[i], NULL, memory_order_relaxed);
+		atomic_store_explicit(&rBuf->elements[i], (uintptr_t) NULL, memory_order_relaxed);
 	}
 
 	atomic_thread_fence(memory_order_release);
@@ -65,12 +65,12 @@ bool ringBufferPut(RingBuffer rBuf, void *elem) {
 		exit(EXIT_FAILURE);
 	}
 
-	void *curr = atomic_load_explicit(&rBuf->elements[rBuf->putPos], memory_order_acquire);
+	void *curr = (void *) atomic_load_explicit(&rBuf->elements[rBuf->putPos], memory_order_acquire);
 
 	// If the place where we want to put the new element is NULL, it's still
 	// free and we can use it.
 	if (curr == NULL) {
-		atomic_store_explicit(&rBuf->elements[rBuf->putPos], elem, memory_order_release);
+		atomic_store_explicit(&rBuf->elements[rBuf->putPos], (uintptr_t ) elem, memory_order_release);
 
 		// Increase local put pointer.
 		rBuf->putPos = ((rBuf->putPos + 1) & (rBuf->size - 1));
@@ -83,12 +83,12 @@ bool ringBufferPut(RingBuffer rBuf, void *elem) {
 }
 
 void *ringBufferGet(RingBuffer rBuf) {
-	void *curr = atomic_load_explicit(&rBuf->elements[rBuf->getPos], memory_order_acquire);
+	void *curr = (void *) atomic_load_explicit(&rBuf->elements[rBuf->getPos], memory_order_acquire);
 
 	// If the place where we want to get an element from is not NULL, there
 	// is valid content there, which we return, and reset the place to NULL.
 	if (curr != NULL) {
-		atomic_store_explicit(&rBuf->elements[rBuf->getPos], NULL, memory_order_release);
+		atomic_store_explicit(&rBuf->elements[rBuf->getPos], (uintptr_t) NULL, memory_order_release);
 
 		// Increase local get pointer.
 		rBuf->getPos = ((rBuf->getPos + 1) & (rBuf->size - 1));
@@ -101,7 +101,7 @@ void *ringBufferGet(RingBuffer rBuf) {
 }
 
 void *ringBufferLook(RingBuffer rBuf) {
-	void *curr = atomic_load_explicit(&rBuf->elements[rBuf->getPos], memory_order_acquire);
+	void *curr = (void *) atomic_load_explicit(&rBuf->elements[rBuf->getPos], memory_order_acquire);
 
 	// If the place where we want to get an element from is not NULL, there
 	// is valid content there, which we return, without removing it from the
