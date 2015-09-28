@@ -298,7 +298,13 @@ caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
 	return (&handle->info);
 }
 
-bool davisCommonSendDefaultConfig(davisHandle handle) {
+bool davisCommonSendDefaultFPGAConfig(davisHandle handle) {
+	davisState state = &handle->state;
+
+	return (true);
+}
+
+bool davisCommonSendDefaultChipConfig(davisHandle handle) {
 	davisState state = &handle->state;
 
 	return (true);

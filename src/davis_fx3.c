@@ -42,7 +42,17 @@ bool davisFX3Close(caerDeviceHandle cdh) {
 bool davisFX3SendDefaultConfig(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
-	return (davisCommonSendDefaultConfig(handle));
+	// First send default chip/bias config.
+	if (!davisCommonSendDefaultChipConfig(handle)) {
+		return (false);
+	}
+
+	// Send default FPGA config.
+	if (!davisCommonSendDefaultFPGAConfig(handle)) {
+		return (false);
+	}
+
+	return (true);
 }
 
 bool davisFX3ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
