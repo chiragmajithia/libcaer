@@ -3053,10 +3053,6 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	// Reset configuration update, so as to not re-do work afterwards.
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
-	// Create buffers as specified in config file.
-	davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
-		U32T(atomic_load(&state->usbBufferSize)));
-
 	// Enable data transfer on USB end-point 2.
 	davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, true);
 	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, true);
@@ -3065,6 +3061,10 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, true);
 	davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, true);
 	davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, true);
+
+	// Create buffers as specified in config file.
+	davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
+		U32T(atomic_load(&state->usbBufferSize)));
 
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
@@ -3083,6 +3083,7 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
 	// Disable data transfer on USB end-point 2. Reverse order of enabling above.
+	// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
 	davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, false);
 	davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, false);
 	davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, false);

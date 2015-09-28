@@ -1082,12 +1082,12 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// Reset configuration update, so as to not re-do work afterwards.
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
+	// Enable data transfer on USB end-point 6.
+	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
+
 	// Create buffers as specified in config file.
 	dvs128AllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
 		U32T(atomic_load(&state->usbBufferSize)));
-
-	// Enable data transfer on USB end-point 6.
-	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
 
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
@@ -1106,6 +1106,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
 	// Disable data transfer on USB end-point 6.
+	// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
 	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
 
 	// Cancel all transfers and handle them.
