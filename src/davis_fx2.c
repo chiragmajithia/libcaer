@@ -1,9 +1,9 @@
 #include "davis_fx2.h"
 
-static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
-static uint16_t receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress);
-static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param);
-static uint8_t receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr);
+static bool sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue);
+static bool receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t *biasValue);
+static bool sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param);
+static bool receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t *param);
 
 caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_t devAddressRestrict,
 	const char *serialNumberRestrict) {
@@ -50,16 +50,12 @@ bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, 
 
 	if (modAddr == DAVIS_CONFIG_BIAS) {
 		// Biasing is done differently for FX2 cameras, via separate vendor request.
-		sendBias(handle->state.deviceHandle, paramAddr, U16T(param));
-
-		return (true);
+		return (sendBias(handle->state.deviceHandle, paramAddr, U16T(param)));
 	}
 
 	if (modAddr == DAVIS_CONFIG_CHIP) {
 		// Chip configuration is done differently for FX2 cameras, via separate vendor request.
-		sendChipSR(handle->state.deviceHandle, paramAddr, U8T(param));
-
-		return (true);
+		return (sendChipSR(handle->state.deviceHandle, paramAddr, U8T(param)));
 	}
 
 	return (davisCommonConfigSet(handle, modAddr, paramAddr, param));
@@ -70,22 +66,20 @@ bool davisFX2ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, 
 
 	if (modAddr == DAVIS_CONFIG_BIAS) {
 		// Biasing is done differently for FX2 cameras, via separate vendor request.
-		*param = receiveBias(handle->state.deviceHandle, paramAddr);
-
-		return (true);
+		uint16_t param16 = U16T(*param);
+		return (receiveBias(handle->state.deviceHandle, paramAddr, &param16));
 	}
 
 	if (modAddr == DAVIS_CONFIG_CHIP) {
 		// Chip configuration is done differently for FX2 cameras, via separate vendor request.
-		*param = receiveChipSR(handle->state.deviceHandle, paramAddr);
-
-		return (true);
+		uint8_t param8 = U8T(*param);
+		return (receiveChipSR(handle->state.deviceHandle, paramAddr, &param8));
 	}
 
 	return (davisCommonConfigGet(handle, modAddr, paramAddr, param));
 }
 
-static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue) {
+static bool sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t biasValue) {
 	// All biases are two byte quantities.
 	uint8_t bias[2] = { 0 };
 
@@ -93,24 +87,27 @@ static void sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint1
 	bias[0] = U8T(biasValue >> 8);
 	bias[1] = U8T(biasValue >> 0);
 
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+	return (libusb_control_transfer(devHandle,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) == LIBUSB_SUCCESS);
 }
 
-static uint16_t receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress) {
+static bool receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t *biasValue) {
 	// All biases are two byte quantities.
 	uint8_t bias[2] = { 0 };
 
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0);
+	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) != LIBUSB_SUCCESS) {
+		return (false);
+	}
 
-	uint16_t returnedBias = U16T(bias[1] << 0);
-	returnedBias |= U16T(bias[0] << 8);
+	*biasValue = U16T(bias[1] << 0);
+	*biasValue |= U16T(bias[0] << 8);
 
-	return (returnedBias);
+	return (true);
 }
 
-static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param) {
+static bool sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t param) {
 	// Only DAVIS240 can be used with the FX2 boards.
 	// This generates the full shift register content manually, as the single
 	// configuration options are not addressable like with FX3 boards.
@@ -118,8 +115,10 @@ static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8
 	uint8_t chipSR[7] = { 0 };
 
 	// Get the current configuration from the device.
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != LIBUSB_SUCCESS) {
+		return (false);
+	}
 
 	// Now update the correct configuration value.
 	switch (paramAddr) {
@@ -256,89 +255,92 @@ static void sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8
 			break;
 
 		default:
+			return (false);
 			break;
 	}
 
 	// Send updated configuration back to device.
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
+	return (libusb_control_transfer(devHandle,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) == LIBUSB_SUCCESS);
 }
 
-static uint8_t receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr) {
+static bool receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t *param) {
 	// A total of 56 bits (7 bytes) of configuration.
 	uint8_t chipSR[7] = { 0 };
 
 	// Get the current configuration from the device.
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0);
-
-	uint8_t param = 0;
+	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != LIBUSB_SUCCESS) {
+		return (false);
+	}
 
 	// Parse the returned configuration bytes and return the value we're interested in.
 	switch (paramAddr) {
 		case DAVIS240_CONFIG_CHIP_DIGITALMUX0:
-			param = U8T(chipSR[1] & 0x0F);
+			*param = U8T(chipSR[1] & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_DIGITALMUX1:
-			param = U8T((chipSR[1] >> 4) & 0x0F);
+			*param = U8T((chipSR[1] >> 4) & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_DIGITALMUX2:
-			param = U8T(chipSR[0] & 0x0F);
+			*param = U8T(chipSR[0] & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_DIGITALMUX3:
-			param = U8T((chipSR[0] >> 4) & 0x0F);
+			*param = U8T((chipSR[0] >> 4) & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_ANALOGMUX0:
-			param = U8T((chipSR[6] >> 4) & 0x0F);
+			*param = U8T((chipSR[6] >> 4) & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_ANALOGMUX1:
-			param = U8T(chipSR[5] & 0x0F);
+			*param = U8T(chipSR[5] & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_ANALOGMUX2:
-			param = U8T((chipSR[5] >> 4) & 0x0F);
+			*param = U8T((chipSR[5] >> 4) & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_BIASMUX0:
-			param = U8T(chipSR[6] & 0x0F);
+			*param = U8T(chipSR[6] & 0x0F);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_RESETCALIBNEURON:
-			param = U8T((chipSR[4] >> 0) & 0x01);
+			*param = U8T((chipSR[4] >> 0) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON:
-			param = U8T((chipSR[4] >> 1) & 0x01);
+			*param = U8T((chipSR[4] >> 1) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_RESETTESTPIXEL:
-			param = U8T((chipSR[4] >> 2) & 0x01);
+			*param = U8T((chipSR[4] >> 2) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL:
-			param = U8T((chipSR[4] >> 3) & 0x01);
+			*param = U8T((chipSR[4] >> 3) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_AERNAROW:
-			param = U8T((chipSR[4] >> 4) & 0x01);
+			*param = U8T((chipSR[4] >> 4) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_USEAOUT:
-			param = U8T((chipSR[4] >> 5) & 0x01);
+			*param = U8T((chipSR[4] >> 5) & 0x01);
 			break;
 
 		case DAVIS240_CONFIG_CHIP_GLOBALSHUTTER:
-			param = U8T((chipSR[4] >> 6) & 0x01);
+			*param = U8T((chipSR[4] >> 6) & 0x01);
 			break;
 
 		default:
+			return (false);
 			break;
 	}
 
-	return (param);
+	return (true);
 }

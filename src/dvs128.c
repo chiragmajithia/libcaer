@@ -7,7 +7,7 @@ static void dvs128AllocateTransfers(dvs128Handle handle, uint32_t bufferNum, uin
 static void dvs128DeallocateTransfers(dvs128Handle handle);
 static void LIBUSB_CALL dvs128LibUsbCallback(struct libusb_transfer *transfer);
 static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t bytesSent);
-static void dvs128SendBiases(dvs128State state);
+static bool dvs128SendBiases(dvs128State state);
 static void *dvs128DataAcquisitionThread(void *inPtr);
 static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle);
 
@@ -107,9 +107,19 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	uint8_t busNumber = libusb_get_bus_number(libusb_get_device(state->deviceHandle));
 	uint8_t devAddress = libusb_get_device_address(libusb_get_device(state->deviceHandle));
 
-	char serialNumber[8 + 1];
-	libusb_get_string_descriptor_ascii(state->deviceHandle, 3, (unsigned char *) serialNumber, 8 + 1);
-	serialNumber[8] = '\0'; // Ensure NUL termination.
+	char serialNumber[8 + 1] = { 0 };
+	int getStringDescResult = libusb_get_string_descriptor_ascii(state->deviceHandle, 3, (unsigned char *) serialNumber,
+		8);
+
+	// Check serial number success and length.
+	if (getStringDescResult < 0 || getStringDescResult > 8) {
+		dvs128DeviceClose(state->deviceHandle);
+		libusb_exit(state->deviceContext);
+		free(handle);
+
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to get serial number for %s device.", DVS_DEVICE_NAME);
+		return (NULL);
+	}
 
 	size_t fullLogStringLength = (size_t) snprintf(NULL, 0, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]",
 	DVS_DEVICE_NAME, deviceID, serialNumber, busNumber, devAddress);
@@ -186,9 +196,7 @@ bool dvs128SendDefaultConfig(caerDeviceHandle cdh) {
 	caerIntegerToByteArray(217, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
 
 	// Send biases to device.
-	dvs128SendBiases(state);
-
-	return (true);
+	return (dvs128SendBiases(state));
 }
 
 bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
@@ -269,17 +277,21 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_DVS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_DVS_RUN:
-					if (param) {
-						libusb_control_transfer(state->deviceHandle,
+					if (param && !state->dvsRunning) {
+						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
+							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							return (false);
+						}
 
 						state->dvsRunning = true;
 					}
-					else {
-						libusb_control_transfer(state->deviceHandle,
+					else if (!param && state->dvsRunning) {
+						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
+							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							return (false);
+						}
 
 						state->dvsRunning = false;
 					}
@@ -287,17 +299,21 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 
 				case DVS128_CONFIG_DVS_TIMESTAMP_RESET:
 					if (param) {
-						libusb_control_transfer(state->deviceHandle,
+						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_RESET_TS, 0, 0, NULL, 0, 0);
+							VENDOR_REQUEST_RESET_TS, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							return (false);
+						}
 					}
 					break;
 
 				case DVS128_CONFIG_DVS_ARRAY_RESET:
 					if (param) {
-						libusb_control_transfer(state->deviceHandle,
+						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_RESET_ARRAY, 0, 0, NULL, 0, 0);
+							VENDOR_REQUEST_RESET_ARRAY, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							return (false);
+						}
 					}
 					break;
 
@@ -311,62 +327,62 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 			switch (paramAddr) {
 				case DVS128_CONFIG_BIAS_CAS:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_INJGND:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_PUX:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_PUY:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_REQPD:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_REQ:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_FOLL:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_PR:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_REFR:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFF:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFON:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				case DVS128_CONFIG_BIAS_DIFFOFF:
 					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
-					dvs128SendBiases(state);
+					return (dvs128SendBiases(state));
 					break;
 
 				default:
@@ -1129,12 +1145,12 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 	}
 }
 
-static void dvs128SendBiases(dvs128State state) {
+static bool dvs128SendBiases(dvs128State state) {
 	// Biases are already stored in an array with the same format as expected by
 	// the device, we can thus send it directly.
-	libusb_control_transfer(state->deviceHandle,
+	return (libusb_control_transfer(state->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_SEND_BIASES, 0, 0, (uint8_t *) state->biases, BIAS_NUMBER * BIAS_LENGTH, 0);
+		VENDOR_REQUEST_SEND_BIASES, 0, 0, (uint8_t *) state->biases, BIAS_NUMBER * BIAS_LENGTH, 0) == LIBUSB_SUCCESS);
 }
 
 static void *dvs128DataAcquisitionThread(void *inPtr) {

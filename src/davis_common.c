@@ -164,9 +164,18 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	uint8_t busNumber = libusb_get_bus_number(libusb_get_device(state->deviceHandle));
 	uint8_t devAddress = libusb_get_device_address(libusb_get_device(state->deviceHandle));
 
-	char serialNumber[8 + 1];
-	libusb_get_string_descriptor_ascii(state->deviceHandle, 3, (unsigned char *) serialNumber, 8 + 1);
-	serialNumber[8] = '\0'; // Ensure NUL termination.
+	char serialNumber[8 + 1] = { 0 };
+	int getStringDescResult = libusb_get_string_descriptor_ascii(state->deviceHandle, 3, (unsigned char *) serialNumber,
+		8);
+
+	// Check serial number success and length.
+	if (getStringDescResult < 0 || getStringDescResult > 8) {
+		davisDeviceClose(state->deviceHandle);
+		libusb_exit(state->deviceContext);
+
+		caerLog(CAER_LOG_CRITICAL, __func__, "Unable to get serial number for %s device.", deviceName);
+		return (false);
+	}
 
 	size_t fullLogStringLength = (size_t) snprintf(NULL, 0, "%s ID-%" PRIu16 " SN-%s [%" PRIu8 ":%" PRIu8 "]",
 		deviceName, deviceID, serialNumber, busNumber, devAddress);
@@ -184,44 +193,48 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 		deviceID, serialNumber, busNumber, devAddress);
 
 	// Populate info variables based on data from device.
+	uint32_t param32 = 0;
+
 	handle->info.deviceID = deviceID;
 	handle->info.deviceString = fullLogString;
-	handle->info.logicVersion = U16T(
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION));
-	handle->info.deviceIsMaster = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO,
-	DAVIS_CONFIG_SYSINFO_DEVICE_IS_MASTER);
-	handle->info.logicClock = U16T(
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_CLOCK));
-	handle->info.adcClock = U16T(
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_ADC_CLOCK));
-	handle->info.chipID = U16T(
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_CHIP_IDENTIFIER));
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION, &param32);
+	handle->info.logicVersion = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_DEVICE_IS_MASTER, &param32);
+	handle->info.deviceIsMaster = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_CLOCK, &param32);
+	handle->info.logicClock = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_ADC_CLOCK, &param32);
+	handle->info.adcClock = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_CHIP_IDENTIFIER, &param32);
+	handle->info.chipID = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_HAS_PIXEL_FILTER, &param32);
+	handle->info.dvsHasPixelFilter = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_HAS_BACKGROUND_ACTIVITY_FILTER, &param32);
+	handle->info.dvsHasBackgroundActivityFilter = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_HAS_TEST_EVENT_GENERATOR, &param32);
+	handle->info.dvsHasTestEventGenerator = param32;
 
-	handle->info.dvsHasPixelFilter = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS,
-	DAVIS_CONFIG_DVS_HAS_PIXEL_FILTER);
-	handle->info.dvsHasBackgroundActivityFilter = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS,
-	DAVIS_CONFIG_DVS_HAS_BACKGROUND_ACTIVITY_FILTER);
-	handle->info.dvsHasTestEventGenerator = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS,
-	DAVIS_CONFIG_DVS_HAS_TEST_EVENT_GENERATOR);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_COLOR_FILTER, &param32);
+	handle->info.apsColorFilter = U8T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_HAS_GLOBAL_SHUTTER, &param32);
+	handle->info.apsHasGlobalShutter = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_HAS_QUAD_ROI, &param32);
+	handle->info.apsHasQuadROI = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_HAS_EXTERNAL_ADC, &param32);
+	handle->info.apsHasExternalADC = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_HAS_INTERNAL_ADC, &param32);
+	handle->info.apsHasInternalADC = param32;
 
-	handle->info.apsColorFilter = U8T(
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_COLOR_FILTER));
-	handle->info.apsHasGlobalShutter = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS,
-	DAVIS_CONFIG_APS_HAS_GLOBAL_SHUTTER);
-	handle->info.apsHasQuadROI = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_HAS_QUAD_ROI);
-	handle->info.apsHasExternalADC = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS,
-	DAVIS_CONFIG_APS_HAS_EXTERNAL_ADC);
-	handle->info.apsHasInternalADC = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS,
-	DAVIS_CONFIG_APS_HAS_INTERNAL_ADC);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_HAS_GENERATOR, &param32);
+	handle->info.extInputHasGenerator = param32;
 
-	handle->info.extInputHasGenerator = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT,
-	DAVIS_CONFIG_EXTINPUT_HAS_GENERATOR);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_SIZE_COLUMNS, &param32);
+	state->dvsSizeX = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_SIZE_ROWS, &param32);
+	state->dvsSizeY = U16T(param32);
 
-	state->dvsSizeX = U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_SIZE_COLUMNS));
-	state->dvsSizeY = U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_SIZE_ROWS));
-
-	state->dvsInvertXY =
-	U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ORIENTATION_INFO)) & 0x04;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ORIENTATION_INFO, &param32);
+	state->dvsInvertXY = U16T(param32) & 0x04;
 
 	if (state->dvsInvertXY) {
 		handle->info.dvsSizeX = state->dvsSizeY;
@@ -232,10 +245,13 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 		handle->info.dvsSizeY = state->dvsSizeY;
 	}
 
-	state->apsSizeX = U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_SIZE_COLUMNS));
-	state->apsSizeY = U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_SIZE_ROWS));
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_SIZE_COLUMNS, &param32);
+	state->apsSizeX = U16T(param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_SIZE_ROWS, &param32);
+	state->apsSizeY = U16T(param32);
 
-	uint16_t apsOrientationInfo = U16T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS_ORIENTATION_INFO, 2));
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_ORIENTATION_INFO, &param32);
+	uint16_t apsOrientationInfo = U16T(param32);
 	state->apsInvertXY = apsOrientationInfo & 0x04;
 	state->apsFlipX = apsOrientationInfo & 0x02;
 	state->apsFlipY = apsOrientationInfo & 0x01;
@@ -583,20 +599,26 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	// Default IMU settings (for event parsing).
-	state->imuAccelScale = calculateIMUAccelScale(
-		U8T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_ACCEL_FULL_SCALE)));
-	state->imuGyroScale = calculateIMUGyroScale(
-		U8T(spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_GYRO_FULL_SCALE)));
+	uint32_t param32 = 0;
+
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_ACCEL_FULL_SCALE, &param32);
+	state->imuAccelScale = calculateIMUAccelScale(U8T(param32));
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_GYRO_FULL_SCALE, &param32);
+	state->imuGyroScale = calculateIMUGyroScale(U8T(param32));
 
 	// Default APS settings (for event parsing).
-	state->apsWindow0SizeX =
-		U16T(
-			spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0) + 1 - spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0));
-	state->apsWindow0SizeY =
-		U16T(
-			spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0) + 1 - spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0));
-	state->apsGlobalShutter = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER);
-	state->apsResetRead = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ);
+	uint32_t param32start = 0;
+
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
+	state->apsWindow0SizeX = U16T(param32 + 1 - param32start);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
+	state->apsWindow0SizeY = U16T(param32 + 1 - param32start);
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, &param32);
+	state->apsGlobalShutter = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ, &param32);
+	state->apsResetRead = param32;
 
 	// Start data acquisition thread.
 	atomic_store(&state->dataAcquisitionThreadRun, true);
@@ -678,7 +700,7 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 	return (NULL);
 }
 
-void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param) {
+bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param) {
 	uint8_t spiConfig[4] = { 0 };
 
 	spiConfig[0] = U8T(param >> 24);
@@ -686,23 +708,26 @@ void spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t 
 	spiConfig[2] = U8T(param >> 8);
 	spiConfig[3] = U8T(param >> 0);
 
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
+	return (libusb_control_transfer(devHandle,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+		VENDOR_REQUEST_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0) == LIBUSB_SUCCESS);
 }
 
-uint32_t spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr) {
-	uint32_t returnedParam = 0;
+bool spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t *param) {
 	uint8_t spiConfig[4] = { 0 };
 
-	libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0);
+	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+	VENDOR_REQUEST_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0) != LIBUSB_SUCCESS) {
+		return (false);
+	}
 
-	returnedParam |= U32T(spiConfig[0] << 24);
-	returnedParam |= U32T(spiConfig[1] << 16);
-	returnedParam |= U32T(spiConfig[2] << 8);
-	returnedParam |= U32T(spiConfig[3] << 0);
+	*param = 0;
+	*param |= U32T(spiConfig[0] << 24);
+	*param |= U32T(spiConfig[1] << 16);
+	*param |= U32T(spiConfig[2] << 8);
+	*param |= U32T(spiConfig[3] << 0);
 
-	return (returnedParam);
+	return (true);
 }
 
 static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
@@ -791,8 +816,10 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 				}
 
 				// Communication with device open, get logic version information.
-				uint16_t logicVersion = U16T(
-					spiConfigReceive(devHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION));
+				uint32_t param32 = 0;
+
+				spiConfigReceive(devHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION, &param32);
+				uint16_t logicVersion = U16T(param32);
 
 				// Verify device logic version.
 				if (logicVersion < requiredLogicRevision) {
@@ -1862,7 +1889,9 @@ static void davisDataAcquisitionThreadConfig(davisHandle handle) {
 	if ((configUpdate >> 1) & 0x01) {
 		// Get new Master/Slave information from device. Done here to prevent deadlock
 		// inside asynchronous callback.
-		handle->info.deviceIsMaster = spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO,
-		DAVIS_CONFIG_SYSINFO_DEVICE_IS_MASTER);
+		uint32_t param32 = 0;
+
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_DEVICE_IS_MASTER, &param32);
+		handle->info.deviceIsMaster = param32;
 	}
 }
