@@ -26,6 +26,19 @@
 
 #define VENDOR_REQUEST_FPGA_CONFIG 0xBF
 
+#define IS_128(chipID)  ((chipID) == DAVIS_CHIP_DAVIS128)
+#define IS_208(chipID)  ((chipID) == DAVIS_CHIP_DAVIS208)
+#define IS_240A(chipID) ((chipID) == DAVIS_CHIP_DAVIS240A)
+#define IS_240B(chipID) ((chipID) == DAVIS_CHIP_DAVIS240B)
+#define IS_240C(chipID) ((chipID) == DAVIS_CHIP_DAVIS240C)
+#define IS_240(chipID)  (IS_240A(chipID) || IS_240B(chipID) || IS_240C(chipID))
+#define IS_346A(chipID) ((chipID) == DAVIS_CHIP_DAVIS346A)
+#define IS_346B(chipID) ((chipID) == DAVIS_CHIP_DAVIS346B)
+#define IS_346C(chipID) ((chipID) == DAVIS_CHIP_DAVIS346C)
+#define IS_346(chipID)  (IS_346A(chipID) || IS_346B(chipID) || IS_346C(chipID))
+#define IS_640(chipID)  ((chipID) == DAVIS_CHIP_DAVIS640)
+#define IS_RGB(chipID)  ((chipID) == DAVIS_CHIP_DAVISRGB)
+
 struct davis_state {
 	// Data Acquisition Thread -> Mainloop Exchange
 	RingBuffer dataExchangeBuffer;

@@ -46,7 +46,7 @@ bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_DELAY_ROW, 14)) {
 		return (false);
 	}
-	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 1)) {
+	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 4)) {
 		return (false);
 	}
 
