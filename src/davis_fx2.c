@@ -28,10 +28,6 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		return (NULL);
 	}
 
-	// FX2 specific configuration.
-	davisFX2ConfigSet((caerDeviceHandle) handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_DELAY_ROW, 14);
-	davisFX2ConfigSet((caerDeviceHandle) handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 1);
-
 	return ((caerDeviceHandle) handle);
 }
 
@@ -42,7 +38,19 @@ bool davisFX2Close(caerDeviceHandle cdh) {
 bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
-	return (davisCommonSendDefaultConfig(handle));
+	if (!davisCommonSendDefaultConfig(handle)) {
+		return (false);
+	}
+
+	// FX2 specific configuration.
+	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_DELAY_ROW, 14)) {
+		return (false);
+	}
+	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 1)) {
+		return (false);
+	}
+
+	return (true);
 }
 
 bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
