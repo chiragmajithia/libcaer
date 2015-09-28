@@ -266,7 +266,7 @@ static bool sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8
 			}
 			break;
 
-		case DAVIS240_CONFIG_CHIP_GLOBALSHUTTER:
+		case DAVIS240_CONFIG_CHIP_GLOBAL_SHUTTER:
 			if (param) {
 				// Flip bit on if enabled.
 				chipSR[4] |= U8T(1 << 6);
@@ -356,7 +356,7 @@ static bool receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, ui
 			*param = U8T((chipSR[4] >> 5) & 0x01);
 			break;
 
-		case DAVIS240_CONFIG_CHIP_GLOBALSHUTTER:
+		case DAVIS240_CONFIG_CHIP_GLOBAL_SHUTTER:
 			*param = U8T((chipSR[4] >> 6) & 0x01);
 			break;
 
