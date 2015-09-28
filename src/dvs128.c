@@ -326,62 +326,18 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_BIAS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_BIAS_CAS:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_INJGND:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_PUX:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_PUY:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_REQPD:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_REQ:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_FOLL:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_PR:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_REFR:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFF:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFFON:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
-					return (dvs128SendBiases(state));
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFFOFF:
-					caerIntegerToByteArray(param, state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					caerIntegerToByteArray(param, state->biases[paramAddr], BIAS_LENGTH);
 					return (dvs128SendBiases(state));
 					break;
 
@@ -475,10 +431,6 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					break;
 
 				case DVS128_CONFIG_DVS_TIMESTAMP_RESET:
-					// Always false because it's an impulse, it resets itself automatically
-					*param = false;
-					break;
-
 				case DVS128_CONFIG_DVS_ARRAY_RESET:
 					// Always false because it's an impulse, it resets itself automatically.
 					*param = false;
@@ -493,51 +445,18 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_BIAS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_BIAS_CAS:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_INJGND:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_PUX:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUX], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_PUY:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PUY], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_REQPD:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_REQ:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REQ], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_FOLL:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_FOLL], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_PR:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_PR], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_REFR:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_REFR], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFF:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFF], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFFON:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFON], BIAS_LENGTH);
-					break;
-
 				case DVS128_CONFIG_BIAS_DIFFOFF:
-					*param = caerByteArrayToInteger(state->biases[DVS128_CONFIG_BIAS_DIFFOFF], BIAS_LENGTH);
+					*param = caerByteArrayToInteger(state->biases[paramAddr], BIAS_LENGTH);
 					break;
 
 				default:

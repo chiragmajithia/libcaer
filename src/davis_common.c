@@ -1,5 +1,7 @@
 #include "davis_common.h"
 
+static bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
+static bool spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t *param);
 static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_t devVID, uint16_t devPID,
 	uint8_t devType, uint8_t busNumber, uint8_t devAddress, const char *serialNumber, uint16_t requiredLogicRevision,
 	uint16_t requiredFirmwareVersion);
@@ -392,7 +394,220 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 			}
 			break;
 
+		case DAVIS_CONFIG_MUX:
+			switch (paramAddr) {
+				case DAVIS_CONFIG_MUX_RUN:
+				case DAVIS_CONFIG_MUX_TIMESTAMP_RUN:
+				case DAVIS_CONFIG_MUX_TIMESTAMP_RESET:
+				case DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE:
+				case DAVIS_CONFIG_MUX_DROP_DVS_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_MUX_DROP_APS_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_MUX_DROP_IMU_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_MUX_DROP_EXTINPUT_ON_TRANSFER_STALL:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_MUX, paramAddr, param));
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
 		case DAVIS_CONFIG_DVS:
+			switch (paramAddr) {
+				case DAVIS_CONFIG_DVS_RUN:
+				case DAVIS_CONFIG_DVS_ACK_DELAY_ROW:
+				case DAVIS_CONFIG_DVS_ACK_DELAY_COLUMN:
+				case DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW:
+				case DAVIS_CONFIG_DVS_ACK_EXTENSION_COLUMN:
+				case DAVIS_CONFIG_DVS_WAIT_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_DVS_FILTER_ROW_ONLY_EVENTS:
+				case DAVIS_CONFIG_DVS_EXTERNAL_AER_CONTROL:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+					break;
+
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_ROW:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_COLUMN:
+					if (handle->info.dvsHasPixelFilter) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_DVS_FILTER_BACKGROUND_ACTIVITY:
+				case DAVIS_CONFIG_DVS_FILTER_BACKGROUND_ACTIVITY_DELTAT:
+					if (handle->info.dvsHasBackgroundActivityFilter) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_DVS_TEST_EVENT_GENERATOR_ENABLE:
+					if (handle->info.dvsHasTestEventGenerator) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_APS:
+			switch (paramAddr) {
+				case DAVIS_CONFIG_APS_RUN:
+				case DAVIS_CONFIG_APS_RESET_READ:
+				case DAVIS_CONFIG_APS_WAIT_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_APS_START_COLUMN_0:
+				case DAVIS_CONFIG_APS_START_ROW_0:
+				case DAVIS_CONFIG_APS_END_COLUMN_0:
+				case DAVIS_CONFIG_APS_END_ROW_0:
+				case DAVIS_CONFIG_APS_EXPOSURE:
+				case DAVIS_CONFIG_APS_FRAME_DELAY:
+				case DAVIS_CONFIG_APS_RESET_SETTLE:
+				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
+				case DAVIS_CONFIG_APS_ROW_SETTLE:
+				case DAVIS_CONFIG_APS_NULL_SETTLE:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					break;
+
+				case DAVIS_CONFIG_APS_GLOBAL_SHUTTER:
+					if (handle->info.apsHasGlobalShutter) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_APS_START_COLUMN_1:
+				case DAVIS_CONFIG_APS_START_ROW_1:
+				case DAVIS_CONFIG_APS_END_COLUMN_1:
+				case DAVIS_CONFIG_APS_END_ROW_1:
+				case DAVIS_CONFIG_APS_START_COLUMN_2:
+				case DAVIS_CONFIG_APS_START_ROW_2:
+				case DAVIS_CONFIG_APS_END_COLUMN_2:
+				case DAVIS_CONFIG_APS_END_ROW_2:
+				case DAVIS_CONFIG_APS_START_COLUMN_3:
+				case DAVIS_CONFIG_APS_START_ROW_3:
+				case DAVIS_CONFIG_APS_END_COLUMN_3:
+				case DAVIS_CONFIG_APS_END_ROW_3:
+					if (handle->info.apsHasQuadROI) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_APS_USE_INTERNAL_ADC:
+				case DAVIS_CONFIG_APS_SAMPLE_ENABLE:
+				case DAVIS_CONFIG_APS_SAMPLE_SETTLE:
+				case DAVIS_CONFIG_APS_RAMP_RESET:
+				case DAVIS_CONFIG_APS_RAMP_SHORT_RESET:
+					if (handle->info.apsHasInternalADC) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVISRGB_CONFIG_APS_TRANSFER:
+				case DAVISRGB_CONFIG_APS_RSFDSETTLE:
+				case DAVISRGB_CONFIG_APS_GSPDRESET:
+				case DAVISRGB_CONFIG_APS_GSRESETFALL:
+				case DAVISRGB_CONFIG_APS_GSTXFALL:
+				case DAVISRGB_CONFIG_APS_GSFDRESET:
+					// Support for DAVISRGB extra timing parameters.
+					if (handle->info.chipID == DAVIS_CHIP_DAVISRGB) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_IMU:
+			switch (paramAddr) {
+				case DAVIS_CONFIG_IMU_RUN:
+				case DAVIS_CONFIG_IMU_TEMP_STANDBY:
+				case DAVIS_CONFIG_IMU_ACCEL_STANDBY:
+				case DAVIS_CONFIG_IMU_GYRO_STANDBY:
+				case DAVIS_CONFIG_IMU_LP_CYCLE:
+				case DAVIS_CONFIG_IMU_LP_WAKEUP:
+				case DAVIS_CONFIG_IMU_SAMPLE_RATE_DIVIDER:
+				case DAVIS_CONFIG_IMU_DIGITAL_LOW_PASS_FILTER:
+				case DAVIS_CONFIG_IMU_ACCEL_FULL_SCALE:
+				case DAVIS_CONFIG_IMU_GYRO_FULL_SCALE:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_IMU, paramAddr, param));
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_EXTINPUT:
+			switch (paramAddr) {
+				case DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSES:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
+					break;
+
+				case DAVIS_CONFIG_EXTINPUT_RUN_GENERATOR:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_USE_CUSTOM_SIGNAL:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_POLARITY:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH:
+					if (handle->info.extInputHasGenerator) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				default:
+					return (false);
+					break;
+			}
+			break;
+
+		case DAVIS_CONFIG_BIAS: // Also DAVIS_CONFIG_CHIP.
 			switch (paramAddr) {
 
 				default:
@@ -401,8 +616,17 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 			}
 			break;
 
-		case DAVIS_CONFIG_BIAS:
+		case DAVIS_CONFIG_SYSINFO:
+			// No SystemInfo parameters can ever be set!
+			return (false);
+			break;
+
+		case DAVIS_CONFIG_USB:
 			switch (paramAddr) {
+				case DAVIS_CONFIG_USB_RUN:
+				case DAVIS_CONFIG_USB_EARLY_PACKET_DELAY:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_USB, paramAddr, param));
+					break;
 
 				default:
 					return (false);
@@ -700,7 +924,7 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 	return (NULL);
 }
 
-bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param) {
+static bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param) {
 	uint8_t spiConfig[4] = { 0 };
 
 	spiConfig[0] = U8T(param >> 24);
@@ -713,7 +937,7 @@ bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t 
 		VENDOR_REQUEST_FPGA_CONFIG, moduleAddr, paramAddr, spiConfig, sizeof(spiConfig), 0) == LIBUSB_SUCCESS);
 }
 
-bool spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t *param) {
+static bool spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t *param) {
 	uint8_t spiConfig[4] = { 0 };
 
 	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,

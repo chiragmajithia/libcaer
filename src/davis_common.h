@@ -137,7 +137,4 @@ bool davisCommonDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(vo
 bool davisCommonDataStop(caerDeviceHandle handle);
 caerEventPacketContainer davisCommonDataGet(caerDeviceHandle handle);
 
-bool spiConfigSend(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t param);
-bool spiConfigReceive(libusb_device_handle *devHandle, uint8_t moduleAddr, uint8_t paramAddr, uint32_t *param);
-
 #endif /* LIBCAER_SRC_DAVIS_COMMON_H_ */
