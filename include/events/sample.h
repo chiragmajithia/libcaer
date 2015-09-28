@@ -49,7 +49,7 @@ static inline caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventC
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SAMPLE_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_sample_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -77,7 +77,7 @@ static inline int32_t caerSampleEventGetTimestamp(caerSampleEvent event) {
 }
 
 static inline int64_t caerSampleEventGetTimestamp64(caerSampleEvent event, caerSampleEventPacket packet) {
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerSampleEventGetTimestamp(event))));
 }
 

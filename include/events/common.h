@@ -210,11 +210,11 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, in
 }
 
 static inline int32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
-	return (le32toh(*((int32_t *) (((uint8_t *) eventPtr) + caerEventPacketHeaderGetEventTSOffset(headerPtr)))));
+	return (le32toh(*((int32_t *) (((uint8_t *) eventPtr) + U64T(caerEventPacketHeaderGetEventTSOffset(headerPtr))))));
 }
 
 static inline int64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr))));
 }
 

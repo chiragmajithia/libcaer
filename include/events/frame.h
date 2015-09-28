@@ -56,7 +56,7 @@ static inline caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCap
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, FRAME_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_frame_event, ts_startexposure));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -107,7 +107,7 @@ static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerFrameEventGetTSStartOfFrame(event))));
 }
 
@@ -131,7 +131,7 @@ static inline int32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerFrameEventGetTSEndOfFrame(event))));
 }
 
@@ -155,7 +155,7 @@ static inline int32_t caerFrameEventGetTSStartOfExposure(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerFrameEventGetTSStartOfExposure(event))));
 }
 
@@ -179,7 +179,7 @@ static inline int32_t caerFrameEventGetTSEndOfExposure(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerFrameEventGetTSEndOfExposure(event))));
 }
 

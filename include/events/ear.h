@@ -52,7 +52,7 @@ static inline caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacit
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, EAR_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_ear_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -80,7 +80,7 @@ static inline int32_t caerEarEventGetTimestamp(caerEarEvent event) {
 }
 
 static inline int64_t caerEarEventGetTimestamp64(caerEarEvent event, caerEarEventPacket packet) {
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerEarEventGetTimestamp(event))));
 }
 

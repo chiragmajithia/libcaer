@@ -53,7 +53,7 @@ static inline caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapac
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU9_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu9_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -81,7 +81,7 @@ static inline int32_t caerIMU9EventGetTimestamp(caerIMU9Event event) {
 }
 
 static inline int64_t caerIMU9EventGetTimestamp64(caerIMU9Event event, caerIMU9EventPacket packet) {
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerIMU9EventGetTimestamp(event))));
 }
 
@@ -99,12 +99,12 @@ static inline void caerIMU9EventSetTimestamp(caerIMU9Event event, int32_t timest
 }
 
 static inline bool caerIMU9EventIsValid(caerIMU9Event event) {
-	return ((le16toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
 
 static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (!caerIMU9EventIsValid(event)) {
-		event->info |= htole16(U16T(1) << VALID_MARK_SHIFT);
+		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -122,7 +122,7 @@ static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacke
 
 static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (caerIMU9EventIsValid(event)) {
-		event->info &= htole16((uint16_t) (~(U16T(1) << VALID_MARK_SHIFT)));
+		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!

@@ -58,7 +58,7 @@ static inline caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t even
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SPECIAL_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, (int16_t) eventSize);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_special_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -86,7 +86,7 @@ static inline int32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
 }
 
 static inline int64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, caerSpecialEventPacket packet) {
-	return ((int64_t) ((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
+	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
 		| U64T(caerSpecialEventGetTimestamp(event))));
 }
 
