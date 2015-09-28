@@ -48,11 +48,39 @@ bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 	davisHandle handle = (davisHandle) cdh;
 
+	if (modAddr == DAVIS_CONFIG_BIAS) {
+		// Biasing is done differently for FX2 cameras, via separate vendor request.
+		sendBias(handle->state.deviceHandle, paramAddr, U16T(param));
+
+		return (true);
+	}
+
+	if (modAddr == DAVIS_CONFIG_CHIP) {
+		// Chip configuration is done differently for FX2 cameras, via separate vendor request.
+		sendChipSR(handle->state.deviceHandle, paramAddr, U8T(param));
+
+		return (true);
+	}
+
 	return (davisCommonConfigSet(handle, modAddr, paramAddr, param));
 }
 
 bool davisFX2ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t *param) {
 	davisHandle handle = (davisHandle) cdh;
+
+	if (modAddr == DAVIS_CONFIG_BIAS) {
+		// Biasing is done differently for FX2 cameras, via separate vendor request.
+		*param = receiveBias(handle->state.deviceHandle, paramAddr);
+
+		return (true);
+	}
+
+	if (modAddr == DAVIS_CONFIG_CHIP) {
+		// Chip configuration is done differently for FX2 cameras, via separate vendor request.
+		*param = receiveChipSR(handle->state.deviceHandle, paramAddr);
+
+		return (true);
+	}
 
 	return (davisCommonConfigGet(handle, modAddr, paramAddr, param));
 }

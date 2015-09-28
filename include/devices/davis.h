@@ -34,6 +34,7 @@
 #define DAVIS_CONFIG_IMU      3
 #define DAVIS_CONFIG_EXTINPUT 4
 #define DAVIS_CONFIG_BIAS     5
+#define DAVIS_CONFIG_CHIP     5
 #define DAVIS_CONFIG_SYSINFO  6
 #define DAVIS_CONFIG_USB      9
 

@@ -539,7 +539,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -548,7 +548,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -557,7 +557,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	state->currentFramePacket = caerFrameEventPacketAllocate(I32T(atomic_load(&state->maxFramePacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentFramePacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -566,7 +566,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	state->currentIMU6Packet = caerIMU6EventPacketAllocate(I32T(atomic_load(&state->maxIMU6PacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentIMU6Packet == NULL) {
 		freeAllDataMemory(state);
 
@@ -724,8 +724,8 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType
-				&& (uint8_t) (devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
+				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType
+				&& U8T(devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
 					continue;
@@ -971,7 +971,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		if (state->currentPolarityPacket == NULL) {
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
-				I32T(atomic_load(&state->maxPolarityPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
+				I32T(atomic_load(&state->maxPolarityPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
@@ -980,7 +980,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		if (state->currentSpecialPacket == NULL) {
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
-				I32T(atomic_load(&state->maxSpecialPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
+				I32T(atomic_load(&state->maxSpecialPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
@@ -989,7 +989,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		if (state->currentFramePacket == NULL) {
 			state->currentFramePacket = caerFrameEventPacketAllocate(I32T(atomic_load(&state->maxFramePacketSize)),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentFramePacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate frame event packet.");
 				return;
@@ -998,7 +998,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		if (state->currentIMU6Packet == NULL) {
 			state->currentIMU6Packet = caerIMU6EventPacketAllocate(I32T(atomic_load(&state->maxIMU6PacketSize)),
-				(int16_t) handle->info.deviceID, state->wrapOverflow);
+				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentIMU6Packet == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate IMU6 event packet.");
 				return;
@@ -1026,7 +1026,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				state->currentSpecialPacketPosition);
 
 			// Look at the code, to determine event and data type.
-			uint8_t code = (uint8_t) ((event & 0x7000) >> 12);
+			uint8_t code = U8T((event & 0x7000) >> 12);
 			uint16_t data = (event & 0x0FFF);
 
 			switch (code) {
@@ -1394,7 +1394,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					// Invert polarity for PixelParade high gain pixels (DavisSense), because of
 					// negative gain from pre-amplifier.
 					uint8_t polarity =
-						((handle->info.chipID == DAVIS_CHIP_DAVIS208) && (data < 192)) ? ((uint8_t) ~code) : (code);
+						((handle->info.chipID == DAVIS_CHIP_DAVIS208) && (data < 192)) ? U8T(~code) : (code);
 
 					caerPolarityEventSetTimestamp(currentPolarityEvent, state->dvsTimestamp);
 					caerPolarityEventSetPolarity(currentPolarityEvent, (polarity & 0x01));
@@ -1502,7 +1502,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							}
 						}
 						else { // Decreasing
-							state->apsRGBPixelOffset = (int16_t) (state->apsRGBPixelOffset - 3);
+							state->apsRGBPixelOffset = I16T(state->apsRGBPixelOffset - 3);
 						}
 					}
 
@@ -1547,19 +1547,19 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									break;
 
 								case 2: {
-									int16_t accelX = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t accelX = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelX(&state->currentIMU6Event, accelX / state->imuAccelScale);
 									break;
 								}
 
 								case 4: {
-									int16_t accelY = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t accelY = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelY(&state->currentIMU6Event, accelY / state->imuAccelScale);
 									break;
 								}
 
 								case 6: {
-									int16_t accelZ = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t accelZ = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetAccelZ(&state->currentIMU6Event, accelZ / state->imuAccelScale);
 									break;
 								}
@@ -1567,25 +1567,25 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									// Temperature is signed. Formula for converting to °C:
 									// (SIGNED_VAL / 340) + 36.53
 								case 8: {
-									int16_t temp = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t temp = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetTemp(&state->currentIMU6Event, (temp / 340.0f) + 36.53f);
 									break;
 								}
 
 								case 10: {
-									int16_t gyroX = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroX = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroX(&state->currentIMU6Event, gyroX / state->imuGyroScale);
 									break;
 								}
 
 								case 12: {
-									int16_t gyroY = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroY = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroY(&state->currentIMU6Event, gyroY / state->imuGyroScale);
 									break;
 								}
 
 								case 14: {
-									int16_t gyroZ = (int16_t) ((state->imuTmpData << 8) | misc8Data);
+									int16_t gyroZ = I16T((state->imuTmpData << 8) | misc8Data);
 									caerIMU6EventSetGyroZ(&state->currentIMU6Event, gyroZ / state->imuGyroScale);
 									break;
 								}

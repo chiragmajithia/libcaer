@@ -273,12 +273,14 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 						libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
+
 						state->dvsRunning = true;
 					}
 					else {
 						libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
+
 						state->dvsRunning = false;
 					}
 					break;
@@ -563,7 +565,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -572,7 +574,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
-		(int16_t) handle->info.deviceID, 0);
+		I16T(handle->info.deviceID), 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -673,8 +675,8 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& (uint8_t) ((devDesc.bcdDevice & 0xFF00) >> 8) == devType
-				&& (uint8_t) (devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
+				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType
+				&& U8T(devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
 					continue;
@@ -918,7 +920,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		if (state->currentPolarityPacket == NULL) {
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
-				I32T(atomic_load(&state->maxPolarityPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
+				I32T(atomic_load(&state->maxPolarityPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
@@ -927,7 +929,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		if (state->currentSpecialPacket == NULL) {
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
-				I32T(atomic_load(&state->maxSpecialPacketSize)), (int16_t) handle->info.deviceID, state->wrapOverflow);
+				I32T(atomic_load(&state->maxSpecialPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
@@ -1013,9 +1015,9 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			}
 			else {
 				// Invert x values (flip along the x axis).
-				uint16_t x = (uint16_t) ((DVS_ARRAY_SIZE_X - 1)
-					- ((uint16_t) ((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK)));
-				uint16_t y = (uint16_t) ((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK);
+				uint16_t x = U16T(
+					(DVS_ARRAY_SIZE_X - 1) - U16T((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK));
+				uint16_t y = U16T((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK);
 				bool polarity = (((addressUSB >> DVS128_POLARITY_SHIFT) & DVS128_POLARITY_MASK) == 0) ? (1) : (0);
 
 				// Check range conformity.
