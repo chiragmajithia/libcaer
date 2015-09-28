@@ -309,6 +309,7 @@ bool davisCommonSendDefaultChipConfig(caerDeviceHandle cdh,
 bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param)) {
 	davisHandle handle = (davisHandle) cdh;
 
+	// Default bias configuration.
 	if (IS_240(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN,
 			caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
@@ -357,21 +358,193 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSN,
 			caerBiasGenerateShiftedSource(33, 21, SHIFTED_SOURCE, SPLIT_GATE));
 
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX0, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX1, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX2, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_DIGITALMUX3, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX0, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX1, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_ANALOGMUX2, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_BIASMUX0, 0);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETCALIBNEURON, true);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_TYPENCALIBNEURON, false);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_RESETTESTPIXEL, true);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL, false);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_AERNAROW, false);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_USEAOUT, false);
-		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_GLOBALSHUTTER, handle->info.apsHasGlobalShutter);
+	}
+
+	if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID)
+	|| IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL, caerBiasGenerateVDAC(27, 6));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSCAS, caerBiasGenerateVDAC(21, 6));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFHIGH, caerBiasGenerateVDAC(30, 7));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFLOW, caerBiasGenerateVDAC(1, 7));
+
+		if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+			// Only DAVIS346 and 640 have ADC testing.
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE, caerBiasGenerateVDAC(21, 7));
+		}
+
+		if (IS_208(handle->info.chipID)) {
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_RESETHIGHPASS, caerBiasGenerateVDAC(63, 7));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSS, caerBiasGenerateVDAC(11, 5));
+
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REGBIASBP,
+				caerBiasGenerateCoarseFine(5, 20, true, false, true, true));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSSBN,
+				caerBiasGenerateCoarseFine(5, 20, true, true, true, true));
+		}
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_LOCALBUFBN,
+			caerBiasGenerateCoarseFine(5, 164, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PADFOLLBN,
+			caerBiasGenerateCoarseFine(7, 215, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_DIFFBN,
+			caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ONBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_OFFBN,
+			caerBiasGenerateCoarseFine(4, 1, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PIXINVBN,
+			caerBiasGenerateCoarseFine(5, 129, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRBP,
+			caerBiasGenerateCoarseFine(2, 58, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRSFBP,
+			caerBiasGenerateCoarseFine(1, 16, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_REFRBP,
+			caerBiasGenerateCoarseFine(4, 25, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_READOUTBUFBP,
+			caerBiasGenerateCoarseFine(6, 20, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSROSFBN,
+			caerBiasGenerateCoarseFine(6, 219, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCCOMPBP,
+			caerBiasGenerateCoarseFine(5, 20, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_COLSELLOWBN,
+			caerBiasGenerateCoarseFine(0, 1, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_DACBUFBP,
+			caerBiasGenerateCoarseFine(6, 60, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_LCOLTIMEOUTBN,
+			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPDBN,
+			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPUXBP,
+			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPUYBP,
+			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_IFREFRBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_IFTHRBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_BIASBUFFER,
+			caerBiasGenerateCoarseFine(5, 254, true, true, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_SSP,
+			caerBiasGenerateShiftedSource(1, 33, SHIFTED_SOURCE, SPLIT_GATE));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_SSN,
+			caerBiasGenerateShiftedSource(1, 33, SHIFTED_SOURCE, SPLIT_GATE));
+
+		if (IS_640(handle->info.chipID)) {
+			// Slow down pixels for big 640x480 array, to avoid overwhelming the AER bus.
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS640_CONFIG_BIAS_PRBP,
+				caerBiasGenerateCoarseFine(2, 3, true, false, true, true));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS640_CONFIG_BIAS_PRSFBP,
+				caerBiasGenerateCoarseFine(1, 1, true, false, true, true));
+		}
+	}
+
+	if (IS_RGB(handle->info.chipID)) {
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSCAS, caerBiasGenerateVDAC(21, 4));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG1LO, caerBiasGenerateVDAC(21, 4));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG2LO, caerBiasGenerateVDAC(0, 0));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_TX2OVG2HI, caerBiasGenerateVDAC(63, 0));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_GND07, caerBiasGenerateVDAC(13, 4));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCTESTVOLTAGE, caerBiasGenerateVDAC(21, 0));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFHIGH, caerBiasGenerateVDAC(63, 7));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFLOW, caerBiasGenerateVDAC(0, 7));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_IFREFRBN,
+			caerBiasGenerateCoarseFine(5, 255, false, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_IFTHRBN,
+			caerBiasGenerateCoarseFine(5, 255, false, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_LOCALBUFBN,
+			caerBiasGenerateCoarseFine(5, 164, false, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PADFOLLBN,
+			caerBiasGenerateCoarseFine(7, 209, false, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PIXINVBN,
+			caerBiasGenerateCoarseFine(4, 164, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_DIFFBN,
+			caerBiasGenerateCoarseFine(4, 54, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ONBN,
+			caerBiasGenerateCoarseFine(6, 63, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OFFBN,
+			caerBiasGenerateCoarseFine(2, 138, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PRBP,
+			caerBiasGenerateCoarseFine(1, 108, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PRSFBP,
+			caerBiasGenerateCoarseFine(1, 108, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_REFRBP,
+			caerBiasGenerateCoarseFine(4, 28, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ARRAYBIASBUFFERBN,
+			caerBiasGenerateCoarseFine(6, 128, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ARRAYLOGICBUFFERBN,
+			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_FALLTIMEBN,
+			caerBiasGenerateCoarseFine(7, 41, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_RISETIMEBP,
+			caerBiasGenerateCoarseFine(6, 162, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_READOUTBUFBP,
+			caerBiasGenerateCoarseFine(6, 20, false, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSROSFBN,
+			caerBiasGenerateCoarseFine(6, 255, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCCOMPBP,
+			caerBiasGenerateCoarseFine(4, 159, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_DACBUFBP,
+			caerBiasGenerateCoarseFine(6, 194, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_LCOLTIMEOUTBN,
+			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPDBN,
+			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPUXBP,
+			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPUYBP,
+			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_BIASBUFFER,
+			caerBiasGenerateCoarseFine(6, 251, true, true, true, true));
+
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_SSP,
+			caerBiasGenerateShiftedSource(1, 33, TIED_TO_RAIL, SPLIT_GATE));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_SSN,
+			caerBiasGenerateShiftedSource(2, 33, SHIFTED_SOURCE, SPLIT_GATE));
+	}
+
+	// Default chip configuration.
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_DIGITALMUX0, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_DIGITALMUX1, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_DIGITALMUX2, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_DIGITALMUX3, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_ANALOGMUX0, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_ANALOGMUX1, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_ANALOGMUX2, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_BIASMUX0, 0);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_RESETCALIBNEURON, true);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_TYPENCALIBNEURON, false);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_RESETTESTPIXEL, true);
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_AERNAROW, false);  // Use nArow in the AER state machine.
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_USEAOUT, false); // Enable analog pads for aMUX output (testing).
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_GLOBALSHUTTER, handle->info.apsHasGlobalShutter);
+
+	// Special extra pixels control for DAVIS240 A/B.
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL, false);
+
+	// Select which grey counter to use with the internal ADC: '0' means the external grey counter is used, which
+	// has to be supplied off-chip. '1' means the on-chip grey counter is used instead.
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_SELECTGRAYCOUNTER, 1);
+
+	// Test ADC functionality: if true, the ADC takes its input voltage not from the pixel, but from the
+	// VDAC 'AdcTestVoltage'. If false, the voltage comes from the pixels.
+	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS346_CONFIG_CHIP_TESTADC, false);
+
+	if (IS_208(handle->info.chipID)) {
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTPREAMPAVG, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTBIASREFSS, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTSENSE, true);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTPOSFB, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTHIGHPASS, false);
+	}
+
+	if (IS_RGB(handle->info.chipID)) {
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTOVG1LO, true);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO, false);
+		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI, false);
 	}
 
 	return (true);
