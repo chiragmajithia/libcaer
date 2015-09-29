@@ -1,1 +1,3 @@
-INSTALL(FILES libcaer.h DESTINATION include)
+INSTALL(FILES libcaer.h log.h DESTINATION include/libcaer)
+INSTALL(DIRECTORY events DESTINATION include/libcaer)
+INSTALL(DIRECTORY devices DESTINATION include/libcaer)
