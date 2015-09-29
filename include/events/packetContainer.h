@@ -38,7 +38,8 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 }
 
 static inline caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
-	size_t eventPacketContainerSize = (size_t) eventPacketsNumber * sizeof(caerEventPacketHeader);
+	size_t eventPacketContainerSize = sizeof(struct caer_event_packet_container)
+		+ ((size_t) eventPacketsNumber * sizeof(caerEventPacketHeader));
 
 	caerEventPacketContainer packetContainer = calloc(1, eventPacketContainerSize);
 	if (packetContainer == NULL) {
