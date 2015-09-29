@@ -73,6 +73,8 @@ int main(void) {
 
 		printf("Got event container with %d packets.\n",
 			caerEventPacketContainerGetEventPacketsNumber(eventPacketContainer));
+
+		caerEventPacketContainerFree(eventPacketContainer);
 	}
 
 	caerDeviceDataStop(dvs128_handle);
