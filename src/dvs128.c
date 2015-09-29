@@ -181,7 +181,7 @@ bool dvs128SendDefaultConfig(caerDeviceHandle cdh) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
 
-	// Set all biases to default value.
+	// Set all biases to default value. Based on DVS128 Fast biases.
 	caerIntegerToByteArray(1992, state->biases[DVS128_CONFIG_BIAS_CAS], BIAS_LENGTH);
 	caerIntegerToByteArray(1108364, state->biases[DVS128_CONFIG_BIAS_INJGND], BIAS_LENGTH);
 	caerIntegerToByteArray(16777215, state->biases[DVS128_CONFIG_BIAS_REQPD], BIAS_LENGTH);
@@ -585,7 +585,12 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 	// Didn't find any event container, either report this or retry, depending
 	// on blocking setting.
 	if (atomic_load(&state->dataExchangeBlocking)) {
-		goto retry;
+		// Don't retry right away in a tight loop, back off and wait a little.
+		// If no data is available, sleep for a millisecond to avoid wasting resources.
+		struct timespec noDataSleep = { .tv_sec = 0, .tv_nsec = 1000000 };
+		if (nanosleep(&noDataSleep, NULL) == 0) {
+			goto retry;
+		}
 	}
 
 	// Nothing.
