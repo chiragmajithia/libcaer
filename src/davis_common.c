@@ -1869,7 +1869,9 @@ bool davisCommonDataStop(caerDeviceHandle cdh) {
 	caerEventPacketContainer container;
 	while ((container = ringBufferGet(state->dataExchangeBuffer)) != NULL) {
 		// Notify data-not-available call-back.
-		state->dataNotifyDecrease(state->dataNotifyUserPtr);
+		if (state->dataNotifyDecrease != NULL) {
+			state->dataNotifyDecrease(state->dataNotifyUserPtr);
+		}
 
 		// Free container, which will free its subordinate packets too.
 		caerEventPacketContainerFree(container);
@@ -1901,7 +1903,9 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 	if (container != NULL) {
 		// Found an event container, return it and signal this piece of data
 		// is no longer available for later acquisition.
-		state->dataNotifyDecrease(state->dataNotifyUserPtr);
+		if (state->dataNotifyDecrease != NULL) {
+			state->dataNotifyDecrease(state->dataNotifyUserPtr);
+		}
 
 		return (container);
 	}
@@ -3046,7 +3050,9 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				}
 			}
 			else {
-				state->dataNotifyIncrease(state->dataNotifyUserPtr);
+				if (state->dataNotifyIncrease != NULL) {
+					state->dataNotifyIncrease(state->dataNotifyUserPtr);
+				}
 
 				state->currentPacketContainer = NULL;
 			}
