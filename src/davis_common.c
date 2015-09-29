@@ -2846,17 +2846,22 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					break;
 				}
 
-				case 7: // Timestamp wrap
+				case 7: { // Timestamp wrap
 					// Detect big timestamp wrap-around.
-					// TODO: detect big TS also considering big wrap jumps due to wrap counter.
-					if (state->wrapAdd == (INT32_MAX - (TS_WRAP_ADD - 1))) {
-						// Reset wrapAdd to zero at this point, so we can again
+					int64_t wrapJump = (TS_WRAP_ADD * data);
+					int64_t wrapSum = I64T(state->wrapAdd) + wrapJump;
+
+					if (wrapSum > I64T(INT32_MAX)) {
+						// Reset wrapAdd at this point, so we can again
 						// start detecting overruns of the 32bit value.
-						state->wrapAdd = 0;
+						// We reset not to zero, but to the remaining value after
+						// multiple wrap-jumps are taken into account.
+						int64_t wrapRemainder = wrapSum - I64T(INT32_MAX) - 1LL;
+						state->wrapAdd = I32T(wrapRemainder);
 
 						state->lastTimestamp = 0;
-						state->currentTimestamp = 0;
-						state->dvsTimestamp = 0;
+						state->currentTimestamp = state->wrapAdd;
+						state->dvsTimestamp = 0; // Closest to previous value for column addresses.
 
 						// Increment TSOverflow counter.
 						state->wrapOverflow++;
@@ -2874,7 +2879,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						// to multiply it with the wrap counter,
 						// which is located in the data part of this
 						// event.
-						state->wrapAdd += (TS_WRAP_ADD * data);
+						state->wrapAdd = I32T(wrapSum);
 
 						state->lastTimestamp = state->currentTimestamp;
 						state->currentTimestamp = state->wrapAdd;
@@ -2887,6 +2892,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					}
 
 					break;
+				}
 
 				default:
 					caerLog(CAER_LOG_ERROR, handle->info.deviceString, "Caught event that can't be handled.");
