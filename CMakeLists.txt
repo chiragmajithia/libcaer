@@ -57,16 +57,20 @@ ENDIF()
 ADD_DEFINITIONS(-D_XOPEN_SOURCE=600)
 ADD_DEFINITIONS(-D_DEFAULT_SOURCE=1)
 
-# Enable all warnings for GCC
+# Enable all warnings for GCC / Clang
 IF (CC_GCC OR CC_CLANG)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra")
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wunused -Wundef -Wformat=2 -Winit-self -Wuninitialized")
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-prototypes -Wmissing-prototypes -Wredundant-decls")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-declarations -Wnested-externs -Wjump-misses-init")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstack-protector -Wunsuffixed-float-constants")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -Wbad-function-cast -Wfloat-equal -Wdouble-promotion")
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-declarations -Wnested-externs -Wstack-protector")
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow -Wbad-function-cast -Wfloat-equal")
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wconversion -Wstrict-overflow=2")
+
+	# Warnings supported by GCC only
+	IF (CC_GCC)
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wjump-misses-init -Wunsuffixed-float-constants -Wdouble-promotion")
+	ENDIF()
 ENDIF()
 
 # Search for external libraries with pkg-config
