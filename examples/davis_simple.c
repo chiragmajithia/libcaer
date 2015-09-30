@@ -1,5 +1,5 @@
 #include <libcaer/libcaer.h>
-#include <libcaer/devices/dvs128.h>
+#include <libcaer/devices/davis.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -34,51 +34,51 @@ int main(void) {
 		return (EXIT_FAILURE);
 	}
 
-	// Open a DVS128, give it a device ID of 1, and don't care about USB bus or SN restrictions.
-	caerDeviceHandle dvs128_handle = caerDeviceOpen(1, CAER_DEVICE_DVS128, 0, 0, NULL);
-	if (dvs128_handle == NULL) {
+	// Open a DAVIS, give it a device ID of 1, and don't care about USB bus or SN restrictions.
+	caerDeviceHandle davis_handle = caerDeviceOpen(1, CAER_DEVICE_DAVIS_FX2, 0, 0, NULL);
+	if (davis_handle == NULL) {
 		return (EXIT_FAILURE);
 	}
 
 	// Let's take a look at the information we have on the device.
-	caerDVS128Info dvs128_info = caerDVS128InfoGet(dvs128_handle);
+	caerDavisInfo davis_info = caerDavisInfoGet(davis_handle);
 
-	printf("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", dvs128_info->deviceString,
-		dvs128_info->deviceID, dvs128_info->deviceIsMaster, dvs128_info->dvsSizeX, dvs128_info->dvsSizeY,
-		dvs128_info->logicVersion);
+	printf("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", davis_info->deviceString,
+		davis_info->deviceID, davis_info->deviceIsMaster, davis_info->dvsSizeX, davis_info->dvsSizeY,
+		davis_info->logicVersion);
 
 	// Send the default configuration before using the device.
 	// No configuration is sent automatically!
-	caerDeviceSendDefaultConfig(dvs128_handle);
+	caerDeviceSendDefaultConfig(davis_handle);
 
 	// Tweak some biases, to increase bandwidth in this case.
-	caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PR, 695);
-	caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_FOLL, 867);
+	//caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, 695);
+	//caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, 867);
 
 	// Let's verify they really changed!
 	uint32_t prBias, follBias;
-	caerDeviceConfigGet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PR, &prBias);
-	caerDeviceConfigGet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_FOLL, &follBias);
+	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, &prBias);
+	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, &follBias);
 
 	printf("New bias values --- PR: %d, FOLL: %d.\n", prBias, follBias);
 
 	// Now let's get start getting some data from the device. We just loop, no notification needed.
-	caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL);
+	caerDeviceDataStart(davis_handle, NULL, NULL, NULL);
 
 	// Let's turn on blocking data-get mode to avoid wasting resources.
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, false);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL,
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, false);
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL,
 		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE, 100000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL,
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE, 100000);
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL,
 		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE, 100000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL,
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE, 100000);
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL,
 		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE, 100000);
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE, 100000);
 
 	while (!atomic_load(&globalShutdown)) {
-		caerEventPacketContainer packetContainer = caerDeviceDataGet(dvs128_handle);
+		caerEventPacketContainer packetContainer = caerDeviceDataGet(davis_handle);
 		if (packetContainer == NULL) {
 			continue; // Skip if nothing there.
 		}
@@ -100,9 +100,9 @@ int main(void) {
 		caerEventPacketContainerFree(packetContainer);
 	}
 
-	caerDeviceDataStop(dvs128_handle);
+	caerDeviceDataStop(davis_handle);
 
-	caerDeviceClose(&dvs128_handle);
+	caerDeviceClose(&davis_handle);
 
 	printf("Shutdown successful.\n");
 
