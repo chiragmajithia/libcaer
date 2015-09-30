@@ -17,7 +17,7 @@ caerDeviceHandle davisFX3Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 	}
 
 	// Set main deviceType correctly right away.
-	handle->deviceType = CAER_DEVICE_DAVIS_FX3;
+	handle->h.deviceType = CAER_DEVICE_DAVIS_FX2;
 
 	bool openRetVal = davisCommonOpen((davisHandle) handle, DAVIS_FX3_DEVICE_VID, DAVIS_FX3_DEVICE_PID,
 	DAVIS_FX3_DEVICE_DID_TYPE, DAVIS_FX3_DEVICE_NAME, deviceID, busNumberRestrict, devAddressRestrict,
