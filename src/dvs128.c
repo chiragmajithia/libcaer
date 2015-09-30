@@ -64,6 +64,9 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		return (NULL);
 	}
 
+	// Set main deviceType correctly right away.
+	handle->deviceType = CAER_DEVICE_DVS128;
+
 	dvs128State state = &handle->state;
 
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
