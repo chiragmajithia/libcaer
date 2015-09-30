@@ -107,7 +107,7 @@ static bool sendBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint1
 
 	return (libusb_control_transfer(devHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) == LIBUSB_SUCCESS);
+		VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) == sizeof(bias));
 }
 
 static bool receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress, uint16_t *biasValue) {
@@ -120,7 +120,7 @@ static bool receiveBias(libusb_device_handle *devHandle, uint8_t biasAddress, ui
 	uint8_t bias[2] = { 0 };
 
 	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) != LIBUSB_SUCCESS) {
+	VENDOR_REQUEST_CHIP_BIAS, biasAddress, 0, bias, sizeof(bias), 0) != sizeof(bias)) {
 		return (false);
 	}
 
@@ -139,7 +139,7 @@ static bool sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8
 
 	// Get the current configuration from the device.
 	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != LIBUSB_SUCCESS) {
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != sizeof(chipSR)) {
 		return (false);
 	}
 
@@ -285,7 +285,7 @@ static bool sendChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8
 	// Send updated configuration back to device.
 	return (libusb_control_transfer(devHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) == LIBUSB_SUCCESS);
+		VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) == sizeof(chipSR));
 }
 
 static bool receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, uint8_t *param) {
@@ -294,7 +294,7 @@ static bool receiveChipSR(libusb_device_handle *devHandle, uint8_t paramAddr, ui
 
 	// Get the current configuration from the device.
 	if (libusb_control_transfer(devHandle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != LIBUSB_SUCCESS) {
+	VENDOR_REQUEST_CHIP_DIAG, 0, 0, chipSR, sizeof(chipSR), 0) != sizeof(chipSR)) {
 		return (false);
 	}
 

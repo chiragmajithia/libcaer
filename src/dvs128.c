@@ -280,7 +280,7 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					if (param && !state->dvsRunning) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 
@@ -289,7 +289,7 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					else if (!param && state->dvsRunning) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 
@@ -301,7 +301,7 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					if (param) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_RESET_TS, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							VENDOR_REQUEST_RESET_TS, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 					}
@@ -311,7 +311,7 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					if (param) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-							VENDOR_REQUEST_RESET_ARRAY, 0, 0, NULL, 0, 0) != LIBUSB_SUCCESS) {
+							VENDOR_REQUEST_RESET_ARRAY, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 					}
@@ -1080,7 +1080,8 @@ static bool dvs128SendBiases(dvs128State state) {
 	// the device, we can thus send it directly.
 	return (libusb_control_transfer(state->deviceHandle,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-		VENDOR_REQUEST_SEND_BIASES, 0, 0, (uint8_t *) state->biases, BIAS_NUMBER * BIAS_LENGTH, 0) == LIBUSB_SUCCESS);
+		VENDOR_REQUEST_SEND_BIASES, 0, 0, (uint8_t *) state->biases, (BIAS_NUMBER * BIAS_LENGTH), 0)
+		== (BIAS_NUMBER * BIAS_LENGTH));
 }
 
 static void *dvs128DataAcquisitionThread(void *inPtr) {
