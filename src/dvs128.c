@@ -520,15 +520,17 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	// Start data acquisition thread.
-	atomic_store(&state->dataAcquisitionThreadRun, true);
-
 	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &dvs128DataAcquisitionThread, handle)) != 0) {
 		freeAllDataMemory(state);
 
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.",
 		errno);
 		return (false);
+	}
+
+	// Wait for the data acquisition thread to be ready.
+	while (atomic_load(&state->dataAcquisitionThreadRun) == 0) {
+		;
 	}
 
 	return (true);
@@ -1104,10 +1106,13 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	dvs128AllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
 		U32T(atomic_load(&state->usbBufferSize)));
 
-	// Handle USB events (1 second timeout).
-	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
+	// Signal data thread ready back to start function.
+	atomic_store(&state->dataAcquisitionThreadRun, true);
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
+
+	// Handle USB events (1 second timeout).
+	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
 	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.

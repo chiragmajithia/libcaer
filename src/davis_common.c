@@ -1836,15 +1836,17 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ, &param32);
 	state->apsResetRead = param32;
 
-	// Start data acquisition thread.
-	atomic_store(&state->dataAcquisitionThreadRun, true);
-
 	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &davisDataAcquisitionThread, handle)) != 0) {
 		freeAllDataMemory(state);
 
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.",
 		errno);
 		return (false);
+	}
+
+	// Wait for the data acquisition thread to be ready.
+	while (atomic_load(&state->dataAcquisitionThreadRun) == 0) {
+		;
 	}
 
 	return (true);
@@ -3083,10 +3085,13 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
 		U32T(atomic_load(&state->usbBufferSize)));
 
-	// Handle USB events (1 second timeout).
-	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
+	// Signal data thread ready back to start function.
+	atomic_store(&state->dataAcquisitionThreadRun, true);
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
+
+	// Handle USB events (1 second timeout).
+	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
 	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
