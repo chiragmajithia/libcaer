@@ -72,6 +72,8 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
 	atomic_store(&state->dataExchangeBufferSize, 64);
 	atomic_store(&state->dataExchangeBlocking, false);
+	atomic_store(&state->dataExchangeStartProducers, true);
+	atomic_store(&state->dataExchangeStopProducers, true);
 	atomic_store(&state->usbBufferNumber, 8);
 	atomic_store(&state->usbBufferSize, 4096);
 
@@ -239,6 +241,14 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					atomic_store(&state->dataExchangeBlocking, param);
 					break;
 
+				case CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS:
+					atomic_store(&state->dataExchangeStartProducers, param);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS:
+					atomic_store(&state->dataExchangeStopProducers, param);
+					break;
+
 				default:
 					return (false);
 					break;
@@ -387,6 +397,14 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 
 				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
 					*param = atomic_load(&state->dataExchangeBlocking);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS:
+					*param = atomic_load(&state->dataExchangeStartProducers);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS:
+					*param = atomic_load(&state->dataExchangeStopProducers);
 					break;
 
 				default:
@@ -1099,8 +1117,10 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	// Reset configuration update, so as to not re-do work afterwards.
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
-	// Enable data transfer on USB end-point 6.
-	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
+	if (atomic_load(&state->dataExchangeStartProducers)) {
+		// Enable data transfer on USB end-point 6.
+		dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, true);
+	}
 
 	// Create buffers as specified in config file.
 	dvs128AllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
@@ -1125,9 +1145,11 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
-	// Disable data transfer on USB end-point 6.
-	// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
-	dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
+	if (atomic_load(&state->dataExchangeStopProducers)) {
+		// Disable data transfer on USB end-point 6.
+		// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
+		dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
+	}
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);

@@ -38,6 +38,8 @@ struct dvs128_state {
 	RingBuffer dataExchangeBuffer;
 	atomic_uint_fast32_t dataExchangeBufferSize; // Only takes effect on DataStart() calls!
 	atomic_bool dataExchangeBlocking;
+	atomic_bool dataExchangeStartProducers;
+	atomic_bool dataExchangeStopProducers;
 	void (*dataNotifyIncrease)(void *ptr);
 	void (*dataNotifyDecrease)(void *ptr);
 	void *dataNotifyUserPtr;

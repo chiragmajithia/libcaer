@@ -128,6 +128,8 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
 	atomic_store(&state->dataExchangeBufferSize, 64);
 	atomic_store(&state->dataExchangeBlocking, false);
+	atomic_store(&state->dataExchangeStartProducers, true);
+	atomic_store(&state->dataExchangeStopProducers, true);
 	atomic_store(&state->usbBufferNumber, 8);
 	atomic_store(&state->usbBufferSize, 4096);
 
@@ -697,6 +699,14 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					atomic_store(&state->dataExchangeBlocking, param);
 					break;
 
+				case CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS:
+					atomic_store(&state->dataExchangeStartProducers, param);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS:
+					atomic_store(&state->dataExchangeStopProducers, param);
+					break;
+
 				default:
 					return (false);
 					break;
@@ -1223,6 +1233,14 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 				case CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING:
 					*param = atomic_load(&state->dataExchangeBlocking);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS:
+					*param = atomic_load(&state->dataExchangeStartProducers);
+					break;
+
+				case CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS:
+					*param = atomic_load(&state->dataExchangeStopProducers);
 					break;
 
 				default:
@@ -3072,14 +3090,16 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	// Reset configuration update, so as to not re-do work afterwards.
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
 
-	// Enable data transfer on USB end-point 2.
-	davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, true);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, true);
+	if (atomic_load(&state->dataExchangeStartProducers)) {
+		// Enable data transfer on USB end-point 2.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, true);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, true);
+	}
 
 	// Create buffers as specified in config file.
 	davisAllocateTransfers(handle, U32T(atomic_load(&state->usbBufferNumber)),
@@ -3104,16 +3124,18 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
 
-	// Disable data transfer on USB end-point 2. Reverse order of enabling above.
-	// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
-	davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, false);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, false);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, false);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, false);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE, false); // Ensure chip turns off.
-	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, false); // Turn off timestamping too.
-	davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, false);
-	davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, false);
+	if (atomic_load(&state->dataExchangeStopProducers)) {
+		// Disable data transfer on USB end-point 2. Reverse order of enabling above.
+		// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE, false); // Ensure chip turns off.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, false); // Turn off timestamping too.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, false);
+	}
 
 	// Cancel all transfers and handle them.
 	davisDeallocateTransfers(handle);
