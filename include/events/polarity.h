@@ -31,33 +31,7 @@ struct caer_polarity_event_packet {
 
 typedef struct caer_polarity_event_packet *caerPolarityEventPacket;
 
-static inline caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
-	int32_t tsOverflow) {
-	size_t eventSize = sizeof(struct caer_polarity_event);
-	size_t eventPacketSize = sizeof(struct caer_polarity_event_packet) + ((size_t) eventCapacity * eventSize);
-
-	// Zero out event memory (all events invalid).
-	caerPolarityEventPacket packet = calloc(1, eventPacketSize);
-	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "Polarity Event",
-			"Failed to allocate %zu bytes of memory for Polarity Event Packet of capacity %"
-			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
-			errno);
-#endif
-		return (NULL);
-	}
-
-	// Fill in header fields.
-	caerEventPacketHeaderSetEventType(&packet->packetHeader, POLARITY_EVENT);
-	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
-	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_polarity_event, timestamp));
-	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
-	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-
-	return (packet);
-}
+caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
 static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
@@ -79,8 +53,8 @@ static inline int32_t caerPolarityEventGetTimestamp(caerPolarityEvent event) {
 }
 
 static inline int64_t caerPolarityEventGetTimestamp64(caerPolarityEvent event, caerPolarityEventPacket packet) {
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerPolarityEventGetTimestamp(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerPolarityEventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

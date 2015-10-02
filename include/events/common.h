@@ -58,22 +58,8 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	header->eventType = htole16(eventType);
 }
 
-// Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
-void caerFrameEventPacketFreePixels(caerEventPacketHeader packet);
-
-static inline void caerEventPacketFree(caerEventPacketHeader header) {
-	if (header == NULL) {
-		return;
-	}
-
-	// Frame packets contain multiple memory blocks, need to free them here!
-	if (caerEventPacketHeaderGetEventType(header) == FRAME_EVENT) {
-		caerFrameEventPacketFreePixels(header);
-	}
-
-	// Free packet memory.
-	free(header);
-}
+// Generic event packet freeing function. Automatically figures out event type.
+void caerEventPacketFree(caerEventPacketHeader header);
 
 static inline int16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
 	return (le16toh(header->eventSource));

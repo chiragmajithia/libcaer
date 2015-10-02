@@ -31,32 +31,7 @@ struct caer_imu6_event_packet {
 
 typedef struct caer_imu6_event_packet *caerIMU6EventPacket;
 
-static inline caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
-	int32_t tsOverflow) {
-	size_t eventSize = sizeof(struct caer_imu6_event);
-	size_t eventPacketSize = sizeof(struct caer_imu6_event_packet) + ((size_t) eventCapacity * eventSize);
-
-	// Zero out event memory (all events invalid).
-	caerIMU6EventPacket packet = calloc(1, eventPacketSize);
-	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "IMU6 Event", "Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
-		PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
-		errno);
-#endif
-		return (NULL);
-	}
-
-	// Fill in header fields.
-	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU6_EVENT);
-	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
-	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu6_event, timestamp));
-	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
-	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-
-	return (packet);
-}
+caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
 static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
@@ -78,8 +53,8 @@ static inline int32_t caerIMU6EventGetTimestamp(caerIMU6Event event) {
 }
 
 static inline int64_t caerIMU6EventGetTimestamp64(caerIMU6Event event, caerIMU6EventPacket packet) {
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerIMU6EventGetTimestamp(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerIMU6EventGetTimestamp(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).

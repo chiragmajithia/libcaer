@@ -19,6 +19,10 @@ struct caer_event_packet_container {
 // Keep several packets of multiple types together, for easy time-based association.
 typedef struct caer_event_packet_container *caerEventPacketContainer;
 
+caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber);
+
+void caerEventPacketContainerFree(caerEventPacketContainer container);
+
 static inline int32_t caerEventPacketContainerGetEventPacketsNumber(caerEventPacketContainer container) {
 	return (le32toh(container->eventPacketsNumber));
 }
@@ -35,26 +39,6 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 	}
 
 	container->eventPacketsNumber = htole32(eventPacketsNumber);
-}
-
-static inline caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
-	size_t eventPacketContainerSize = sizeof(struct caer_event_packet_container)
-		+ ((size_t) eventPacketsNumber * sizeof(caerEventPacketHeader));
-
-	caerEventPacketContainer packetContainer = calloc(1, eventPacketContainerSize);
-	if (packetContainer == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
-			"Failed to allocate %zu bytes of memory for Event Packet Container, containing %"
-			PRIi32 " packets. Error: %d.", eventPacketContainerSize, eventPacketsNumber, errno);
-#endif
-		return (NULL);
-	}
-
-	// Fill in header fields.
-	caerEventPacketContainerSetEventPacketsNumber(packetContainer, eventPacketsNumber);
-
-	return (packetContainer);
 }
 
 static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerEventPacketContainer container,
@@ -87,23 +71,6 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 
 	// Store the given event packet.
 	container->eventPackets[n] = packetHeader;
-}
-
-static inline void caerEventPacketContainerFree(caerEventPacketContainer container) {
-	if (container == NULL) {
-		return;
-	}
-
-	// Free packet container and ensure all subordinate memory is also freed.
-	for (int32_t i = 0; i < caerEventPacketContainerGetEventPacketsNumber(container); i++) {
-		caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(container, i);
-
-		if (packetHeader != NULL) {
-			caerEventPacketFree(packetHeader);
-		}
-	}
-
-	free(container);
 }
 
 #endif /* LIBCAER_EVENTS_PACKETCONTAINER_H_ */

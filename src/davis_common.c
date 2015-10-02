@@ -3168,3 +3168,60 @@ static void davisDataAcquisitionThreadConfig(davisHandle handle) {
 		handle->info.deviceIsMaster = param32;
 	}
 }
+
+uint16_t caerBiasGenerateVDAC(uint8_t voltageValue, uint8_t currentValue) {
+	// Build up bias value from all its components.
+	uint16_t biasValue = U16T((voltageValue & 0x3F) << 0);
+	biasValue |= U16T((currentValue & 0x07) << 6);
+
+	return (biasValue);
+}
+
+uint16_t caerBiasGenerateCoarseFine(uint8_t coarseValue, uint8_t fineValue, bool enabled, bool sexN,
+bool typeNormal, bool currentLevelNormal) {
+	uint16_t biasValue = 0;
+
+	// Build up bias value from all its components.
+	if (enabled) {
+		biasValue |= 0x01;
+	}
+	if (sexN) {
+		biasValue |= 0x02;
+	}
+	if (typeNormal) {
+		biasValue |= 0x04;
+	}
+	if (currentLevelNormal) {
+		biasValue |= 0x08;
+	}
+
+	biasValue |= U16T((fineValue & 0xFF) << 4);
+	biasValue |= U16T((coarseValue & 0x07) << 12);
+
+	return (biasValue);
+}
+
+uint16_t caerBiasGenerateShiftedSource(uint8_t refValue, uint8_t regValue,
+	enum caer_bias_shifted_source_operating_mode operatingMode,
+	enum caer_bias_shifted_source_voltage_level voltageLevel) {
+	uint16_t biasValue = 0;
+
+	if (operatingMode == HI_Z) {
+		biasValue |= 0x01;
+	}
+	else if (operatingMode == TIED_TO_RAIL) {
+		biasValue |= 0x02;
+	}
+
+	if (voltageLevel == SINGLE_DIODE) {
+		biasValue |= (0x01 << 2);
+	}
+	else if (voltageLevel == DOUBLE_DIODE) {
+		biasValue |= (0x02 << 2);
+	}
+
+	biasValue |= U16T((refValue & 0x3F) << 4);
+	biasValue |= U16T((regValue & 0x3F) << 10);
+
+	return (biasValue);
+}

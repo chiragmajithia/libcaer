@@ -35,34 +35,7 @@ struct caer_frame_event_packet {
 
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
 
-// Need pixel info too here, so storage requirement for pixel data can be determined.
-static inline caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
-	int32_t tsOverflow) {
-	size_t eventSize = sizeof(struct caer_frame_event);
-	size_t eventPacketSize = sizeof(struct caer_frame_event_packet) + ((size_t) eventCapacity * eventSize);
-
-	// Zero out event memory (all events invalid).
-	caerFrameEventPacket packet = calloc(1, eventPacketSize);
-	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "Frame Event",
-			"Failed to allocate %zu bytes of memory for Frame Event Packet of capacity %"
-			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
-			errno);
-#endif
-		return (NULL);
-	}
-
-	// Fill in header fields.
-	caerEventPacketHeaderSetEventType(&packet->packetHeader, FRAME_EVENT);
-	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
-	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_frame_event, ts_startexposure));
-	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
-	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
-
-	return (packet);
-}
+caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
 static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
@@ -80,25 +53,10 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 }
 
 // Allocate effective pixel memory for frame event.
-static inline void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY,
-	uint8_t channelNumber) {
-	size_t pixelSize = sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber;
+void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber);
 
-	uint16_t *pixels = calloc(1, pixelSize);
-	if (pixels == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Failed to allocate %zu bytes of memory for pixels. Error: %d.",
-			pixelSize, errno);
-#endif
-		return;
-	}
-
-	// Fill in header fields.
-	frameEvent->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
-	frameEvent->lengthX = htole32(lengthX);
-	frameEvent->lengthY = htole32(lengthY);
-	frameEvent->pixels = pixels;
-}
+// Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
+void caerFrameEventPacketFreePixels(caerEventPacketHeader packet);
 
 static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_startframe));
@@ -107,8 +65,8 @@ static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerFrameEventGetTSStartOfFrame(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSStartOfFrame(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -131,8 +89,8 @@ static inline int32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerFrameEventGetTSEndOfFrame(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSEndOfFrame(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -155,8 +113,8 @@ static inline int32_t caerFrameEventGetTSStartOfExposure(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerFrameEventGetTSStartOfExposure(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSStartOfExposure(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
@@ -179,8 +137,8 @@ static inline int32_t caerFrameEventGetTSEndOfExposure(caerFrameEvent event) {
 static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerFrameEventGetTSEndOfExposure(event))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSEndOfExposure(event))));
 }
 
 // Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
