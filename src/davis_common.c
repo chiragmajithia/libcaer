@@ -131,7 +131,7 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	atomic_store(&state->dataExchangeStartProducers, true);
 	atomic_store(&state->dataExchangeStopProducers, true);
 	atomic_store(&state->usbBufferNumber, 8);
-	atomic_store(&state->usbBufferSize, 4096);
+	atomic_store(&state->usbBufferSize, 8192);
 
 	// Packet settings (size (in events) and time interval (in µs)).
 	atomic_store(&state->maxPacketContainerSize, 4096 + 128 + 4 + 8);
