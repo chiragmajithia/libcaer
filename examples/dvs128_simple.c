@@ -66,16 +66,7 @@ int main(void) {
 	caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL);
 
 	// Let's turn on blocking data-get mode to avoid wasting resources.
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, false);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE, 100000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE, 100000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE, 100000);
+	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
 
 	while (!atomic_load(&globalShutdown)) {
 		caerEventPacketContainer packetContainer = caerDeviceDataGet(dvs128_handle);
@@ -85,7 +76,7 @@ int main(void) {
 
 		int32_t packetNum = caerEventPacketContainerGetEventPacketsNumber(packetContainer);
 
-		printf("Got event container with %d packets (allocated).\n", packetNum);
+		printf("\nGot event container with %d packets (allocated).\n", packetNum);
 
 		for (int32_t i = 0; i < packetNum; i++) {
 			caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(packetContainer, i);
@@ -94,7 +85,23 @@ int main(void) {
 				continue; // Skip if nothing there.
 			}
 
-			printf("Packet %d size is %d.\n", i, caerEventPacketHeaderGetEventNumber(packetHeader));
+			printf("Packet %d of type %d -> size is %d.\n", i, caerEventPacketHeaderGetEventType(packetHeader),
+				caerEventPacketHeaderGetEventNumber(packetHeader));
+
+			// Packet 0 is always the special events packet for DVS128, while packet is the polarity events packet.
+			if (i == POLARITY_EVENT) {
+				caerPolarityEventPacket polarity = (caerPolarityEventPacket) packetHeader;
+
+				// Get full timestamp and addresses of first event.
+				caerPolarityEvent firstEvent = caerPolarityEventPacketGetEvent(polarity, 0);
+
+				int32_t ts = caerPolarityEventGetTimestamp(firstEvent);
+				uint16_t x = caerPolarityEventGetX(firstEvent);
+				uint16_t y = caerPolarityEventGetY(firstEvent);
+				bool pol = caerPolarityEventGetPolarity(firstEvent);
+
+				printf("First polarity event - ts: %d, x: %d, y: %d, pol: %d.\n", ts, x, y, pol);
+			}
 		}
 
 		caerEventPacketContainerFree(packetContainer);

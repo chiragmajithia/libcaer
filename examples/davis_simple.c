@@ -52,30 +52,23 @@ int main(void) {
 	caerDeviceSendDefaultConfig(davis_handle);
 
 	// Tweak some biases, to increase bandwidth in this case.
-	//caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, 695);
-	//caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, 867);
+	caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
+		caerBiasGenerateCoarseFine(2, 116, true, false, true, true));
+	caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
+		caerBiasGenerateCoarseFine(1, 33, true, false, true, true));
 
 	// Let's verify they really changed!
-	uint32_t prBias, follBias;
+	uint32_t prBias, prsfBias;
 	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, &prBias);
-	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, &follBias);
+	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, &prsfBias);
 
-	printf("New bias values --- PR: %d, FOLL: %d.\n", prBias, follBias);
+	printf("New bias values --- PR: %d, PRSF: %d.\n", prBias, prsfBias);
 
 	// Now let's get start getting some data from the device. We just loop, no notification needed.
 	caerDeviceDataStart(davis_handle, NULL, NULL, NULL);
 
 	// Let's turn on blocking data-get mode to avoid wasting resources.
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, false);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE, 100000);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE, 100000);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL,
-		1000000);
-	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_PACKETS, CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE, 100000);
+	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
 
 	while (!atomic_load(&globalShutdown)) {
 		caerEventPacketContainer packetContainer = caerDeviceDataGet(davis_handle);
@@ -85,7 +78,7 @@ int main(void) {
 
 		int32_t packetNum = caerEventPacketContainerGetEventPacketsNumber(packetContainer);
 
-		printf("Got event container with %d packets (allocated).\n", packetNum);
+		printf("\nGot event container with %d packets (allocated).\n", packetNum);
 
 		for (int32_t i = 0; i < packetNum; i++) {
 			caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(packetContainer, i);
@@ -94,7 +87,23 @@ int main(void) {
 				continue; // Skip if nothing there.
 			}
 
-			printf("Packet %d size is %d.\n", i, caerEventPacketHeaderGetEventNumber(packetHeader));
+			printf("Packet %d of type %d -> size is %d.\n", i, caerEventPacketHeaderGetEventType(packetHeader),
+				caerEventPacketHeaderGetEventNumber(packetHeader));
+
+			// Packet 0 is always the special events packet for DVS128, while packet is the polarity events packet.
+			if (i == POLARITY_EVENT) {
+				caerPolarityEventPacket polarity = (caerPolarityEventPacket) packetHeader;
+
+				// Get full timestamp and addresses of first event.
+				caerPolarityEvent firstEvent = caerPolarityEventPacketGetEvent(polarity, 0);
+
+				int32_t ts = caerPolarityEventGetTimestamp(firstEvent);
+				uint16_t x = caerPolarityEventGetX(firstEvent);
+				uint16_t y = caerPolarityEventGetY(firstEvent);
+				bool pol = caerPolarityEventGetPolarity(firstEvent);
+
+				printf("First polarity event - ts: %d, x: %d, y: %d, pol: %d.\n", ts, x, y, pol);
+			}
 		}
 
 		caerEventPacketContainerFree(packetContainer);
