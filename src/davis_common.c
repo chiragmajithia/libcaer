@@ -1875,6 +1875,18 @@ bool davisCommonDataStop(caerDeviceHandle cdh) {
 	davisState state = &handle->state;
 
 	// Stop data acquisition thread.
+	if (atomic_load(&state->dataExchangeStopProducers)) {
+		// Disable data transfer on USB end-point 2. Reverse order of enabling.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE, false); // Ensure chip turns off.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, false); // Turn off timestamping too.
+		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, false);
+		davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, false);
+	}
+
 	atomic_store(&state->dataAcquisitionThreadRun, false);
 
 	// Wait for data acquisition thread to terminate...
@@ -3123,19 +3135,6 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 	}
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
-
-	if (atomic_load(&state->dataExchangeStopProducers)) {
-		// Disable data transfer on USB end-point 2. Reverse order of enabling above.
-		// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
-		davisCommonConfigSet(handle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR, false);
-		davisCommonConfigSet(handle, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, false);
-		davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, false);
-		davisCommonConfigSet(handle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, false);
-		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE, false); // Ensure chip turns off.
-		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RUN, false); // Turn off timestamping too.
-		davisCommonConfigSet(handle, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_RUN, false);
-		davisCommonConfigSet(handle, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_RUN, false);
-	}
 
 	// Cancel all transfers and handle them.
 	davisDeallocateTransfers(handle);

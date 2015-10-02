@@ -559,6 +559,11 @@ bool dvs128DataStop(caerDeviceHandle cdh) {
 	dvs128State state = &handle->state;
 
 	// Stop data acquisition thread.
+	if (atomic_load(&state->dataExchangeStopProducers)) {
+		// Disable data transfer on USB end-point 6.
+		dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
+	}
+
 	atomic_store(&state->dataAcquisitionThreadRun, false);
 
 	// Wait for data acquisition thread to terminate...
@@ -1144,12 +1149,6 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 	}
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "shutting down data acquisition thread ...");
-
-	if (atomic_load(&state->dataExchangeStopProducers)) {
-		// Disable data transfer on USB end-point 6.
-		// TODO: check if this really needs to be in close() due to libusb_handle_events_timeout() not returning under high load.
-		dvs128ConfigSet((caerDeviceHandle) handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_RUN, false);
-	}
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);
