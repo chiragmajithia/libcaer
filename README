@@ -4,6 +4,11 @@ libcaer
 Minimal C library to access, configure and get data out of AER sensors,
 such as the Dynamic Vision Sensor (DVS) or DAVIS cameras.
 
+REQUIREMENTS:
+
+cmake >= 2.6
+gcc >= 4.9 or clang >= 3.7
+libusb >= 1.0.19
 
 INSTALLATION:
 
@@ -18,3 +23,21 @@ $ make
 3) install:
 
 $ make install
+
+USAGE:
+
+See examples/ directory. Usual usage is (simplified):
+
+h = caerDeviceOpen(TYPE);
+caerDeviceSendDefaultConfig(h);
+caerDeviceDataStart(h);
+
+loop:
+	c = caerDeviceDataGet(h);
+	work with c (container) and its event packets
+
+caerDeviceDataStop(h);
+caerDeviceClose(&h);
+
+All configuration parameters and event types are specified in the
+public headers.
