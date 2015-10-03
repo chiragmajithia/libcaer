@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_
 #define LIBCAER_EVENTS_PACKETCONTAINER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 // Use signed integers for maximum compatibility with other languages.
@@ -72,5 +76,9 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 	// Store the given event packet.
 	container->eventPackets[n] = packetHeader;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_PACKETCONTAINER_H_ */

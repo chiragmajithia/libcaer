@@ -8,6 +8,10 @@
 #ifndef LIBCAER_DEVICES_DAVIS_H_
 #define LIBCAER_DEVICES_DAVIS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "usb.h"
 #include "events/polarity.h"
 #include "events/special.h"
@@ -511,5 +515,9 @@ struct caer_bias_shiftedsource {
 
 uint16_t caerBiasShiftedSourceGenerate(struct caer_bias_shiftedsource shiftedSourceBias);
 struct caer_bias_shiftedsource caerBiasShiftedSourceParse(uint16_t shiftedSourceBias);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_DEVICES_DAVIS_H_ */

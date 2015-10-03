@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_SAMPLE_H_
 #define LIBCAER_EVENTS_SAMPLE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 #define SAMPLE_TYPE_SHIFT 1
@@ -121,5 +125,9 @@ static inline uint32_t caerSampleEventGetSample(caerSampleEvent event) {
 static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t sample) {
 	event->data |= htole32((U32T(sample) & SAMPLE_MASK) << SAMPLE_SHIFT);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_SAMPLE_H_ */

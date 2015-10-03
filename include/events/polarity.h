@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_POLARITY_H_
 #define LIBCAER_EVENTS_POLARITY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 #define POLARITY_SHIFT 1
@@ -131,5 +135,9 @@ static inline uint16_t caerPolarityEventGetX(caerPolarityEvent event) {
 static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddress) {
 	event->data |= htole32((U32T(xAddress) & X_ADDR_MASK) << X_ADDR_SHIFT);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_POLARITY_H_ */

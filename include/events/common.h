@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_COMMON_H_
 #define LIBCAER_EVENTS_COMMON_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "libcaer.h"
 
 // 0 in the 0th bit means invalid, 1 means valid.
@@ -210,5 +214,9 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
 	// and memory is little-endian, so lowest bit must be in first byte of memory.
 	return (*((uint8_t *) eventPtr) & VALID_MARK_MASK);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_COMMON_H_ */

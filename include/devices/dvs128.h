@@ -8,6 +8,10 @@
 #ifndef LIBCAER_DEVICES_DVS128_H_
 #define LIBCAER_DEVICES_DVS128_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "usb.h"
 #include "events/polarity.h"
 #include "events/special.h"
@@ -46,5 +50,9 @@ struct caer_dvs128_info {
 };
 
 struct caer_dvs128_info caerDVS128InfoGet(caerDeviceHandle handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_DEVICES_DVS128_H_ */

@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_FRAME_H_
 #define LIBCAER_EVENTS_FRAME_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 // All pixels are always normalized to 16bit depth.
@@ -363,5 +367,9 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
 	// Get pixel array.
 	return (event->pixels);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_FRAME_H_ */

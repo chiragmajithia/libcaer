@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_IMU6_H_
 #define LIBCAER_EVENTS_IMU6_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 struct caer_imu6_event {
@@ -163,5 +167,9 @@ static inline float caerIMU6EventGetTemp(caerIMU6Event event) {
 static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
 	event->temp = htole32(temp);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_IMU6_H_ */

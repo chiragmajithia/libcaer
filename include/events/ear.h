@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_EAR_H_
 #define LIBCAER_EVENTS_EAR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 #define EAR_SHIFT 1
@@ -141,5 +145,9 @@ static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
 static inline void caerEarEventSetChannel(caerEarEvent event, uint16_t channel) {
 	event->data |= htole32((U32T(channel) & CHANNEL_MASK) << CHANNEL_SHIFT);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_EAR_H_ */

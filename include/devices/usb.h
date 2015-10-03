@@ -1,6 +1,10 @@
 #ifndef LIBCAER_DEVICES_USB_H_
 #define LIBCAER_DEVICES_USB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "libcaer.h"
 #include "events/packetContainer.h"
 
@@ -43,5 +47,9 @@ bool caerDeviceDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(voi
 	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
 bool caerDeviceDataStop(caerDeviceHandle handle);
 caerEventPacketContainer caerDeviceDataGet(caerDeviceHandle handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_DEVICES_USB_H_ */

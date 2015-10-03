@@ -8,6 +8,10 @@
 #ifndef LIBCAER_EVENTS_SPECIAL_H_
 #define LIBCAER_EVENTS_SPECIAL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "common.h"
 
 #define TYPE_SHIFT 1
@@ -130,5 +134,9 @@ static inline uint32_t caerSpecialEventGetData(caerSpecialEvent event) {
 static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data) {
 	event->data |= htole32((U32T(data) & DATA_MASK) << DATA_SHIFT);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBCAER_EVENTS_SPECIAL_H_ */
