@@ -1,15 +1,7 @@
-/*
- * common.c
- *
- *  Created on: May 25, 2015
- *      Author: llongi
- */
-
 #include "libcaer.h"
 #include <stdatomic.h>
 #include <stdarg.h>
 #include <time.h>
-#include <unistd.h>
 
 static atomic_uint_fast8_t caerLogLevel = ATOMIC_VAR_INIT(CAER_LOG_ERROR);
 

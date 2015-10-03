@@ -10,7 +10,7 @@ static void davisAllocateTransfers(davisHandle handle, uint32_t bufferNum, uint3
 static void davisDeallocateTransfers(davisHandle handle);
 static void LIBUSB_CALL davisLibUsbCallback(struct libusb_transfer *transfer);
 static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t bytesSent);
-static void *davisDataAcquisitionThread(void *inPtr);
+static int davisDataAcquisitionThread(void *inPtr);
 static void davisDataAcquisitionThreadConfig(davisHandle handle);
 
 static inline void checkStrictMonotonicTimestamp(davisHandle handle) {
@@ -1865,7 +1865,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ, &param32);
 	state->apsResetRead = param32;
 
-	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &davisDataAcquisitionThread, handle)) != 0) {
+	if ((errno = thrd_create(&state->dataAcquisitionThread, &davisDataAcquisitionThread, handle)) != thrd_success) {
 		freeAllDataMemory(state);
 
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.",
@@ -1901,7 +1901,7 @@ bool davisCommonDataStop(caerDeviceHandle cdh) {
 	atomic_store(&state->dataAcquisitionThreadRun, false);
 
 	// Wait for data acquisition thread to terminate...
-	if ((errno = pthread_join(state->dataAcquisitionThread, NULL)) != 0) {
+	if ((errno = thrd_join(state->dataAcquisitionThread, NULL)) != thrd_success) {
 		// This should never happen!
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to join data acquisition thread. Error: %d.",
 		errno);
@@ -1959,7 +1959,7 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 		// Don't retry right away in a tight loop, back off and wait a little.
 		// If no data is available, sleep for a millisecond to avoid wasting resources.
 		struct timespec noDataSleep = { .tv_sec = 0, .tv_nsec = 1000000 };
-		if (nanosleep(&noDataSleep, NULL) == 0) {
+		if (thrd_sleep(&noDataSleep, NULL) == 0) {
 			goto retry;
 		}
 	}
@@ -3103,7 +3103,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 	}
 }
 
-static void *davisDataAcquisitionThread(void *inPtr) {
+static int davisDataAcquisitionThread(void *inPtr) {
 	// inPtr is a pointer to device handle.
 	davisHandle handle = inPtr;
 	davisState state = &handle->state;
@@ -3152,7 +3152,7 @@ static void *davisDataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
 
-	return (NULL);
+	return (EXIT_SUCCESS);
 }
 
 static void davisDataAcquisitionThreadConfig(davisHandle handle) {

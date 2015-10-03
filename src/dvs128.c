@@ -8,7 +8,7 @@ static void dvs128DeallocateTransfers(dvs128Handle handle);
 static void LIBUSB_CALL dvs128LibUsbCallback(struct libusb_transfer *transfer);
 static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t bytesSent);
 static bool dvs128SendBiases(dvs128State state);
-static void *dvs128DataAcquisitionThread(void *inPtr);
+static int dvs128DataAcquisitionThread(void *inPtr);
 static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle);
 
 static inline void checkMonotonicTimestamp(dvs128Handle handle) {
@@ -538,7 +538,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	if ((errno = pthread_create(&state->dataAcquisitionThread, NULL, &dvs128DataAcquisitionThread, handle)) != 0) {
+	if ((errno = thrd_create(&state->dataAcquisitionThread, &dvs128DataAcquisitionThread, handle)) != thrd_success) {
 		freeAllDataMemory(state);
 
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to start data acquisition thread. Error: %d.",
@@ -567,7 +567,7 @@ bool dvs128DataStop(caerDeviceHandle cdh) {
 	atomic_store(&state->dataAcquisitionThreadRun, false);
 
 	// Wait for data acquisition thread to terminate...
-	if ((errno = pthread_join(state->dataAcquisitionThread, NULL)) != 0) {
+	if ((errno = thrd_join(state->dataAcquisitionThread, NULL)) != thrd_success) {
 		// This should never happen!
 		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to join data acquisition thread. Error: %d.",
 		errno);
@@ -620,7 +620,7 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 		// Don't retry right away in a tight loop, back off and wait a little.
 		// If no data is available, sleep for a millisecond to avoid wasting resources.
 		struct timespec noDataSleep = { .tv_sec = 0, .tv_nsec = 1000000 };
-		if (nanosleep(&noDataSleep, NULL) == 0) {
+		if (thrd_sleep(&noDataSleep, NULL) == 0) {
 			goto retry;
 		}
 	}
@@ -1112,7 +1112,7 @@ static bool dvs128SendBiases(dvs128State state) {
 		== (BIAS_NUMBER * BIAS_LENGTH));
 }
 
-static void *dvs128DataAcquisitionThread(void *inPtr) {
+static int dvs128DataAcquisitionThread(void *inPtr) {
 	// inPtr is a pointer to device handle.
 	dvs128Handle handle = inPtr;
 	dvs128State state = &handle->state;
@@ -1155,7 +1155,7 @@ static void *dvs128DataAcquisitionThread(void *inPtr) {
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
 
-	return (NULL);
+	return (EXIT_SUCCESS);
 }
 
 static void dvs128DataAcquisitionThreadConfig(dvs128Handle handle) {

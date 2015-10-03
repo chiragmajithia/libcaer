@@ -3,10 +3,9 @@
 
 #include "devices/dvs128.h"
 #include "ringbuffer/ringbuffer.h"
-#include <pthread.h>
-#include <unistd.h>
-#include <libusb.h>
+#include "c11threads_posix.h"
 #include <stdatomic.h>
+#include <libusb-1.0/libusb.h>
 
 #define DVS_DEVICE_NAME "DVS128"
 
@@ -50,7 +49,7 @@ struct dvs128_state {
 	atomic_uint_fast32_t usbBufferNumber;
 	atomic_uint_fast32_t usbBufferSize;
 	// Data Acquisition Thread
-	pthread_t dataAcquisitionThread;
+	thrd_t dataAcquisitionThread;
 	atomic_bool dataAcquisitionThreadRun;
 	atomic_uint_fast32_t dataAcquisitionThreadConfigUpdate;
 	struct libusb_transfer **dataTransfers;

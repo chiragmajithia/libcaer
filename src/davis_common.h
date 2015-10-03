@@ -3,10 +3,9 @@
 
 #include "devices/davis.h"
 #include "ringbuffer/ringbuffer.h"
-#include <pthread.h>
-#include <unistd.h>
-#include <libusb.h>
+#include "c11threads_posix.h"
 #include <stdatomic.h>
+#include <libusb-1.0/libusb.h>
 
 #define APS_READOUT_TYPES_NUM 2
 #define APS_READOUT_RESET  0
@@ -56,7 +55,7 @@ struct davis_state {
 	atomic_uint_fast32_t usbBufferNumber;
 	atomic_uint_fast32_t usbBufferSize;
 	// Data Acquisition Thread
-	pthread_t dataAcquisitionThread;
+	thrd_t dataAcquisitionThread;
 	atomic_bool dataAcquisitionThreadRun;
 	atomic_uint_fast32_t dataAcquisitionThreadConfigUpdate;
 	struct libusb_transfer **dataTransfers;

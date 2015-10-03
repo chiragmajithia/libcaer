@@ -25,6 +25,10 @@
 								<option id="gnu.c.compiler.option.include.paths.816228382" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include/libusb-1.0"/>
 								</option>
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.617236572" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="_DEFAULT_SOURCE=1"/>
+									<listOptionValue builtIn="false" value="_XOPEN_SOURCE=700"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1645890299" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.226870374" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base">

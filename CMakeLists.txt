@@ -53,9 +53,16 @@ IF (NOT "${SIZEOF_VOID_PTR}" STREQUAL "${SIZEOF_SIZE_T}")
 	MESSAGE(SEND_ERROR "Size of void * and size_t must be the same!")
 ENDIF()
 
-# Header definitions
-ADD_DEFINITIONS(-D_XOPEN_SOURCE=600)
-ADD_DEFINITIONS(-D_DEFAULT_SOURCE=1)
+# Check threads support (almost nobody implements C11 threads yet!)
+FIND_PACKAGE(Threads)
+SET(HAVE_PTHREADS ${CMAKE_USE_PTHREADS_INIT})
+SET(HAVE_WIN32_THREADS ${CMAKE_USE_WIN32_THREADS_INIT})
+
+IF (HAVE_PTHREADS)
+	# POSIX system (Unix, Linux, MacOS X)
+	ADD_DEFINITIONS(-D_XOPEN_SOURCE=700)
+	ADD_DEFINITIONS(-D_DEFAULT_SOURCE=1)
+ENDIF()
 
 # Enable all warnings for GCC / Clang
 IF (CC_GCC OR CC_CLANG)
