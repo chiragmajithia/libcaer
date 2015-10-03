@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <time.h>
+#include <sched.h>
 #include <errno.h>
 
 typedef pthread_t thrd_t;
