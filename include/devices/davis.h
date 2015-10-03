@@ -472,25 +472,44 @@ struct caer_davis_info {
 	bool extInputHasGenerator;
 };
 
-typedef struct caer_davis_info *caerDavisInfo;
+struct caer_davis_info caerDavisInfoGet(caerDeviceHandle handle);
 
-caerDavisInfo caerDavisInfoGet(caerDeviceHandle handle);
+struct caer_bias_vdac {
+	uint8_t voltageValue;
+	uint8_t currentValue;
+};
 
-uint16_t caerBiasGenerateVDAC(uint8_t voltageValue, uint8_t currentValue);
+uint16_t caerBiasVDACGenerate(struct caer_bias_vdac vdacBias);
+struct caer_bias_vdac caerBiasVDACParse(uint16_t vdacBias);
 
-uint16_t caerBiasGenerateCoarseFine(uint8_t coarseValue, uint8_t fineValue, bool enabled, bool sexN,
-bool typeNormal, bool currentLevelNormal);
+struct caer_bias_coarsefine {
+	uint8_t coarseValue;
+	uint8_t fineValue;
+	bool enabled;
+	bool sexN;
+	bool typeNormal;
+	bool currentLevelNormal;
+};
 
-enum caer_bias_shifted_source_operating_mode {
+uint16_t caerBiasCoarseFineGenerate(struct caer_bias_coarsefine coarseFineBias);
+struct caer_bias_coarsefine caerBiasCoarseFineParse(uint16_t coarseFineBias);
+
+enum caer_bias_shiftedsource_operating_mode {
 	SHIFTED_SOURCE = 0, HI_Z = 1, TIED_TO_RAIL = 2,
 };
 
-enum caer_bias_shifted_source_voltage_level {
+enum caer_bias_shiftedsource_voltage_level {
 	SPLIT_GATE = 0, SINGLE_DIODE = 1, DOUBLE_DIODE = 2,
 };
 
-uint16_t caerBiasGenerateShiftedSource(uint8_t refValue, uint8_t regValue,
-	enum caer_bias_shifted_source_operating_mode operatingMode,
-	enum caer_bias_shifted_source_voltage_level voltageLevel);
+struct caer_bias_shiftedsource {
+	uint8_t refValue;
+	uint8_t regValue;
+	enum caer_bias_shiftedsource_operating_mode operatingMode;
+	enum caer_bias_shiftedsource_voltage_level voltageLevel;
+};
+
+uint16_t caerBiasShiftedSourceGenerate(struct caer_bias_shiftedsource shiftedSourceBias);
+struct caer_bias_shiftedsource caerBiasShiftedSourceParse(uint16_t shiftedSourceBias);
 
 #endif /* LIBCAER_DEVICES_DAVIS_H_ */

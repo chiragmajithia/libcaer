@@ -45,8 +45,6 @@ struct caer_dvs128_info {
 	uint16_t dvsSizeY;
 };
 
-typedef struct caer_dvs128_info *caerDVS128Info;
-
-caerDVS128Info caerDVS128InfoGet(caerDeviceHandle handle);
+struct caer_dvs128_info caerDVS128InfoGet(caerDeviceHandle handle);
 
 #endif /* LIBCAER_DEVICES_DVS128_H_ */

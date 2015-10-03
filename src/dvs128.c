@@ -175,11 +175,11 @@ bool dvs128Close(caerDeviceHandle cdh) {
 	return (true);
 }
 
-caerDVS128Info caerDVS128InfoGet(caerDeviceHandle cdh) {
+struct caer_dvs128_info caerDVS128InfoGet(caerDeviceHandle cdh) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 
-	// Return a link to the device information.
-	return (&handle->info);
+	// Return a copy of the device information.
+	return (handle->info);
 }
 
 bool dvs128SendDefaultConfig(caerDeviceHandle cdh) {

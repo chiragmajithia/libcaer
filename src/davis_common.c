@@ -293,11 +293,11 @@ bool davisCommonClose(davisHandle handle) {
 	return (true);
 }
 
-caerDavisInfo caerDavisInfoGet(caerDeviceHandle cdh) {
+struct caer_davis_info caerDavisInfoGet(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
-	// Return a link to the device information.
-	return (&handle->info);
+	// Return a copy of the device information.
+	return (handle->info);
 }
 
 bool davisCommonSendDefaultFPGAConfig(caerDeviceHandle cdh,
@@ -418,205 +418,216 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	return (true);
 }
 
+#define CF_N_TYPE(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = true, \
+	.typeNormal = true, .currentLevelNormal = true }
+
+#define CF_P_TYPE(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
+	.typeNormal = true, .currentLevelNormal = true }
+
+#define CF_N_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = true, \
+	.typeNormal = false, .currentLevelNormal = true }
+
+#define CF_P_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
+	.typeNormal = false, .currentLevelNormal = true }
+
+#define CF_N_TYPE_OFF(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = false, .sexN = true, \
+	.typeNormal = true, .currentLevelNormal = true }
+
+#define CF_P_TYPE_OFF(COARSE, FINE) (struct caer_bias_coarsefine) \
+	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = false, .sexN = false, \
+	.typeNormal = true, .currentLevelNormal = true }
+
+#define SHIFTSOURCE(REF, REG, OPMODE) (struct caer_bias_shiftedsource) \
+	{ .refValue = REF, .regValue = REG, .operatingMode = OPMODE, .voltageLevel = SPLIT_GATE }
+
+#define VDAC(VOLT, CURR) (struct caer_bias_vdac) \
+	{ .voltageValue = VOLT, .currentValue = CURR }
+
 bool davisCommonSendDefaultChipConfig(caerDeviceHandle cdh,
 bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param)) {
 	davisHandle handle = (davisHandle) cdh;
 
 	// Default bias configuration.
 	if (IS_240(handle->info.chipID)) {
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN,
-			caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN,
-			caerBiasGenerateCoarseFine(4, 0, true, true, true, true));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 39)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN, caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 0)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSCASEPC,
-			caerBiasGenerateCoarseFine(5, 185, true, true, false, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_CAS(5, 185)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFCASBNC,
-			caerBiasGenerateCoarseFine(5, 115, true, true, false, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_CAS(5, 115)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSROSFBN,
-			caerBiasGenerateCoarseFine(6, 219, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 219)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LOCALBUFBN,
-			caerBiasGenerateCoarseFine(5, 164, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 164)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PIXINVBN,
-			caerBiasGenerateCoarseFine(5, 129, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
-			caerBiasGenerateCoarseFine(2, 58, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
-			caerBiasGenerateCoarseFine(1, 16, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_REFRBP,
-			caerBiasGenerateCoarseFine(4, 25, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPDBN,
-			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 129)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(2, 58)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, caerBiasCoarseFineGenerate(CF_P_TYPE(1, 16)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_REFRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(4, 25)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPDBN, caerBiasCoarseFineGenerate(CF_N_TYPE(6, 91)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_LCOLTIMEOUTBN,
-			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 49)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUXBP,
-			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(4, 80)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_AEPUYBP,
-			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(7, 152)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFTHRBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_IFREFRBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PADFOLLBN,
-			caerBiasGenerateCoarseFine(7, 215, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(7, 215)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_APSOVERFLOWLEVEL,
-			caerBiasGenerateCoarseFine(6, 253, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 253)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_BIASBUFFER,
-			caerBiasGenerateCoarseFine(5, 254, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 254)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSP,
-			caerBiasGenerateShiftedSource(33, 20, SHIFTED_SOURCE, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, SHIFTED_SOURCE)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_SSN,
-			caerBiasGenerateShiftedSource(33, 21, SHIFTED_SOURCE, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, SHIFTED_SOURCE)));
 
 	}
 
 	if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID)
 	|| IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL, caerBiasGenerateVDAC(27, 6));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSCAS, caerBiasGenerateVDAC(21, 6));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFHIGH, caerBiasGenerateVDAC(30, 7));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFLOW, caerBiasGenerateVDAC(1, 7));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL, caerBiasVDACGenerate(VDAC(27, 6)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSCAS, caerBiasVDACGenerate(VDAC(21, 6)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFHIGH, caerBiasVDACGenerate(VDAC(30, 7)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFLOW, caerBiasVDACGenerate(VDAC(1, 7)));
 
 		if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
 			// Only DAVIS346 and 640 have ADC testing.
-			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE, caerBiasGenerateVDAC(21, 7));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE,
+				caerBiasVDACGenerate(VDAC(21, 7)));
 		}
 
 		if (IS_208(handle->info.chipID)) {
-			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_RESETHIGHPASS, caerBiasGenerateVDAC(63, 7));
-			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSS, caerBiasGenerateVDAC(11, 5));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_RESETHIGHPASS, caerBiasVDACGenerate(VDAC(63, 7)));
+			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSS, caerBiasVDACGenerate(VDAC(11, 5)));
 
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REGBIASBP,
-				caerBiasGenerateCoarseFine(5, 20, true, false, true, true));
+				caerBiasCoarseFineGenerate(CF_P_TYPE(5, 20)));
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSSBN,
-				caerBiasGenerateCoarseFine(5, 20, true, true, true, true));
+				caerBiasCoarseFineGenerate(CF_N_TYPE(5, 20)));
 		}
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_LOCALBUFBN,
-			caerBiasGenerateCoarseFine(5, 164, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 164)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PADFOLLBN,
-			caerBiasGenerateCoarseFine(7, 215, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_DIFFBN,
-			caerBiasGenerateCoarseFine(4, 39, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ONBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_OFFBN,
-			caerBiasGenerateCoarseFine(4, 1, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(7, 215)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_DIFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 39)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ONBN, caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_OFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 1)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PIXINVBN,
-			caerBiasGenerateCoarseFine(5, 129, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRBP,
-			caerBiasGenerateCoarseFine(2, 58, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRSFBP,
-			caerBiasGenerateCoarseFine(1, 16, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_REFRBP,
-			caerBiasGenerateCoarseFine(4, 25, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 129)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(2, 58)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_PRSFBP, caerBiasCoarseFineGenerate(CF_P_TYPE(1, 16)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_REFRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(4, 25)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_READOUTBUFBP,
-			caerBiasGenerateCoarseFine(6, 20, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(6, 20)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSROSFBN,
-			caerBiasGenerateCoarseFine(6, 219, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 219)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCCOMPBP,
-			caerBiasGenerateCoarseFine(5, 20, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(5, 20)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_COLSELLOWBN,
-			caerBiasGenerateCoarseFine(0, 1, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(0, 1)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_DACBUFBP,
-			caerBiasGenerateCoarseFine(6, 60, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(6, 60)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_LCOLTIMEOUTBN,
-			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPDBN,
-			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 49)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPDBN, caerBiasCoarseFineGenerate(CF_N_TYPE(6, 91)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPUXBP,
-			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(4, 80)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_AEPUYBP,
-			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(7, 152)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_IFREFRBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_IFTHRBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_BIASBUFFER,
-			caerBiasGenerateCoarseFine(5, 254, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 254)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_SSP,
-			caerBiasGenerateShiftedSource(1, 33, SHIFTED_SOURCE, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, SHIFTED_SOURCE)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_SSN,
-			caerBiasGenerateShiftedSource(1, 33, SHIFTED_SOURCE, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, SHIFTED_SOURCE)));
 
 		if (IS_640(handle->info.chipID)) {
 			// Slow down pixels for big 640x480 array, to avoid overwhelming the AER bus.
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS640_CONFIG_BIAS_PRBP,
-				caerBiasGenerateCoarseFine(2, 3, true, false, true, true));
+				caerBiasCoarseFineGenerate(CF_P_TYPE(2, 3)));
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS640_CONFIG_BIAS_PRSFBP,
-				caerBiasGenerateCoarseFine(1, 1, true, false, true, true));
+				caerBiasCoarseFineGenerate(CF_P_TYPE(1, 1)));
 		}
 	}
 
 	if (IS_RGB(handle->info.chipID)) {
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSCAS, caerBiasGenerateVDAC(21, 4));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG1LO, caerBiasGenerateVDAC(21, 4));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG2LO, caerBiasGenerateVDAC(0, 0));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_TX2OVG2HI, caerBiasGenerateVDAC(63, 0));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_GND07, caerBiasGenerateVDAC(13, 4));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCTESTVOLTAGE, caerBiasGenerateVDAC(21, 0));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFHIGH, caerBiasGenerateVDAC(63, 7));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFLOW, caerBiasGenerateVDAC(0, 7));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSCAS, caerBiasVDACGenerate(VDAC(21, 4)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG1LO, caerBiasVDACGenerate(VDAC(21, 4)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG2LO, caerBiasVDACGenerate(VDAC(0, 0)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_TX2OVG2HI, caerBiasVDACGenerate(VDAC(63, 0)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_GND07, caerBiasVDACGenerate(VDAC(13, 4)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCTESTVOLTAGE, caerBiasVDACGenerate(VDAC(21, 0)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFHIGH, caerBiasVDACGenerate(VDAC(63, 7)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCREFLOW, caerBiasVDACGenerate(VDAC(0, 7)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_IFREFRBN,
-			caerBiasGenerateCoarseFine(5, 255, false, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_OFF(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_IFTHRBN,
-			caerBiasGenerateCoarseFine(5, 255, false, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_OFF(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_LOCALBUFBN,
-			caerBiasGenerateCoarseFine(5, 164, false, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_OFF(5, 164)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PADFOLLBN,
-			caerBiasGenerateCoarseFine(7, 209, false, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE_OFF(7, 209)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PIXINVBN,
-			caerBiasGenerateCoarseFine(4, 164, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_DIFFBN,
-			caerBiasGenerateCoarseFine(4, 54, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ONBN,
-			caerBiasGenerateCoarseFine(6, 63, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OFFBN,
-			caerBiasGenerateCoarseFine(2, 138, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PRBP,
-			caerBiasGenerateCoarseFine(1, 108, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(4, 164)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_DIFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 54)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ONBN, caerBiasCoarseFineGenerate(CF_N_TYPE(6, 63)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(2, 138)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(1, 108)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_PRSFBP,
-			caerBiasGenerateCoarseFine(1, 108, true, false, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_REFRBP,
-			caerBiasGenerateCoarseFine(4, 28, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(1, 108)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_REFRBP, caerBiasCoarseFineGenerate(CF_P_TYPE(4, 28)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ARRAYBIASBUFFERBN,
-			caerBiasGenerateCoarseFine(6, 128, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 128)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ARRAYLOGICBUFFERBN,
-			caerBiasGenerateCoarseFine(5, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_FALLTIMEBN,
-			caerBiasGenerateCoarseFine(7, 41, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(7, 41)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_RISETIMEBP,
-			caerBiasGenerateCoarseFine(6, 162, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(6, 162)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_READOUTBUFBP,
-			caerBiasGenerateCoarseFine(6, 20, false, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE_OFF(6, 20)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSROSFBN,
-			caerBiasGenerateCoarseFine(6, 255, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_ADCCOMPBP,
-			caerBiasGenerateCoarseFine(4, 159, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(4, 159)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_DACBUFBP,
-			caerBiasGenerateCoarseFine(6, 194, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(6, 194)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_LCOLTIMEOUTBN,
-			caerBiasGenerateCoarseFine(5, 49, true, true, true, true));
-		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPDBN,
-			caerBiasGenerateCoarseFine(6, 91, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(5, 49)));
+		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPDBN, caerBiasCoarseFineGenerate(CF_N_TYPE(6, 91)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPUXBP,
-			caerBiasGenerateCoarseFine(4, 80, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(4, 80)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_AEPUYBP,
-			caerBiasGenerateCoarseFine(7, 152, true, false, true, true));
+			caerBiasCoarseFineGenerate(CF_P_TYPE(7, 152)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_BIASBUFFER,
-			caerBiasGenerateCoarseFine(6, 251, true, true, true, true));
+			caerBiasCoarseFineGenerate(CF_N_TYPE(6, 251)));
 
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_SSP,
-			caerBiasGenerateShiftedSource(1, 33, TIED_TO_RAIL, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, TIED_TO_RAIL)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_SSN,
-			caerBiasGenerateShiftedSource(2, 33, SHIFTED_SOURCE, SPLIT_GATE));
+			caerBiasShiftedSourceGenerate(SHIFTSOURCE(2, 33, SHIFTED_SOURCE)));
 	}
 
 	// Default chip configuration.
@@ -3168,59 +3179,95 @@ static void davisDataAcquisitionThreadConfig(davisHandle handle) {
 	}
 }
 
-uint16_t caerBiasGenerateVDAC(uint8_t voltageValue, uint8_t currentValue) {
+uint16_t caerBiasVDACGenerate(struct caer_bias_vdac vdacBias) {
 	// Build up bias value from all its components.
-	uint16_t biasValue = U16T((voltageValue & 0x3F) << 0);
-	biasValue |= U16T((currentValue & 0x07) << 6);
+	uint16_t biasValue = U16T((vdacBias.voltageValue & 0x3F) << 0);
+	biasValue |= U16T((vdacBias.currentValue & 0x07) << 6);
 
 	return (biasValue);
 }
 
-uint16_t caerBiasGenerateCoarseFine(uint8_t coarseValue, uint8_t fineValue, bool enabled, bool sexN,
-bool typeNormal, bool currentLevelNormal) {
+struct caer_bias_vdac caerBiasVDACParse(uint16_t vdacBias) {
+	struct caer_bias_vdac biasValue;
+
+	// Decompose bias integer into its parts.
+	biasValue.voltageValue = vdacBias & 0x3F;
+	biasValue.currentValue = (vdacBias >> 6) & 0x07;
+
+	return (biasValue);
+}
+
+uint16_t caerBiasCoarseFineGenerate(struct caer_bias_coarsefine coarseFineBias) {
 	uint16_t biasValue = 0;
 
 	// Build up bias value from all its components.
-	if (enabled) {
+	if (coarseFineBias.enabled) {
 		biasValue |= 0x01;
 	}
-	if (sexN) {
+	if (coarseFineBias.sexN) {
 		biasValue |= 0x02;
 	}
-	if (typeNormal) {
+	if (coarseFineBias.typeNormal) {
 		biasValue |= 0x04;
 	}
-	if (currentLevelNormal) {
+	if (coarseFineBias.currentLevelNormal) {
 		biasValue |= 0x08;
 	}
 
-	biasValue |= U16T((fineValue & 0xFF) << 4);
-	biasValue |= U16T((coarseValue & 0x07) << 12);
+	biasValue |= U16T((coarseFineBias.fineValue & 0xFF) << 4);
+	biasValue |= U16T((coarseFineBias.coarseValue & 0x07) << 12);
 
 	return (biasValue);
 }
 
-uint16_t caerBiasGenerateShiftedSource(uint8_t refValue, uint8_t regValue,
-	enum caer_bias_shifted_source_operating_mode operatingMode,
-	enum caer_bias_shifted_source_voltage_level voltageLevel) {
+struct caer_bias_coarsefine caerBiasCoarseFineParse(uint16_t coarseFineBias) {
+	struct caer_bias_coarsefine biasValue;
+
+	// Decompose bias integer into its parts.
+	biasValue.enabled = (coarseFineBias & 0x01);
+	biasValue.sexN = (coarseFineBias & 0x02);
+	biasValue.typeNormal = (coarseFineBias & 0x04);
+	biasValue.currentLevelNormal = (coarseFineBias & 0x08);
+	biasValue.fineValue = U8T(coarseFineBias >> 4) & 0xFF;
+	biasValue.coarseValue = U8T(coarseFineBias >> 12) & 0x07;
+
+	return (biasValue);
+}
+
+uint16_t caerBiasShiftedSourceGenerate(struct caer_bias_shiftedsource shiftedSourceBias) {
 	uint16_t biasValue = 0;
 
-	if (operatingMode == HI_Z) {
+	if (shiftedSourceBias.operatingMode == HI_Z) {
 		biasValue |= 0x01;
 	}
-	else if (operatingMode == TIED_TO_RAIL) {
+	else if (shiftedSourceBias.operatingMode == TIED_TO_RAIL) {
 		biasValue |= 0x02;
 	}
 
-	if (voltageLevel == SINGLE_DIODE) {
+	if (shiftedSourceBias.voltageLevel == SINGLE_DIODE) {
 		biasValue |= (0x01 << 2);
 	}
-	else if (voltageLevel == DOUBLE_DIODE) {
+	else if (shiftedSourceBias.voltageLevel == DOUBLE_DIODE) {
 		biasValue |= (0x02 << 2);
 	}
 
-	biasValue |= U16T((refValue & 0x3F) << 4);
-	biasValue |= U16T((regValue & 0x3F) << 10);
+	biasValue |= U16T((shiftedSourceBias.refValue & 0x3F) << 4);
+	biasValue |= U16T((shiftedSourceBias.regValue & 0x3F) << 10);
+
+	return (biasValue);
+}
+
+struct caer_bias_shiftedsource caerBiasShiftedSourceParse(uint16_t shiftedSourceBias) {
+	struct caer_bias_shiftedsource biasValue;
+
+	// Decompose bias integer into its parts.
+	biasValue.operatingMode =
+		(shiftedSourceBias & 0x01) ? (HI_Z) : ((shiftedSourceBias & 0x02) ? (TIED_TO_RAIL) : (SHIFTED_SOURCE));
+	biasValue.voltageLevel =
+		((shiftedSourceBias >> 2) & 0x01) ?
+			(SINGLE_DIODE) : (((shiftedSourceBias >> 2) & 0x02) ? (DOUBLE_DIODE) : (SPLIT_GATE));
+	biasValue.refValue = (shiftedSourceBias >> 4) & 0x3F;
+	biasValue.regValue = (shiftedSourceBias >> 10) & 0x3F;
 
 	return (biasValue);
 }
