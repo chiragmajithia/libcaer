@@ -3,9 +3,12 @@
 
 #include "devices/davis.h"
 #include "ringbuffer/ringbuffer.h"
-#include "c11threads_posix.h"
 #include <stdatomic.h>
 #include <libusb-1.0/libusb.h>
+
+#ifdef HAVE_PTHREADS
+	#include "c11threads_posix.h"
+#endif
 
 #define APS_READOUT_TYPES_NUM 2
 #define APS_READOUT_RESET  0

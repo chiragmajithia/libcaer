@@ -3,9 +3,12 @@
 
 #include "devices/dvs128.h"
 #include "ringbuffer/ringbuffer.h"
-#include "c11threads_posix.h"
 #include <stdatomic.h>
 #include <libusb-1.0/libusb.h>
+
+#ifdef HAVE_PTHREADS
+	#include "c11threads_posix.h"
+#endif
 
 #define DVS_DEVICE_NAME "DVS128"
 
