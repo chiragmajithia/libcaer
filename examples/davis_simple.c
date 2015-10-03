@@ -41,28 +41,45 @@ int main(void) {
 	}
 
 	// Let's take a look at the information we have on the device.
-	caerDavisInfo davis_info = caerDavisInfoGet(davis_handle);
+	struct caer_davis_info davis_info = caerDavisInfoGet(davis_handle);
 
-	printf("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", davis_info->deviceString,
-		davis_info->deviceID, davis_info->deviceIsMaster, davis_info->dvsSizeX, davis_info->dvsSizeY,
-		davis_info->logicVersion);
+	printf("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", davis_info.deviceString,
+		davis_info.deviceID, davis_info.deviceIsMaster, davis_info.dvsSizeX, davis_info.dvsSizeY,
+		davis_info.logicVersion);
 
 	// Send the default configuration before using the device.
 	// No configuration is sent automatically!
 	caerDeviceSendDefaultConfig(davis_handle);
 
 	// Tweak some biases, to increase bandwidth in this case.
+	struct caer_bias_coarsefine coarseFineBias;
+
+	coarseFineBias.coarseValue = 2;
+	coarseFineBias.fineValue = 116;
+	coarseFineBias.enabled = true;
+	coarseFineBias.sexN = false;
+	coarseFineBias.typeNormal = true;
+	coarseFineBias.currentLevelNormal = true;
 	caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
-		caerBiasGenerateCoarseFine(2, 116, true, false, true, true));
+		caerBiasCoarseFineGenerate(coarseFineBias));
+
+	coarseFineBias.coarseValue = 1;
+	coarseFineBias.fineValue = 33;
+	coarseFineBias.enabled = true;
+	coarseFineBias.sexN = false;
+	coarseFineBias.typeNormal = true;
+	coarseFineBias.currentLevelNormal = true;
 	caerDeviceConfigSet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
-		caerBiasGenerateCoarseFine(1, 33, true, false, true, true));
+		caerBiasCoarseFineGenerate(coarseFineBias));
 
 	// Let's verify they really changed!
 	uint32_t prBias, prsfBias;
 	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, &prBias);
 	caerDeviceConfigGet(davis_handle, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, &prsfBias);
 
-	printf("New bias values --- PR: %d, PRSF: %d.\n", prBias, prsfBias);
+	printf("New bias values --- PR-coarse: %d, PR-fine: %d, PRSF-coarse: %d, PRSF-fine: %d.\n",
+		caerBiasCoarseFineParse(prBias).coarseValue, caerBiasCoarseFineParse(prBias).fineValue,
+		caerBiasCoarseFineParse(prsfBias).coarseValue, caerBiasCoarseFineParse(prsfBias).fineValue);
 
 	// Now let's get start getting some data from the device. We just loop, no notification needed.
 	caerDeviceDataStart(davis_handle, NULL, NULL, NULL);
