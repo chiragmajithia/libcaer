@@ -23,7 +23,7 @@ extern "C" {
 #include <errno.h>
 #include <endian.h>
 
-// Include libcaer headers.
+// Include libcaer log headers always.
 #include "log.h"
 
 // Common macros, useful for everyone.

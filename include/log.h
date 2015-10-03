@@ -8,6 +8,8 @@
 #ifndef LIBCAER_LOG_H_
 #define LIBCAER_LOG_H_
 
+#include <stdint.h>
+
 // Debug severity levels
 #define CAER_LOG_EMERGENCY (0)
 #define CAER_LOG_ALERT     (1)
