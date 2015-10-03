@@ -3,13 +3,6 @@ file(GLOB_RECURSE LIBCAER_SRC_FILES *.c)
 # Add --as-needed to linker flags for library.
 SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
 
-# Define shared library path suffix if not present.
-IF (NOT LIB_SUFFIX)
-	IF (${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
-		SET(LIB_SUFFIX 64)
-	ENDIF()
-ENDIF()
-
 ADD_LIBRARY(caer SHARED ${LIBCAER_SRC_FILES})
 
 SET_TARGET_PROPERTIES(caer
