@@ -25,6 +25,12 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 		// First prepend the time.
 		time_t currentTimeEpoch = time(NULL);
 
+		// From localtime_r() man-page: "According to POSIX.1-2004, localtime()
+		// is required to behave as though tzset(3) was called, while
+		// localtime_r() does not have this requirement."
+		// So we make sure to call it here, to be portable.
+		tzset();
+
 		struct tm currentTime;
 		localtime_r(&currentTimeEpoch, &currentTime);
 
@@ -75,7 +81,8 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 		}
 
 		// Copy all strings into one and ensure NUL termination.
-		size_t logLength = (size_t) snprintf(NULL, 0, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem, format);
+		size_t logLength = (size_t) snprintf(NULL, 0, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem,
+			format);
 		char logString[logLength + 1];
 		snprintf(logString, logLength + 1, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem, format);
 
