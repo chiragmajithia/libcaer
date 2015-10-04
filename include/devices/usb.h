@@ -44,7 +44,8 @@ bool caerDeviceConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramA
 bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
 bool caerDeviceDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
-	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr);
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr),
+	void *dataShutdownUserPtr);
 bool caerDeviceDataStop(caerDeviceHandle handle);
 caerEventPacketContainer caerDeviceDataGet(caerDeviceHandle handle);
 

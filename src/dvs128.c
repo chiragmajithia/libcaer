@@ -160,6 +160,8 @@ bool dvs128Close(caerDeviceHandle cdh) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
 
+	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Shutting down ...");
+
 	// Finally, close the device fully.
 	dvs128DeviceClose(state->deviceHandle);
 
@@ -495,7 +497,8 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 }
 
 bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr), void (*dataNotifyDecrease)(void *ptr),
-	void *dataNotifyUserPtr) {
+	void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr),
+	void *dataShutdownUserPtr) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
 
@@ -503,6 +506,8 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	state->dataNotifyIncrease = dataNotifyIncrease;
 	state->dataNotifyDecrease = dataNotifyDecrease;
 	state->dataNotifyUserPtr = dataNotifyUserPtr;
+	state->dataShutdownNotify = dataShutdownNotify;
+	state->dataShutdownUserPtr = dataShutdownUserPtr;
 
 	// Initialize RingBuffer.
 	state->dataExchangeBuffer = ringBufferInit(atomic_load(&state->dataExchangeBufferSize));
@@ -547,7 +552,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	// Wait for the data acquisition thread to be ready.
-	while (atomic_load(&state->dataAcquisitionThreadRun) == 0) {
+	while (!atomic_load(&state->dataAcquisitionThreadRun)) {
 		;
 	}
 
@@ -1139,7 +1144,7 @@ static int dvs128DataAcquisitionThread(void *inPtr) {
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
-	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
+	while (atomic_load(&state->dataAcquisitionThreadRun) && state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
 		if (atomic_load(&state->dataAcquisitionThreadConfigUpdate) != 0) {
 			dvs128DataAcquisitionThreadConfig(handle);
@@ -1152,6 +1157,13 @@ static int dvs128DataAcquisitionThread(void *inPtr) {
 
 	// Cancel all transfers and handle them.
 	dvs128DeallocateTransfers(handle);
+
+	// Ensure shutdown is stored and notified, could be because of all data transfers going away!
+	atomic_store(&state->dataAcquisitionThreadRun, false);
+
+	if (state->dataShutdownNotify != NULL) {
+		state->dataShutdownNotify(state->dataShutdownUserPtr);
+	}
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
 

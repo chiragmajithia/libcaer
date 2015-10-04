@@ -35,6 +35,8 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 }
 
 bool davisFX2Close(caerDeviceHandle cdh) {
+	caerLog(CAER_LOG_DEBUG, ((davisHandle) cdh)->info.deviceString, "Shutting down ...");
+
 	return (davisCommonClose((davisHandle) cdh));
 }
 

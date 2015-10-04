@@ -1774,7 +1774,8 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 }
 
 bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr),
-	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr) {
+	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr),
+	void *dataShutdownUserPtr) {
 	davisHandle handle = (davisHandle) cdh;
 	davisState state = &handle->state;
 
@@ -1782,6 +1783,8 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	state->dataNotifyIncrease = dataNotifyIncrease;
 	state->dataNotifyDecrease = dataNotifyDecrease;
 	state->dataNotifyUserPtr = dataNotifyUserPtr;
+	state->dataShutdownNotify = dataShutdownNotify;
+	state->dataShutdownUserPtr = dataShutdownUserPtr;
 
 	// Initialize RingBuffer.
 	state->dataExchangeBuffer = ringBufferInit(atomic_load(&state->dataExchangeBufferSize));
@@ -1874,7 +1877,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	// Wait for the data acquisition thread to be ready.
-	while (atomic_load(&state->dataAcquisitionThreadRun) == 0) {
+	while (!atomic_load(&state->dataAcquisitionThreadRun)) {
 		;
 	}
 
@@ -3136,7 +3139,7 @@ static int davisDataAcquisitionThread(void *inPtr) {
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
-	while (atomic_load(&state->dataAcquisitionThreadRun) != 0 && state->activeDataTransfers > 0) {
+	while (atomic_load(&state->dataAcquisitionThreadRun) && state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
 		if (atomic_load(&state->dataAcquisitionThreadConfigUpdate) != 0) {
 			davisDataAcquisitionThreadConfig(handle);
@@ -3149,6 +3152,13 @@ static int davisDataAcquisitionThread(void *inPtr) {
 
 	// Cancel all transfers and handle them.
 	davisDeallocateTransfers(handle);
+
+	// Ensure shutdown is stored and notified, could be because of all data transfers going away!
+	atomic_store(&state->dataAcquisitionThreadRun, false);
+
+	if (state->dataShutdownNotify != NULL) {
+		state->dataShutdownNotify(state->dataShutdownUserPtr);
+	}
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread shut down.");
 
