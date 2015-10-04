@@ -30,7 +30,7 @@ static inline int thrd_create(thrd_t *thr, thrd_start_t func, void *arg) {
 	}
 }
 
-static inline void thrd_exit(int res) {
+static inline _Noreturn void thrd_exit(int res) {
 	pthread_exit((void*) (intptr_t) res);
 }
 
