@@ -7,7 +7,7 @@ such as the Dynamic Vision Sensor (DVS) or DAVIS cameras.
 REQUIREMENTS:
 
 cmake >= 2.6
-gcc >= 4.9 or clang >= 3.7
+gcc >= 4.8 or clang >= 3.7
 libusb >= 1.0.19
 
 INSTALLATION:

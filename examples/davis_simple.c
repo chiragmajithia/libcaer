@@ -82,7 +82,7 @@ int main(void) {
 		caerBiasCoarseFineParse(prsfBias).coarseValue, caerBiasCoarseFineParse(prsfBias).fineValue);
 
 	// Now let's get start getting some data from the device. We just loop, no notification needed.
-	caerDeviceDataStart(davis_handle, NULL, NULL, NULL);
+	caerDeviceDataStart(davis_handle, NULL, NULL, NULL, NULL, NULL);
 
 	// Let's turn on blocking data-get mode to avoid wasting resources.
 	caerDeviceConfigSet(davis_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);

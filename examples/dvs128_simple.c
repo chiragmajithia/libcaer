@@ -63,7 +63,7 @@ int main(void) {
 	printf("New bias values --- PR: %d, FOLL: %d.\n", prBias, follBias);
 
 	// Now let's get start getting some data from the device. We just loop, no notification needed.
-	caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL);
+	caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL, NULL, NULL);
 
 	// Let's turn on blocking data-get mode to avoid wasting resources.
 	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
