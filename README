@@ -14,7 +14,7 @@ INSTALLATION:
 
 1) configure:
 
-$ cmake .
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr .
 
 2) build:
 
