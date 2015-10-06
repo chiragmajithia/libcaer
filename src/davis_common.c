@@ -858,16 +858,45 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_RUN:
 				case DAVIS_CONFIG_APS_RESET_READ:
 				case DAVIS_CONFIG_APS_WAIT_ON_TRANSFER_STALL:
-				case DAVIS_CONFIG_APS_START_COLUMN_0:
-				case DAVIS_CONFIG_APS_START_ROW_0:
-				case DAVIS_CONFIG_APS_END_COLUMN_0:
-				case DAVIS_CONFIG_APS_END_ROW_0:
 				case DAVIS_CONFIG_APS_RESET_SETTLE:
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
 				case DAVIS_CONFIG_APS_ROW_SETTLE:
 				case DAVIS_CONFIG_APS_NULL_SETTLE:
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
+
+				case DAVIS_CONFIG_APS_START_COLUMN_0: {
+					uint32_t endColumn = 0;
+					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &endColumn);
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					state->apsWindow0SizeX = U16T(endColumn + 1 - param);
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_START_ROW_0: {
+					uint32_t endRow = 0;
+					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					state->apsWindow0SizeY = U16T(endRow + 1 - param);
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_END_COLUMN_0: {
+					uint32_t startColumn = 0;
+					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+						&startColumn);
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					state->apsWindow0SizeX = U16T(param + 1 - startColumn);
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_END_ROW_0: {
+					uint32_t startRow = 0;
+					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &startRow);
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					state->apsWindow0SizeY = U16T(param + 1 - startRow);
+					break;
+				}
 
 				case DAVIS_CONFIG_APS_EXPOSURE:
 				case DAVIS_CONFIG_APS_FRAME_DELAY:
@@ -905,6 +934,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_END_COLUMN_3:
 				case DAVIS_CONFIG_APS_END_ROW_3:
 					if (handle->info.apsHasQuadROI) {
+						// TODO: no support on host-side for QuadROI and multi-frame decoding.
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					else {
