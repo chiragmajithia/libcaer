@@ -858,11 +858,20 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_RUN:
 				case DAVIS_CONFIG_APS_RESET_READ:
 				case DAVIS_CONFIG_APS_WAIT_ON_TRANSFER_STALL:
+				case DAVIS_CONFIG_APS_ROW_SETTLE:
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					break;
+
 				case DAVIS_CONFIG_APS_RESET_SETTLE:
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
-				case DAVIS_CONFIG_APS_ROW_SETTLE:
 				case DAVIS_CONFIG_APS_NULL_SETTLE:
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					// Not supported on DAVIS RGB APS state machine.
+					if (!IS_RGB(handle->info.chipID)) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
 					break;
 
 				case DAVIS_CONFIG_APS_START_COLUMN_0: {
@@ -1438,15 +1447,24 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_START_ROW_0:
 				case DAVIS_CONFIG_APS_END_COLUMN_0:
 				case DAVIS_CONFIG_APS_END_ROW_0:
-				case DAVIS_CONFIG_APS_RESET_SETTLE:
-				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
 				case DAVIS_CONFIG_APS_ROW_SETTLE:
-				case DAVIS_CONFIG_APS_NULL_SETTLE:
 				case DAVIS_CONFIG_APS_HAS_GLOBAL_SHUTTER:
 				case DAVIS_CONFIG_APS_HAS_QUAD_ROI:
 				case DAVIS_CONFIG_APS_HAS_EXTERNAL_ADC:
 				case DAVIS_CONFIG_APS_HAS_INTERNAL_ADC:
 					return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					break;
+
+				case DAVIS_CONFIG_APS_RESET_SETTLE:
+				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
+				case DAVIS_CONFIG_APS_NULL_SETTLE:
+					// Not supported on DAVIS RGB APS state machine.
+					if (!IS_RGB(handle->info.chipID)) {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
 					break;
 
 				case DAVIS_CONFIG_APS_EXPOSURE:
