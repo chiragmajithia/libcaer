@@ -32,6 +32,19 @@ extern "C" {
 #define DAVIS_CHIP_DAVIS208  8
 #define DAVIS_CHIP_DAVIS346C 9
 
+#define IS_DAVIS128(chipID)  ((chipID) == DAVIS_CHIP_DAVIS128)
+#define IS_DAVIS208(chipID)  ((chipID) == DAVIS_CHIP_DAVIS208)
+#define IS_DAVIS240A(chipID) ((chipID) == DAVIS_CHIP_DAVIS240A)
+#define IS_DAVIS240B(chipID) ((chipID) == DAVIS_CHIP_DAVIS240B)
+#define IS_DAVIS240C(chipID) ((chipID) == DAVIS_CHIP_DAVIS240C)
+#define IS_DAVIS240(chipID)  (IS_DAVIS240A(chipID) || IS_DAVIS240B(chipID) || IS_DAVIS240C(chipID))
+#define IS_DAVIS346A(chipID) ((chipID) == DAVIS_CHIP_DAVIS346A)
+#define IS_DAVIS346B(chipID) ((chipID) == DAVIS_CHIP_DAVIS346B)
+#define IS_DAVIS346C(chipID) ((chipID) == DAVIS_CHIP_DAVIS346C)
+#define IS_DAVIS346(chipID)  (IS_DAVIS346A(chipID) || IS_DAVIS346B(chipID) || IS_DAVIS346C(chipID))
+#define IS_DAVIS640(chipID)  ((chipID) == DAVIS_CHIP_DAVIS640)
+#define IS_DAVISRGB(chipID)  ((chipID) == DAVIS_CHIP_DAVISRGB)
+
 #define DAVIS_CONFIG_MUX      0
 #define DAVIS_CONFIG_DVS      1
 #define DAVIS_CONFIG_APS      2

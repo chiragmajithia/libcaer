@@ -379,7 +379,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RAMP_RESET, 10); // in cycles @ ADCClock
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RAMP_SHORT_RESET, true);
 	}
-	if (IS_RGB(handle->info.chipID)) {
+	if (IS_DAVISRGB(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_TRANSFER, 3000); // in cycles @ ADCClock
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_RSFDSETTLE, 3000); // in cycles @ ADCClock
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSPDRESET, 3000); // in cycles @ ADCClock
@@ -453,7 +453,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	davisHandle handle = (davisHandle) cdh;
 
 	// Default bias configuration.
-	if (IS_240(handle->info.chipID)) {
+	if (IS_DAVIS240(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 39)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN, caerBiasCoarseFineGenerate(CF_N_TYPE(5, 255)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN, caerBiasCoarseFineGenerate(CF_N_TYPE(4, 0)));
@@ -496,20 +496,20 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 
 	}
 
-	if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID)
-	|| IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+	if (IS_DAVIS128(handle->info.chipID) || IS_DAVIS208(handle->info.chipID)
+	|| IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL, caerBiasVDACGenerate(VDAC(27, 6)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_APSCAS, caerBiasVDACGenerate(VDAC(21, 6)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFHIGH, caerBiasVDACGenerate(VDAC(30, 7)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_ADCREFLOW, caerBiasVDACGenerate(VDAC(1, 7)));
 
-		if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+		if (IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 			// Only DAVIS346 and 640 have ADC testing.
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE,
 				caerBiasVDACGenerate(VDAC(21, 7)));
 		}
 
-		if (IS_208(handle->info.chipID)) {
+		if (IS_DAVIS208(handle->info.chipID)) {
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_RESETHIGHPASS, caerBiasVDACGenerate(VDAC(63, 7)));
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS208_CONFIG_BIAS_REFSS, caerBiasVDACGenerate(VDAC(11, 5)));
 
@@ -561,7 +561,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS128_CONFIG_BIAS_SSN,
 			caerBiasShiftedSourceGenerate(SHIFTSOURCE(1, 33, SHIFTED_SOURCE)));
 
-		if (IS_640(handle->info.chipID)) {
+		if (IS_DAVIS640(handle->info.chipID)) {
 			// Slow down pixels for big 640x480 array, to avoid overwhelming the AER bus.
 			(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVIS640_CONFIG_BIAS_PRBP,
 				caerBiasCoarseFineGenerate(CF_P_TYPE(2, 3)));
@@ -570,7 +570,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		}
 	}
 
-	if (IS_RGB(handle->info.chipID)) {
+	if (IS_DAVISRGB(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_APSCAS, caerBiasVDACGenerate(VDAC(21, 4)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG1LO, caerBiasVDACGenerate(VDAC(21, 4)));
 		(*configSet)(cdh, DAVIS_CONFIG_BIAS, DAVISRGB_CONFIG_BIAS_OVG2LO, caerBiasVDACGenerate(VDAC(0, 0)));
@@ -660,7 +660,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	// VDAC 'AdcTestVoltage'. If false, the voltage comes from the pixels.
 	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS346_CONFIG_CHIP_TESTADC, false);
 
-	if (IS_208(handle->info.chipID)) {
+	if (IS_DAVIS208(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTPREAMPAVG, false);
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTBIASREFSS, false);
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTSENSE, true);
@@ -668,7 +668,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS208_CONFIG_CHIP_SELECTHIGHPASS, false);
 	}
 
-	if (IS_RGB(handle->info.chipID)) {
+	if (IS_DAVISRGB(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTOVG1LO, true);
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO, false);
 		(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI, false);
@@ -869,7 +869,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
 				case DAVIS_CONFIG_APS_NULL_SETTLE:
 					// Not supported on DAVIS RGB APS state machine.
-					if (!IS_RGB(handle->info.chipID)) {
+					if (!IS_DAVISRGB(handle->info.chipID)) {
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					else {
@@ -974,7 +974,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVISRGB_CONFIG_APS_GSTXFALL:
 				case DAVISRGB_CONFIG_APS_GSFDRESET:
 					// Support for DAVISRGB extra timing parameters.
-					if (IS_RGB(handle->info.chipID)) {
+					if (IS_DAVISRGB(handle->info.chipID)) {
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					else {
@@ -1042,14 +1042,14 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 		case DAVIS_CONFIG_BIAS: // Also DAVIS_CONFIG_CHIP (starts at address 128).
 			if (paramAddr < 128) {
 				// BIASING (DAVIS_CONFIG_BIAS).
-				if (IS_240(handle->info.chipID)) {
+				if (IS_DAVIS240(handle->info.chipID)) {
 					// DAVIS240 uses the old bias generator with 22 branches, and uses all of them.
 					if (paramAddr < 22) {
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 					}
 				}
-				else if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID)
-				|| IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+				else if (IS_DAVIS128(handle->info.chipID) || IS_DAVIS208(handle->info.chipID)
+				|| IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 					// All new DAVISes use the new bias generator with 37 branches.
 					switch (paramAddr) {
 						// Same and shared between all of the above chips.
@@ -1085,7 +1085,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 						case DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE:
 							// Only supported by DAVIS346 and DAVIS640 chips.
-							if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+							if (IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 								return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 							}
 							break;
@@ -1095,7 +1095,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 						case DAVIS208_CONFIG_BIAS_REGBIASBP:
 						case DAVIS208_CONFIG_BIAS_REFSSBN:
 							// Only supported by DAVIS208 chips.
-							if (IS_208(handle->info.chipID)) {
+							if (IS_DAVIS208(handle->info.chipID)) {
 								return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 							}
 							break;
@@ -1105,7 +1105,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 							break;
 					}
 				}
-				else if (IS_RGB(handle->info.chipID)) {
+				else if (IS_DAVISRGB(handle->info.chipID)) {
 					// DAVISRGB also uses the 37 branches bias generator, with different values.
 					switch (paramAddr) {
 						case DAVISRGB_CONFIG_BIAS_APSCAS:
@@ -1173,7 +1173,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 					case DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL:
 						// Only supported by DAVIS240 A/B chips.
-						if (IS_240A(handle->info.chipID) || IS_240B(handle->info.chipID)) {
+						if (IS_DAVIS240A(handle->info.chipID) || IS_DAVIS240B(handle->info.chipID)) {
 							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1193,15 +1193,17 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 					case DAVIS128_CONFIG_CHIP_SELECTGRAYCOUNTER:
 						// Only supported by the new DAVIS chips.
-						if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID) || IS_346(handle->info.chipID)
-						|| IS_640(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS128(
+							handle->info.chipID) || IS_DAVIS208(handle->info.chipID) || IS_DAVIS346(handle->info.chipID)
+							|| IS_DAVIS640(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
 
 					case DAVIS346_CONFIG_CHIP_TESTADC:
 						// Only supported by some of the new DAVIS chips.
-						if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS346(
+							handle->info.chipID) || IS_DAVIS640(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1210,7 +1212,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					case DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO: // Also DAVIS208_CONFIG_CHIP_SELECTBIASREFSS.
 					case DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI: // Also DAVIS208_CONFIG_CHIP_SELECTSENSE.
 						// Only supported by DAVIS208 and DAVISRGB.
-						if (IS_208(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS208(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1218,7 +1220,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					case DAVIS208_CONFIG_CHIP_SELECTPOSFB:
 					case DAVIS208_CONFIG_CHIP_SELECTHIGHPASS:
 						// Only supported by DAVIS208.
-						if (IS_208(handle->info.chipID)) {
+						if (IS_DAVIS208(handle->info.chipID)) {
 							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1462,7 +1464,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
 				case DAVIS_CONFIG_APS_NULL_SETTLE:
 					// Not supported on DAVIS RGB APS state machine.
-					if (!IS_RGB(handle->info.chipID)) {
+					if (!IS_DAVISRGB(handle->info.chipID)) {
 						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					else {
@@ -1534,7 +1536,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVISRGB_CONFIG_APS_GSTXFALL:
 				case DAVISRGB_CONFIG_APS_GSFDRESET:
 					// Support for DAVISRGB extra timing parameters.
-					if (IS_RGB(handle->info.chipID)) {
+					if (IS_DAVISRGB(handle->info.chipID)) {
 						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					else {
@@ -1603,14 +1605,14 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 		case DAVIS_CONFIG_BIAS: // Also DAVIS_CONFIG_CHIP (starts at address 128).
 			if (paramAddr < 128) {
 				// BIASING (DAVIS_CONFIG_BIAS).
-				if (IS_240(handle->info.chipID)) {
+				if (IS_DAVIS240(handle->info.chipID)) {
 					// DAVIS240 uses the old bias generator with 22 branches, and uses all of them.
 					if (paramAddr < 22) {
 						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 					}
 				}
-				else if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID)
-				|| IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+				else if (IS_DAVIS128(handle->info.chipID) || IS_DAVIS208(handle->info.chipID)
+				|| IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 					// All new DAVISes use the new bias generator with 37 branches.
 					switch (paramAddr) {
 						// Same and shared between all of the above chips.
@@ -1646,7 +1648,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 						case DAVIS346_CONFIG_BIAS_ADCTESTVOLTAGE:
 							// Only supported by DAVIS346 and DAVIS640 chips.
-							if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID)) {
+							if (IS_DAVIS346(handle->info.chipID) || IS_DAVIS640(handle->info.chipID)) {
 								return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 							}
 							break;
@@ -1656,7 +1658,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 						case DAVIS208_CONFIG_BIAS_REGBIASBP:
 						case DAVIS208_CONFIG_BIAS_REFSSBN:
 							// Only supported by DAVIS208 chips.
-							if (IS_208(handle->info.chipID)) {
+							if (IS_DAVIS208(handle->info.chipID)) {
 								return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_BIAS, paramAddr, param));
 							}
 							break;
@@ -1666,7 +1668,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 							break;
 					}
 				}
-				else if (IS_RGB(handle->info.chipID)) {
+				else if (IS_DAVISRGB(handle->info.chipID)) {
 					// DAVISRGB also uses the 37 branches bias generator, with different values.
 					switch (paramAddr) {
 						case DAVISRGB_CONFIG_BIAS_APSCAS:
@@ -1734,7 +1736,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 					case DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL:
 						// Only supported by DAVIS240 A/B chips.
-						if (IS_240A(handle->info.chipID) || IS_240B(handle->info.chipID)) {
+						if (IS_DAVIS240A(handle->info.chipID) || IS_DAVIS240B(handle->info.chipID)) {
 							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1748,15 +1750,17 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 					case DAVIS128_CONFIG_CHIP_SELECTGRAYCOUNTER:
 						// Only supported by the new DAVIS chips.
-						if (IS_128(handle->info.chipID) || IS_208(handle->info.chipID) || IS_346(handle->info.chipID)
-						|| IS_640(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS128(
+							handle->info.chipID) || IS_DAVIS208(handle->info.chipID) || IS_DAVIS346(handle->info.chipID)
+							|| IS_DAVIS640(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
 
 					case DAVIS346_CONFIG_CHIP_TESTADC:
 						// Only supported by some of the new DAVIS chips.
-						if (IS_346(handle->info.chipID) || IS_640(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS346(
+							handle->info.chipID) || IS_DAVIS640(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1765,7 +1769,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					case DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO: // Also DAVIS208_CONFIG_CHIP_SELECTBIASREFSS.
 					case DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI: // Also DAVIS208_CONFIG_CHIP_SELECTSENSE.
 						// Only supported by DAVIS208 and DAVISRGB.
-						if (IS_208(handle->info.chipID) || IS_RGB(handle->info.chipID)) {
+						if (IS_DAVIS208(handle->info.chipID) || IS_DAVISRGB(handle->info.chipID)) {
 							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -1773,7 +1777,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					case DAVIS208_CONFIG_CHIP_SELECTPOSFB:
 					case DAVIS208_CONFIG_CHIP_SELECTHIGHPASS:
 						// Only supported by DAVIS208.
-						if (IS_208(handle->info.chipID)) {
+						if (IS_DAVIS208(handle->info.chipID)) {
 							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_CHIP, paramAddr, param));
 						}
 						break;
@@ -2742,7 +2746,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 					// Invert polarity for PixelParade high gain pixels (DavisSense), because of
 					// negative gain from pre-amplifier.
-					uint8_t polarity = ((IS_208(handle->info.chipID)) && (data < 192)) ? U8T(~code) : (code);
+					uint8_t polarity = ((IS_DAVIS208(handle->info.chipID)) && (data < 192)) ? U8T(~code) : (code);
 
 					caerPolarityEventSetTimestamp(currentPolarityEvent, state->dvsTimestamp);
 					caerPolarityEventSetPolarity(currentPolarityEvent, (polarity & 0x01));
@@ -2795,7 +2799,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									- state->apsCountY[state->apsCurrentReadoutType])) :
 							(U16T(state->apsCountY[state->apsCurrentReadoutType]));
 
-					if (IS_RGB(handle->info.chipID)) {
+					if (IS_DAVISRGB(handle->info.chipID)) {
 						yPos = U16T(yPos + state->apsRGBPixelOffset);
 					}
 
@@ -2806,15 +2810,15 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					size_t pixelPosition = (size_t) (yPos * caerFrameEventGetLengthX(&state->currentFrameEvent)) + xPos;
 
 					if ((state->apsCurrentReadoutType == APS_READOUT_RESET
-						&& !(IS_RGB(handle->info.chipID) && state->apsGlobalShutter))
+						&& !(IS_DAVISRGB(handle->info.chipID) && state->apsGlobalShutter))
 						|| (state->apsCurrentReadoutType == APS_READOUT_SIGNAL
-							&& (IS_RGB(handle->info.chipID) && state->apsGlobalShutter))) {
+							&& (IS_DAVISRGB(handle->info.chipID) && state->apsGlobalShutter))) {
 						state->apsCurrentResetFrame[pixelPosition] = data;
 					}
 					else {
 						int32_t pixelValue = 0;
 
-						if (IS_RGB(handle->info.chipID) && state->apsGlobalShutter) {
+						if (IS_DAVISRGB(handle->info.chipID) && state->apsGlobalShutter) {
 							// DAVIS RGB GS has inverted samples, signal read comes first
 							// and was stored above inside state->apsCurrentResetFrame.
 							pixelValue = (data - state->apsCurrentResetFrame[pixelPosition]);
@@ -2839,7 +2843,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					state->apsCountY[state->apsCurrentReadoutType]++;
 
 					// RGB support: first 320 pixels are even, then odd.
-					if (IS_RGB(handle->info.chipID)) {
+					if (IS_DAVISRGB(handle->info.chipID)) {
 						if (state->apsRGBPixelOffsetDirection == 0) { // Increasing
 							state->apsRGBPixelOffset++;
 
