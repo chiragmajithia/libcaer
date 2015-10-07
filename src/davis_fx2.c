@@ -71,6 +71,24 @@ bool davisFX2ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, 
 		return (sendBias(handle->state.deviceHandle, paramAddr, U16T(param)));
 	}
 
+	// Global Shutter parameter needs special handling due to being present in two places,
+	// the chip SR and the APS module, and needing to be kept in sync.
+	if ((modAddr == DAVIS_CONFIG_CHIP && paramAddr == DAVIS240_CONFIG_CHIP_GLOBAL_SHUTTER)
+		|| (modAddr == DAVIS_CONFIG_APS && paramAddr == DAVIS_CONFIG_APS_GLOBAL_SHUTTER)) {
+		// Set in both the chip SR and the APS module, if GS flag exists.
+		if (handle->info.apsHasGlobalShutter) {
+			if (!sendChipSR(handle->state.deviceHandle, DAVIS240_CONFIG_CHIP_GLOBAL_SHUTTER, U8T(param))) {
+				return (false);
+			}
+
+			return (davisCommonConfigSet(handle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, param));
+		}
+		else {
+			// No global shutter supported.
+			return (false);
+		}
+	}
+
 	if (modAddr == DAVIS_CONFIG_CHIP) {
 		// Chip configuration is done differently for FX2 cameras, via separate vendor request.
 		return (sendChipSR(handle->state.deviceHandle, paramAddr, U8T(param)));

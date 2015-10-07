@@ -149,6 +149,9 @@ bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramA
 		return (false);
 	}
 
+	// Ensure content of param is zeroed out.
+	*param = 0;
+
 	// Call appropriate function.
 	return (configGetters[handle->deviceType](handle, modAddr, paramAddr, param));
 }
