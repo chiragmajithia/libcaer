@@ -72,8 +72,8 @@ struct davis_state {
 	bool apsFlipX;
 	bool apsFlipY;
 	bool apsIgnoreEvents;
-	uint16_t apsWindow0SizeX;
-	uint16_t apsWindow0SizeY;
+	atomic_uint_fast16_t apsWindow0SizeX;
+	atomic_uint_fast16_t apsWindow0SizeY;
 	bool apsGlobalShutter;
 	bool apsResetRead;
 	bool apsRGBPixelOffsetDirection; // 0 is increasing, 1 is decreasing.

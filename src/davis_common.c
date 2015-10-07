@@ -35,8 +35,8 @@ static inline void initFrame(davisHandle handle) {
 	caerFrameEventSetTSStartOfFrame(&handle->state.currentFrameEvent, handle->state.currentTimestamp);
 
 	// Setup frame.
-	caerFrameEventAllocatePixels(&handle->state.currentFrameEvent, handle->state.apsWindow0SizeX,
-		handle->state.apsWindow0SizeY, 1);
+	caerFrameEventAllocatePixels(&handle->state.currentFrameEvent, U16T(atomic_load(&handle->state.apsWindow0SizeX)),
+		U16T(atomic_load(&handle->state.apsWindow0SizeY)), 1);
 }
 
 static inline float calculateIMUAccelScale(uint8_t imuAccelScale) {
@@ -881,7 +881,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					uint32_t endColumn = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &endColumn);
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
-					state->apsWindow0SizeX = U16T(endColumn + 1 - param);
+					atomic_store(&state->apsWindow0SizeX, U16T(endColumn + 1 - param));
 					break;
 				}
 
@@ -889,7 +889,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					uint32_t endRow = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
-					state->apsWindow0SizeY = U16T(endRow + 1 - param);
+					atomic_store(&state->apsWindow0SizeY, U16T(endRow + 1 - param));
 					break;
 				}
 
@@ -898,7 +898,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
 						&startColumn);
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
-					state->apsWindow0SizeX = U16T(param + 1 - startColumn);
+					atomic_store(&state->apsWindow0SizeX, U16T(param + 1 - startColumn));
 					break;
 				}
 
@@ -906,7 +906,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					uint32_t startRow = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &startRow);
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
-					state->apsWindow0SizeY = U16T(param + 1 - startRow);
+					atomic_store(&state->apsWindow0SizeY, U16T(param + 1 - startRow));
 					break;
 				}
 
@@ -1914,10 +1914,10 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &param32);
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
-	state->apsWindow0SizeX = U16T(param32 + 1 - param32start);
+	atomic_store(&state->apsWindow0SizeX, U16T(param32 + 1 - param32start));
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
-	state->apsWindow0SizeY = U16T(param32 + 1 - param32start);
+	atomic_store(&state->apsWindow0SizeY, U16T(param32 + 1 - param32start));
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, &param32);
 	state->apsGlobalShutter = param32;
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ, &param32);
