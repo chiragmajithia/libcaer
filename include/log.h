@@ -26,6 +26,7 @@ extern "C" {
 
 void caerLogLevelSet(uint8_t logLevel);
 uint8_t caerLogLevelGet(void);
+void caerLogFileDescriptorsSet(int fd1, int fd2);
 void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 
 #ifdef __cplusplus

@@ -2,8 +2,11 @@
 #include <stdatomic.h>
 #include <stdarg.h>
 #include <time.h>
+#include <unistd.h>
 
 static atomic_uint_fast8_t caerLogLevel = ATOMIC_VAR_INIT(CAER_LOG_ERROR);
+static atomic_int caerLogFileDescriptor1 = ATOMIC_VAR_INIT(STDERR_FILENO);
+static atomic_int caerLogFileDescriptor2 = ATOMIC_VAR_INIT(-1);
 
 void caerLogLevelSet(uint8_t logLevel) {
 	atomic_store(&caerLogLevel, logLevel);
@@ -11,6 +14,11 @@ void caerLogLevelSet(uint8_t logLevel) {
 
 uint8_t caerLogLevelGet(void) {
 	return (atomic_load(&caerLogLevel));
+}
+
+void caerLogFileDescriptorsSet(int fd1, int fd2) {
+	atomic_store(&caerLogFileDescriptor1, fd1);
+	atomic_store(&caerLogFileDescriptor2, fd2);
 }
 
 void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
@@ -88,8 +96,18 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 
 		va_list argptr;
 
-		va_start(argptr, format);
-		vfprintf(stderr, logString, argptr);
-		va_end(argptr);
+		int logFileDescriptor1 = atomic_load(&caerLogFileDescriptor1);
+		if (logFileDescriptor1 >= 0) {
+			va_start(argptr, format);
+			vdprintf(logFileDescriptor1, logString, argptr);
+			va_end(argptr);
+		}
+
+		int logFileDescriptor2 = atomic_load(&caerLogFileDescriptor2);
+		if (logFileDescriptor2 >= 0) {
+			va_start(argptr, format);
+			vdprintf(logFileDescriptor2, logString, argptr);
+			va_end(argptr);
+		}
 	}
 }
