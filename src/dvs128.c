@@ -497,8 +497,7 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 }
 
 bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr), void (*dataNotifyDecrease)(void *ptr),
-	void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr),
-	void *dataShutdownUserPtr) {
+	void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr), void *dataShutdownUserPtr) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 	dvs128State state = &handle->state;
 
@@ -652,14 +651,30 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType
-				&& U8T(devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
+				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType) {
+				// Verify device firmware version.
+				if (U8T(devDesc.bcdDevice & 0x00FF) < requiredFirmwareVersion) {
+					caerLog(CAER_LOG_CRITICAL, __func__,
+						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						U8T(devDesc.bcdDevice & 0x00FF), requiredFirmwareVersion);
+
+					continue;
+				}
+
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
+					caerLog(CAER_LOG_INFO, __func__,
+						"USB bus number restriction is present (%" PRIu8 "), this device didn't match it (%" PRIu8 ").",
+						busNumber, libusb_get_bus_number(devicesList[i]));
+
 					continue;
 				}
 
 				if (devAddress > 0 && libusb_get_device_address(devicesList[i]) != devAddress) {
+					caerLog(CAER_LOG_INFO, __func__,
+						"USB device address restriction is present (%" PRIu8 "), this device didn't match it (%" PRIu8 ").",
+						devAddress, libusb_get_device_address(devicesList[i]));
+
 					continue;
 				}
 
@@ -687,6 +702,10 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 					if (!caerStrEquals(serialNumber, deviceSerialNumber)) {
 						libusb_close(devHandle);
 						devHandle = NULL;
+
+						caerLog(CAER_LOG_INFO, __func__,
+							"USB serial number restriction is present (%s), this device didn't match it (%s).",
+							serialNumber, deviceSerialNumber);
 
 						continue;
 					}
@@ -969,11 +988,11 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		}
 		else {
 			// address is LSB MSB (USB is LE)
-			uint16_t addressUSB = le16toh(*((uint16_t *) (&buffer[i])));
+			uint16_t addressUSB = le16toh(*((uint16_t * ) (&buffer[i])));
 
 			// same for timestamp, LSB MSB (USB is LE)
 			// 15 bit value of timestamp in 1 us tick
-			uint16_t timestampUSB = le16toh(*((uint16_t *) (&buffer[i + 2])));
+			uint16_t timestampUSB = le16toh(*((uint16_t * ) (&buffer[i + 2])));
 
 			// Expand to 32 bits. (Tick is 1µs already.)
 			state->lastTimestamp = state->currentTimestamp;

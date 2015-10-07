@@ -27,7 +27,6 @@ caerDeviceHandle davisFX2Open(uint16_t deviceID, uint8_t busNumberRestrict, uint
 		free(handle);
 
 		// Failed to open device and grab basic information!
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to open device.");
 		return (NULL);
 	}
 

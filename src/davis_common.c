@@ -2075,14 +2075,30 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 
 			// Check if this is the device we want (VID/PID).
 			if (devDesc.idVendor == devVID && devDesc.idProduct == devPID
-				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType
-				&& U8T(devDesc.bcdDevice & 0x00FF) >= requiredFirmwareVersion) {
+				&& U8T((devDesc.bcdDevice & 0xFF00) >> 8) == devType) {
+				// Verify device firmware version.
+				if (U8T(devDesc.bcdDevice & 0x00FF) < requiredFirmwareVersion) {
+					caerLog(CAER_LOG_CRITICAL, __func__,
+						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						U8T(devDesc.bcdDevice & 0x00FF), requiredFirmwareVersion);
+
+					continue;
+				}
+
 				// If a USB port restriction is given, honor it.
 				if (busNumber > 0 && libusb_get_bus_number(devicesList[i]) != busNumber) {
+					caerLog(CAER_LOG_INFO, __func__,
+						"USB bus number restriction is present (%" PRIu8 "), this device didn't match it (%" PRIu8 ").",
+						busNumber, libusb_get_bus_number(devicesList[i]));
+
 					continue;
 				}
 
 				if (devAddress > 0 && libusb_get_device_address(devicesList[i]) != devAddress) {
+					caerLog(CAER_LOG_INFO, __func__,
+						"USB device address restriction is present (%" PRIu8 "), this device didn't match it (%" PRIu8 ").",
+						devAddress, libusb_get_device_address(devicesList[i]));
+
 					continue;
 				}
 
@@ -2110,6 +2126,10 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 					if (!caerStrEquals(serialNumber, deviceSerialNumber)) {
 						libusb_close(devHandle);
 						devHandle = NULL;
+
+						caerLog(CAER_LOG_INFO, __func__,
+							"USB serial number restriction is present (%s), this device didn't match it (%s).",
+							serialNumber, deviceSerialNumber);
 
 						continue;
 					}
@@ -2152,6 +2172,10 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 					libusb_release_interface(devHandle, 0);
 					libusb_close(devHandle);
 					devHandle = NULL;
+
+					caerLog(CAER_LOG_CRITICAL, __func__,
+						"Device logic revision too old. You have revision %" PRIu16 "; but at least revision %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						logicVersion, requiredLogicRevision);
 
 					continue;
 				}
@@ -2360,7 +2384,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		bool forceCommit = false;
 
-		uint16_t event = le16toh(*((uint16_t *) (&buffer[i])));
+		uint16_t event = le16toh(*((uint16_t * ) (&buffer[i])));
 
 		// Check if timestamp.
 		if ((event & 0x8000) != 0) {
