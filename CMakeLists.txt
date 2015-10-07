@@ -19,12 +19,8 @@ ENDIF()
 SET(PROJECT_VERSION ${PROJECT_VERSION_NOREV}-r${PROJECT_REVISION})
 MESSAGE(STATUS "Project version is: ${PROJECT_VERSION}")
 
-# Define shared library path suffix if not present.
-IF (NOT LIB_SUFFIX)
-	IF (${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
-		SET(LIB_SUFFIX 64)
-	ENDIF()
-ENDIF()
+# Define installation paths.
+INCLUDE(GNUInstallDirs)
 
 # Set compiler info
 SET(CC_CLANG FALSE)
@@ -122,4 +118,4 @@ ENDFOREACH()
 
 CONFIGURE_FILE(libcaer.pc.in libcaer.pc @ONLY)
 
-INSTALL(FILES libcaer.pc DESTINATION lib${LIB_SUFFIX}/pkgconfig)
+INSTALL(FILES libcaer.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
