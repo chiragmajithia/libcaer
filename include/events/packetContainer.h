@@ -28,11 +28,21 @@ caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNu
 void caerEventPacketContainerFree(caerEventPacketContainer container);
 
 static inline int32_t caerEventPacketContainerGetEventPacketsNumber(caerEventPacketContainer container) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (0);
+	}
+
 	return (le32toh(container->eventPacketsNumber));
 }
 
 static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacketContainer container,
 	int32_t eventPacketsNumber) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return;
+	}
+
 	if (eventPacketsNumber < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
@@ -47,6 +57,11 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 
 static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerEventPacketContainer container,
 	int32_t n) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (NULL);
+	}
+
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
 #if !defined(LIBCAER_LOG_NONE)
@@ -63,6 +78,11 @@ static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerE
 
 static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContainer container, int32_t n,
 	caerEventPacketHeader packetHeader) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return;
+	}
+
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
 #if !defined(LIBCAER_LOG_NONE)
