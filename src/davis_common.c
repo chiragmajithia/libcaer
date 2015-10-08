@@ -2804,6 +2804,16 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						break;
 					}
 
+					// Let's check that apsCountX is not above the maximum. This could happen
+					// if the maximum is a smaller number that comes from ROI, while we're still
+					// reading out a frame with a bigger, old size.
+					if (state->apsCountX[state->apsCurrentReadoutType]
+						>= caerFrameEventGetLengthX(&state->currentFrameEvent)) {
+						caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+							"APS ADC sample: column count is at maximum, discarding further samples.");
+						break;
+					}
+
 					// If reset read, we store the values in a local array. If signal read, we
 					// store the final pixel value directly in the output frame event. We already
 					// do the subtraction between reset and signal here, to avoid carrying that
