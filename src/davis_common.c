@@ -880,16 +880,16 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_START_COLUMN_0: {
 					uint32_t endColumn = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &endColumn);
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					atomic_store(&state->apsWindow0SizeX, U16T(endColumn + 1 - param));
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
 				}
 
 				case DAVIS_CONFIG_APS_START_ROW_0: {
 					uint32_t endRow = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					atomic_store(&state->apsWindow0SizeY, U16T(endRow + 1 - param));
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
 				}
 
@@ -897,16 +897,16 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					uint32_t startColumn = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
 						&startColumn);
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					atomic_store(&state->apsWindow0SizeX, U16T(param + 1 - startColumn));
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
 				}
 
 				case DAVIS_CONFIG_APS_END_ROW_0: {
 					uint32_t startRow = 0;
 					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &startRow);
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					atomic_store(&state->apsWindow0SizeY, U16T(param + 1 - startRow));
+					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
 				}
 
