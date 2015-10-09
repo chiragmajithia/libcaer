@@ -880,35 +880,82 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					break;
 
 				case DAVIS_CONFIG_APS_START_COLUMN_0: {
-					uint32_t endColumn = 0;
-					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &endColumn);
-					atomic_store(&state->apsWindow0SizeX, U16T(endColumn + 1 - param));
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					if (state->apsInvertXY) {
+						// INVERT TO ROW!
+						uint32_t endRow = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
+						atomic_store(&state->apsWindow0SizeY, U16T(endRow + 1 - param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							param));
+					}
+					else {
+						uint32_t endColumn = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							&endColumn);
+						atomic_store(&state->apsWindow0SizeX, U16T(endColumn + 1 - param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							param));
+					}
 					break;
 				}
 
 				case DAVIS_CONFIG_APS_START_ROW_0: {
-					uint32_t endRow = 0;
-					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
-					atomic_store(&state->apsWindow0SizeY, U16T(endRow + 1 - param));
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					if (state->apsInvertXY) {
+						// INVERT TO COLUMN!
+						uint32_t endColumn = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							&endColumn);
+						atomic_store(&state->apsWindow0SizeX, U16T(endColumn + 1 - param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							param));
+					}
+					else {
+						uint32_t endRow = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
+						atomic_store(&state->apsWindow0SizeY, U16T(endRow + 1 - param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							param));
+					}
 					break;
 				}
 
 				case DAVIS_CONFIG_APS_END_COLUMN_0: {
-					uint32_t startColumn = 0;
-					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-						&startColumn);
-					atomic_store(&state->apsWindow0SizeX, U16T(param + 1 - startColumn));
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					if (state->apsInvertXY) {
+						// INVERT TO ROW!
+						uint32_t startRow = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							&startRow);
+						atomic_store(&state->apsWindow0SizeY, U16T(param + 1 - startRow));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
+					}
+					else {
+						uint32_t startColumn = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							&startColumn);
+						atomic_store(&state->apsWindow0SizeX, U16T(param + 1 - startColumn));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							param));
+					}
 					break;
 				}
 
 				case DAVIS_CONFIG_APS_END_ROW_0: {
-					uint32_t startRow = 0;
-					spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &startRow);
-					atomic_store(&state->apsWindow0SizeY, U16T(param + 1 - startRow));
-					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+					if (state->apsInvertXY) {
+						// INVERT TO COLUMN!
+						uint32_t startColumn = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							&startColumn);
+						atomic_store(&state->apsWindow0SizeX, U16T(param + 1 - startColumn));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							param));
+					}
+					else {
+						uint32_t startRow = 0;
+						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							&startRow);
+						atomic_store(&state->apsWindow0SizeY, U16T(param + 1 - startRow));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
+					}
 					break;
 				}
 
@@ -1450,10 +1497,6 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_RUN:
 				case DAVIS_CONFIG_APS_RESET_READ:
 				case DAVIS_CONFIG_APS_WAIT_ON_TRANSFER_STALL:
-				case DAVIS_CONFIG_APS_START_COLUMN_0:
-				case DAVIS_CONFIG_APS_START_ROW_0:
-				case DAVIS_CONFIG_APS_END_COLUMN_0:
-				case DAVIS_CONFIG_APS_END_ROW_0:
 				case DAVIS_CONFIG_APS_ROW_SETTLE:
 				case DAVIS_CONFIG_APS_HAS_GLOBAL_SHUTTER:
 				case DAVIS_CONFIG_APS_HAS_QUAD_ROI:
@@ -1461,6 +1504,58 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_HAS_INTERNAL_ADC:
 					return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
+
+				case DAVIS_CONFIG_APS_START_COLUMN_0: {
+					if (state->apsInvertXY) {
+						// INVERT TO ROW!
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							param));
+					}
+					else {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							param));
+					}
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_START_ROW_0: {
+					if (state->apsInvertXY) {
+						// INVERT TO COLUMN!
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
+							param));
+					}
+					else {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
+							param));
+					}
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_END_COLUMN_0: {
+					if (state->apsInvertXY) {
+						// INVERT TO ROW!
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0,
+							param));
+					}
+					else {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							param));
+					}
+					break;
+				}
+
+				case DAVIS_CONFIG_APS_END_ROW_0: {
+					if (state->apsInvertXY) {
+						// INVERT TO COLUMN!
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
+							param));
+					}
+					else {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0,
+							param));
+					}
+					break;
+				}
 
 				case DAVIS_CONFIG_APS_RESET_SETTLE:
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
@@ -1920,6 +2015,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
 	atomic_store(&state->apsWindow0SizeY, U16T(param32 + 1 - param32start));
+
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, &param32);
 	state->apsGlobalShutter = param32;
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_READ, &param32);
