@@ -2549,8 +2549,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 								if (state->apsCountX[j] != checkValue) {
 									caerLog(CAER_LOG_ERROR, handle->info.deviceString,
-										"APS Frame End: wrong column count [%zu - %d] detected.", j,
-										state->apsCountX[j]);
+										"APS Frame End - %zu: wrong column count %d detected, expected %d.", j,
+										state->apsCountX[j], checkValue);
 									validFrame = false;
 								}
 							}
@@ -2638,8 +2638,9 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							if (state->apsCountY[state->apsCurrentReadoutType]
 								!= caerFrameEventGetLengthY(&state->currentFrameEvent)) {
 								caerLog(CAER_LOG_ERROR, handle->info.deviceString,
-									"APS Column End: wrong row count [%d - %d] detected.", state->apsCurrentReadoutType,
-									state->apsCountY[state->apsCurrentReadoutType]);
+									"APS Column End - %zu: wrong row count %d detected, expected %d.",
+									state->apsCurrentReadoutType, state->apsCountY[state->apsCurrentReadoutType],
+									caerFrameEventGetLengthY(&state->currentFrameEvent));
 							}
 
 							state->apsCountX[state->apsCurrentReadoutType]++;
