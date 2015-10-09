@@ -2658,6 +2658,12 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							if (validFrame) {
 								caerFrameEventValidate(&state->currentFrameEvent, state->currentFramePacket);
 
+								// Invert X and Y lengths if image from chip is inverted.
+								if (state->apsInvertXY) {
+									SWAP_VAR(int32_t, state->currentFrameEvent.lengthX,
+										state->currentFrameEvent.lengthY);
+								}
+
 								caerFrameEvent currentFrameEvent = caerFrameEventPacketGetEvent(
 									state->currentFramePacket, state->currentFramePacketPosition);
 								memcpy(currentFrameEvent, &state->currentFrameEvent, sizeof(struct caer_frame_event));
