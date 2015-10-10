@@ -15,9 +15,12 @@ extern "C" {
 #include "common.h"
 
 // All pixels are always normalized to 16bit depth.
-// Multiple channels (such as RGB) are possible.
+// Multiple channels (RGB for example) are possible, up to 128 channels.
+// Also, up to 64 different Regions of Interest (ROI) can be tracked.
 #define CHANNEL_NUMBER_SHIFT 1
 #define CHANNEL_NUMBER_MASK 0x0000007F
+#define ROI_IDENTIFIER_SHIFT 8
+#define ROI_IDENTIFIER_MASK 0x0000003F
 
 struct caer_frame_event {
 	uint32_t info; // First because of valid mark.
@@ -194,6 +197,14 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventInvalidate() on already invalid event.");
 #endif
 	}
+}
+
+static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t roiIdentifier) {
+	event->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
+}
+
+static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
+	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
 }
 
 static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
