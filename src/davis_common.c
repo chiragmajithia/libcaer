@@ -380,12 +380,12 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RAMP_SHORT_RESET, false);
 	}
 	if (IS_DAVISRGB(handle->info.chipID)) {
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_TRANSFER, handle->info.adcClock * 25); // in cycles @ ADCClock
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_RSFDSETTLE, handle->info.adcClock * 15); // in cycles @ ADCClock
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSPDRESET, handle->info.adcClock * 15); // in cycles @ ADCClock
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSRESETFALL, handle->info.adcClock * 15); // in cycles @ ADCClock
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSTXFALL, handle->info.adcClock * 15); // in cycles @ ADCClock
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSFDRESET, handle->info.adcClock * 15); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_TRANSFER, U32T(handle->info.adcClock * 25)); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_RSFDSETTLE, U32T(handle->info.adcClock * 15)); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSPDRESET, U32T(handle->info.adcClock * 15)); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSRESETFALL, U32T(handle->info.adcClock * 15)); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSTXFALL, U32T(handle->info.adcClock * 15)); // in cycles @ ADCClock
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_GSFDRESET, U32T(handle->info.adcClock * 15)); // in cycles @ ADCClock
 	}
 
 	(*configSet)(cdh, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_TEMP_STANDBY, false);
@@ -2740,7 +2740,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							if (state->apsCountY[state->apsCurrentReadoutType]
 								!= caerFrameEventGetLengthY(&state->currentFrameEvent)) {
 								caerLog(CAER_LOG_ERROR, handle->info.deviceString,
-									"APS Column End - %zu: wrong row count %d detected, expected %d.",
+									"APS Column End - %d: wrong row count %d detected, expected %d.",
 									state->apsCurrentReadoutType, state->apsCountY[state->apsCurrentReadoutType],
 									caerFrameEventGetLengthY(&state->currentFrameEvent));
 							}
