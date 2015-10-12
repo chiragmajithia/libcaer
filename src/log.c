@@ -17,6 +17,11 @@ uint8_t caerLogLevelGet(void) {
 }
 
 void caerLogFileDescriptorsSet(int fd1, int fd2) {
+	if (fd1 == fd2) {
+		// If the same fd is passed twice, just disable it the second time.
+		fd2 = -1;
+	}
+
 	atomic_store(&caerLogFileDescriptor1, fd1);
 	atomic_store(&caerLogFileDescriptor2, fd2);
 }
