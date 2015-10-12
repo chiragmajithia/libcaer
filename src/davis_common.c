@@ -2912,6 +2912,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					// Let's check that apsCountX is not above the maximum. This could happen
 					// if the maximum is a smaller number that comes from ROI, while we're still
 					// reading out a frame with a bigger, old size.
+					// TODO: remove once new ROI scheme in place.
 					if (state->apsCountX[state->apsCurrentReadoutType]
 						>= caerFrameEventGetLengthX(&state->currentFrameEvent)) {
 						caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
@@ -2942,11 +2943,17 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						yPos = U16T(yPos + state->apsRGBPixelOffset);
 					}
 
+					int32_t stride = 0;
+
 					if (state->apsInvertXY) {
 						SWAP_VAR(uint16_t, xPos, yPos);
+						stride = caerFrameEventGetLengthY(&state->currentFrameEvent);
+					}
+					else {
+						stride = caerFrameEventGetLengthX(&state->currentFrameEvent);
 					}
 
-					size_t pixelPosition = (size_t) (yPos * caerFrameEventGetLengthX(&state->currentFrameEvent)) + xPos;
+					size_t pixelPosition = (size_t) (yPos * stride) + xPos;
 
 					if ((state->apsCurrentReadoutType == APS_READOUT_RESET
 						&& !(IS_DAVISRGB(handle->info.chipID) && state->apsGlobalShutter))
