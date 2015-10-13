@@ -119,3 +119,10 @@ ENDFOREACH()
 CONFIGURE_FILE(libcaer.pc.in libcaer.pc @ONLY)
 
 INSTALL(FILES ${CMAKE_BINARY_DIR}/libcaer.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+# Automatic documentation generation support
+FIND_PACKAGE(Doxygen)
+
+IF (DOXYGEN_FOUND)
+	ADD_SUBDIRECTORY(docs)
+ENDIF()
