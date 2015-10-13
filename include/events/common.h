@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#include "libcaer.h"
+#include "../libcaer.h"
 
 // 0 in the 0th bit means invalid, 1 means valid.
 // This way zeroing-out an event packet sets all its events to invalid.

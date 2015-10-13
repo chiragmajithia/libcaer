@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 #include "usb.h"
-#include "events/polarity.h"
-#include "events/special.h"
+#include "../events/polarity.h"
+#include "../events/special.h"
 
 #define CAER_DEVICE_DVS128 0
 

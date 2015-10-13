@@ -13,10 +13,10 @@ extern "C" {
 #endif
 
 #include "usb.h"
-#include "events/polarity.h"
-#include "events/special.h"
-#include "events/frame.h"
-#include "events/imu6.h"
+#include "../events/polarity.h"
+#include "../events/special.h"
+#include "../events/frame.h"
+#include "../events/imu6.h"
 
 #define CAER_DEVICE_DAVIS_FX2 1
 #define CAER_DEVICE_DAVIS_FX3 2

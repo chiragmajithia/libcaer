@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#include "libcaer.h"
-#include "events/packetContainer.h"
+#include "../libcaer.h"
+#include "../events/packetContainer.h"
 
 typedef struct caer_device_handle *caerDeviceHandle;
 
