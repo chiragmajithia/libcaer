@@ -139,7 +139,8 @@ caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t
 	return (packet);
 }
 
-void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber) {
+void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber,
+	uint8_t roiIdentifier, int32_t positionX, int32_t positionY) {
 	size_t pixelSize = sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber;
 
 	uint16_t *pixels = calloc(1, pixelSize);
@@ -153,8 +154,11 @@ void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, in
 
 	// Fill in header fields.
 	frameEvent->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
+	frameEvent->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
 	frameEvent->lengthX = htole32(lengthX);
 	frameEvent->lengthY = htole32(lengthY);
+	frameEvent->positionX = htole32(positionX);
+	frameEvent->positionY = htole32(positionY);
 	frameEvent->pixels = pixels;
 }
 

@@ -30,6 +30,8 @@ struct caer_frame_event {
 	int32_t ts_endexposure;
 	int32_t lengthX;
 	int32_t lengthY;
+	int32_t positionX;
+	int32_t positionY;
 	uint16_t *pixels;
 }__attribute__((__packed__));
 
@@ -60,7 +62,8 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 }
 
 // Allocate effective pixel memory for frame event.
-void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber);
+void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber,
+	uint8_t roiIdentifier, int32_t positionX, int32_t positionY);
 
 // Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
 void caerFrameEventPacketFreePixels(caerEventPacketHeader packet);
@@ -161,6 +164,23 @@ static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_
 	event->ts_endexposure = htole32(endExposure);
 }
 
+// Exposure total length.
+static inline int32_t caerFrameEventGetExposureLength(caerFrameEvent event) {
+	return (caerFrameEventGetTSEndOfExposure(event) - caerFrameEventGetTSStartOfExposure(event));
+}
+
+// Median of exposure timestamp.
+static inline int32_t caerFrameEventGetTimestamp(caerFrameEvent event) {
+	return (caerFrameEventGetTSStartOfExposure(event) + (caerFrameEventGetExposureLength(event) / 2));
+}
+
+// Median of exposure timestamp (64bit).
+static inline int64_t caerFrameEventGetTimestamp64(caerFrameEvent event, caerFrameEventPacket packet) {
+	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
+	// be in a different TSOverflow period, since in those rare cases the event is dropped.
+	return (caerFrameEventGetTSStartOfExposure64(event, packet) + (caerFrameEventGetExposureLength(event) / 2));
+}
+
 static inline bool caerFrameEventIsValid(caerFrameEvent event) {
 	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
@@ -199,16 +219,12 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 	}
 }
 
-static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t roiIdentifier) {
-	event->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
+static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
+	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
 }
 
 static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
 	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
-}
-
-static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
 }
 
 static inline int32_t caerFrameEventGetLengthX(caerFrameEvent event) {
@@ -217,6 +233,14 @@ static inline int32_t caerFrameEventGetLengthX(caerFrameEvent event) {
 
 static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
 	return (le32toh(event->lengthY));
+}
+
+static inline int32_t caerFrameEventGetPositionX(caerFrameEvent event) {
+	return (le32toh(event->positionX));
+}
+
+static inline int32_t caerFrameEventGetPositionY(caerFrameEvent event) {
+	return (le32toh(event->positionY));
 }
 
 static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress) {

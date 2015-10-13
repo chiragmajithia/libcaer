@@ -72,8 +72,6 @@ struct davis_state {
 	bool apsFlipX;
 	bool apsFlipY;
 	bool apsIgnoreEvents;
-	atomic_uint_fast16_t apsWindow0SizeX;
-	atomic_uint_fast16_t apsWindow0SizeY;
 	bool apsGlobalShutter;
 	bool apsResetRead;
 	bool apsRGBPixelOffsetDirection; // 0 is increasing, 1 is decreasing.
@@ -82,6 +80,22 @@ struct davis_state {
 	uint16_t apsCountX[APS_READOUT_TYPES_NUM];
 	uint16_t apsCountY[APS_READOUT_TYPES_NUM];
 	uint16_t *apsCurrentResetFrame;
+	uint16_t apsROI0SizeX;
+	uint16_t apsROI0SizeY;
+	uint16_t apsROI0PositionX;
+	uint16_t apsROI0PositionY;
+	uint16_t apsROI1SizeX;
+	uint16_t apsROI1SizeY;
+	uint16_t apsROI1PositionX;
+	uint16_t apsROI1PositionY;
+	uint16_t apsROI2SizeX;
+	uint16_t apsROI2SizeY;
+	uint16_t apsROI2PositionX;
+	uint16_t apsROI2PositionY;
+	uint16_t apsROI3SizeX;
+	uint16_t apsROI3SizeY;
+	uint16_t apsROI3PositionX;
+	uint16_t apsROI3PositionY;
 	// IMU specific fields
 	bool imuIgnoreEvents;
 	uint8_t imuCount;
@@ -113,7 +127,10 @@ struct davis_state {
 	atomic_int_fast32_t maxSpecialPacketSize;
 	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Current composite events, for later copy, to not loose them on commits.
-	struct caer_frame_event currentFrameEvent;
+	struct caer_frame_event currentFrameEvent0;
+	struct caer_frame_event currentFrameEvent1;
+	struct caer_frame_event currentFrameEvent2;
+	struct caer_frame_event currentFrameEvent3;
 	struct caer_imu6_event currentIMU6Event;
 };
 
