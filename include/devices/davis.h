@@ -1,8 +1,7 @@
-/*
- * davis.h
+/**
+ * @file davis.h
  *
- *  Created on: May 25, 2015
- *      Author: llongi
+ * DAVIS specific configuration defines and information structures.
  */
 
 #ifndef LIBCAER_DEVICES_DAVIS_H_

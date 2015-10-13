@@ -1,8 +1,7 @@
-/*
- * dvs128.h
+/**
+ * @file dvs128.h
  *
- *  Created on: May 26, 2015
- *      Author: llongi
+ * DVS128 specific configuration defines and information structures.
  */
 
 #ifndef LIBCAER_DEVICES_DVS128_H_

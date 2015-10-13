@@ -1,3 +1,11 @@
+/**
+ * @file usb.h
+ *
+ * Common functions to access, configure and exchange data with
+ * supported USB devices. Also contains defines for host/USB
+ * related configuration options.
+ */
+
 #ifndef LIBCAER_DEVICES_USB_H_
 #define LIBCAER_DEVICES_USB_H_
 
@@ -8,13 +16,35 @@ extern "C" {
 #include "../libcaer.h"
 #include "../events/packetContainer.h"
 
+/**
+ * Reference to an open device on which to operate.
+ */
 typedef struct caer_device_handle *caerDeviceHandle;
 
+/**
+ * Module address: host-side USB configuration.
+ */
 #define CAER_HOST_CONFIG_USB -1
+/**
+ * Module address: host-side data exchange (ringbuffer) configuration.
+ */
 #define CAER_HOST_CONFIG_DATAEXCHANGE -2
+/**
+ * Module address: host-side event packets generation configuration.
+ */
 #define CAER_HOST_CONFIG_PACKETS -3
 
+/**
+ * Parameter address for module CAER_HOST_CONFIG_USB:
+ * set number of buffers used by libusb for asynchronous data transfers
+ * with the USB device.
+ */
 #define CAER_HOST_CONFIG_USB_BUFFER_NUMBER 0
+/**
+ * Parameter address for module CAER_HOST_CONFIG_USB:
+ * set size of each buffer used by libusb for asynchronous data transfers
+ * with the USB device.
+ */
 #define CAER_HOST_CONFIG_USB_BUFFER_SIZE   1
 
 #define CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE     0

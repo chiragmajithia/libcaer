@@ -5,6 +5,8 @@
  * and definitions for useful macros used often in the code. Also includes
  * the logging functions and definitions and several useful static inline
  * functions for string comparison and byte array manipulation.
+ * When including libcaer, please make sure to always use the full path,
+ * ie. #include <libcaer/libcaer.h> and not just #include <libcaer.h>.
  */
 
 #ifndef LIBCAER_H_
