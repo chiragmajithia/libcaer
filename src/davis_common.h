@@ -19,6 +19,8 @@
 
 #define APS_ADC_DEPTH 10
 
+#define APS_ROI_REGIONS_MAX 4
+
 #define IMU6_COUNT 15
 #define IMU9_COUNT 21
 
@@ -26,7 +28,8 @@
 
 #define DAVIS_DATA_ENDPOINT 0x82
 
-#define VENDOR_REQUEST_FPGA_CONFIG 0xBF
+#define VENDOR_REQUEST_FPGA_CONFIG          0xBF
+#define VENDOR_REQUEST_FPGA_CONFIG_MULTIPLE 0xC2
 
 struct davis_state {
 	// Data Acquisition Thread -> Mainloop Exchange
@@ -80,22 +83,11 @@ struct davis_state {
 	uint16_t apsCountX[APS_READOUT_TYPES_NUM];
 	uint16_t apsCountY[APS_READOUT_TYPES_NUM];
 	uint16_t *apsCurrentResetFrame;
-	uint16_t apsROI0SizeX;
-	uint16_t apsROI0SizeY;
-	uint16_t apsROI0PositionX;
-	uint16_t apsROI0PositionY;
-	uint16_t apsROI1SizeX;
-	uint16_t apsROI1SizeY;
-	uint16_t apsROI1PositionX;
-	uint16_t apsROI1PositionY;
-	uint16_t apsROI2SizeX;
-	uint16_t apsROI2SizeY;
-	uint16_t apsROI2PositionX;
-	uint16_t apsROI2PositionY;
-	uint16_t apsROI3SizeX;
-	uint16_t apsROI3SizeY;
-	uint16_t apsROI3PositionX;
-	uint16_t apsROI3PositionY;
+	uint16_t apsCurrentROIUpdate;
+	uint16_t apsROISizeX[APS_ROI_REGIONS_MAX];
+	uint16_t apsROISizeY[APS_ROI_REGIONS_MAX];
+	uint16_t apsROIPositionX[APS_ROI_REGIONS_MAX];
+	uint16_t apsROIPositionY[APS_ROI_REGIONS_MAX];
 	// IMU specific fields
 	bool imuIgnoreEvents;
 	uint8_t imuCount;

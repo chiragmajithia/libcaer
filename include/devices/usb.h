@@ -26,7 +26,7 @@ typedef struct caer_device_handle *caerDeviceHandle;
  */
 #define CAER_HOST_CONFIG_USB -1
 /**
- * Module address: host-side data exchange (ringbuffer) configuration.
+ * Module address: host-side data exchange (ring-buffer) configuration.
  */
 #define CAER_HOST_CONFIG_DATAEXCHANGE -2
 /**
@@ -47,36 +47,105 @@ typedef struct caer_device_handle *caerDeviceHandle;
  */
 #define CAER_HOST_CONFIG_USB_BUFFER_SIZE   1
 
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_DATAEXCHANGE_BUFFER_SIZE     0
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING        1
-#define CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS 2
-#define CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS  3
+/**
+ *
+ */
+ #define CAER_HOST_CONFIG_DATAEXCHANGE_START_PRODUCERS 2
+/**
+ *
+ */
+ #define CAER_HOST_CONFIG_DATAEXCHANGE_STOP_PRODUCERS  3
 
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE     0
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL 1
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE      2
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL  3
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE       4
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL   5
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_FRAME_SIZE         6
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_FRAME_INTERVAL     7
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_IMU6_SIZE          8
+/**
+ *
+ */
 #define CAER_HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL      9
 
+/**
+ *
+ */
 caerDeviceHandle caerDeviceOpen(uint16_t deviceID, uint16_t deviceType, uint8_t busNumberRestrict,
 	uint8_t devAddressRestrict, const char *serialNumberRestrict);
+/**
+ *
+ */
 bool caerDeviceClose(caerDeviceHandle *handle);
 
+/**
+ *
+ */
 bool caerDeviceSendDefaultConfig(caerDeviceHandle handle);
-// Negative addresses are used for host-side configuration.
-// Positive addresses (including zero) are used for device-side configuration.
+
+/**
+ * Negative addresses are used for host-side configuration.
+ * Positive addresses (including zero) are used for device-side configuration.
+ */
 bool caerDeviceConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param);
+
+/**
+ * Negative addresses are used for host-side configuration.
+ * Positive addresses (including zero) are used for device-side configuration.
+ */
 bool caerDeviceConfigGet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t *param);
 
+/**
+ *
+ */
 bool caerDeviceDataStart(caerDeviceHandle handle, void (*dataNotifyIncrease)(void *ptr),
 	void (*dataNotifyDecrease)(void *ptr), void *dataNotifyUserPtr, void (*dataShutdownNotify)(void *ptr),
 	void *dataShutdownUserPtr);
+/**
+ *
+ */
 bool caerDeviceDataStop(caerDeviceHandle handle);
+
+/**
+ *
+ */
 caerEventPacketContainer caerDeviceDataGet(caerDeviceHandle handle);
 
 #ifdef __cplusplus

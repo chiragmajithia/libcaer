@@ -35,9 +35,8 @@ static inline void initFrame(davisHandle handle) {
 	caerFrameEventSetTSStartOfFrame(&handle->state.currentFrameEvent0, handle->state.currentTimestamp);
 
 	// Setup frame.
-	// TODO: track position and ROI region correctly.
-	caerFrameEventAllocatePixels(&handle->state.currentFrameEvent0, handle->state.apsROI0SizeX,
-		handle->state.apsROI0SizeY, 1, 0, handle->state.apsROI0PositionX, handle->state.apsROI0PositionY);
+	caerFrameEventAllocatePixels(&handle->state.currentFrameEvent0, handle->state.apsROISizeX[0],
+		handle->state.apsROISizeY[0], 1, 0, handle->state.apsROIPositionX[0], handle->state.apsROIPositionY[0]);
 }
 
 static inline float calculateIMUAccelScale(uint8_t imuAccelScale) {
@@ -886,17 +885,10 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_START_COLUMN_0: {
 					if (state->apsInvertXY) {
 						// INVERT TO ROW!
-						uint32_t endRow = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
-						state->apsROI0SizeY = U16T(endRow + 1 - param);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
 							param));
 					}
 					else {
-						uint32_t endColumn = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							&endColumn);
-						state->apsROI0SizeX = U16T(endColumn + 1 - param);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
 							param));
 					}
@@ -906,17 +898,10 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_START_ROW_0: {
 					if (state->apsInvertXY) {
 						// INVERT TO COLUMN!
-						uint32_t endColumn = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							&endColumn);
-						state->apsROI0SizeX = U16T(endColumn + 1 - param);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
 							param));
 					}
 					else {
-						uint32_t endRow = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &endRow);
-						state->apsROI0SizeY = U16T(endRow + 1 - param);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
 							param));
 					}
@@ -926,17 +911,9 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_END_COLUMN_0: {
 					if (state->apsInvertXY) {
 						// INVERT TO ROW!
-						uint32_t startRow = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							&startRow);
-						state->apsROI0SizeY = U16T(param + 1 - startRow);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
 					}
 					else {
-						uint32_t startColumn = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							&startColumn);
-						state->apsROI0SizeX = U16T(param + 1 - startColumn);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
 							param));
 					}
@@ -946,18 +923,10 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_END_ROW_0: {
 					if (state->apsInvertXY) {
 						// INVERT TO COLUMN!
-						uint32_t startColumn = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							&startColumn);
-						state->apsROI0SizeX = U16T(param + 1 - startColumn);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
 							param));
 					}
 					else {
-						uint32_t startRow = 0;
-						spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							&startRow);
-						state->apsROI0SizeY = U16T(param + 1 - startRow);
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
 					}
 					break;
@@ -2011,14 +1980,27 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	state->imuGyroScale = calculateIMUGyroScale(U8T(param32));
 
 	// Default APS settings (for event parsing).
-	uint32_t param32start = 0;
-
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &param32);
-	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
-	state->apsROI0SizeX = U16T(param32 + 1 - param32start);
-	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
-	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
-	state->apsROI0SizeY = U16T(param32 + 1 - param32start);
+
+	// If EndColumn0 is bigger or equal to APS size, disable ROI region 0.
+	if (param32 < state->apsSizeX) {
+		uint32_t param32start = 0;
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
+
+		state->apsROISizeX[0] = U16T(param32 + 1 - param32start);
+		state->apsROIPositionX[0] = U16T(param32start);
+
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
+
+		state->apsROISizeY[0] = U16T(param32 + 1 - param32start);
+		state->apsROIPositionY[0] = U16T(param32start);
+	}
+	else {
+		// Disable ROI region 0 by setting all parameters to zero.
+		state->apsROISizeX[0] = state->apsROIPositionX[0] = 0;
+		state->apsROISizeY[0] = state->apsROIPositionY[0] = 0;
+	}
 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, &param32);
 	state->apsGlobalShutter = param32;
@@ -2840,6 +2822,30 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							break;
 						}
 
+						case 32:
+							// Next Misc8 APS ROI Size events will refer to ROI region 0.
+							// 0/1 used to distinguish between X and Y sizes.
+							state->apsCurrentROIUpdate = 0;
+							break;
+
+						case 33:
+							// Next Misc8 APS ROI Size events will refer to ROI region 1.
+							// 2/3 used to distinguish between X and Y sizes.
+							state->apsCurrentROIUpdate = 2;
+							break;
+
+						case 34:
+							// Next Misc8 APS ROI Size events will refer to ROI region 2.
+							// 4/5 used to distinguish between X and Y sizes.
+							state->apsCurrentROIUpdate = 4;
+							break;
+
+						case 35:
+							// Next Misc8 APS ROI Size events will refer to ROI region 3.
+							// 6/7 used to distinguish between X and Y sizes.
+							state->apsCurrentROIUpdate = 6;
+							break;
+
 						default:
 							caerLog(CAER_LOG_ERROR, handle->info.deviceString,
 								"Caught special event that can't be handled: %d.", data);
@@ -2909,23 +2915,22 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						break;
 					}
 
+					// Let's check that apsCountX is not above the maximum. This could happen
+					// if the maximum is a smaller number that comes from ROI, while we're still
+					// reading out a frame with a bigger, old size.
+					if (state->apsCountX[state->apsCurrentReadoutType]
+						>= caerFrameEventGetLengthX(&state->currentFrameEvent0)) {
+						caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+							"APS ADC sample: column count is at maximum, discarding further samples.");
+						break;
+					}
+
 					// Let's check that apsCountY is not above the maximum. This could happen
 					// if start/end of column events are discarded (no wait on transfer stall).
 					if (state->apsCountY[state->apsCurrentReadoutType]
 						>= caerFrameEventGetLengthY(&state->currentFrameEvent0)) {
 						caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 							"APS ADC sample: row count is at maximum, discarding further samples.");
-						break;
-					}
-
-					// Let's check that apsCountX is not above the maximum. This could happen
-					// if the maximum is a smaller number that comes from ROI, while we're still
-					// reading out a frame with a bigger, old size.
-					// TODO: remove once new ROI scheme in place.
-					if (state->apsCountX[state->apsCurrentReadoutType]
-						>= caerFrameEventGetLengthX(&state->currentFrameEvent0)) {
-						caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
-							"APS ADC sample: column count is at maximum, discarding further samples.");
 						break;
 					}
 
@@ -3100,6 +3105,16 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 							state->imuCount++;
 
+							break;
+
+						case 1:
+							// APS ROI Size Part 1 (bits 15-8).
+							// TODO: parse new ROI information.
+							break;
+
+						case 2:
+							// APS ROI Size Part 2 (bits 7-0).
+							// TODO: parse new ROI information.
 							break;
 
 						default:
