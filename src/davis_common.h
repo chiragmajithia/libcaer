@@ -83,7 +83,8 @@ struct davis_state {
 	uint16_t apsCountX[APS_READOUT_TYPES_NUM];
 	uint16_t apsCountY[APS_READOUT_TYPES_NUM];
 	uint16_t *apsCurrentResetFrame;
-	uint16_t apsCurrentROIUpdate;
+	uint16_t apsROIUpdate;
+	uint16_t apsROITmpData;
 	uint16_t apsROISizeX[APS_ROI_REGIONS_MAX];
 	uint16_t apsROISizeY[APS_ROI_REGIONS_MAX];
 	uint16_t apsROIPositionX[APS_ROI_REGIONS_MAX];
@@ -119,10 +120,7 @@ struct davis_state {
 	atomic_int_fast32_t maxSpecialPacketSize;
 	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Current composite events, for later copy, to not loose them on commits.
-	struct caer_frame_event currentFrameEvent0;
-	struct caer_frame_event currentFrameEvent1;
-	struct caer_frame_event currentFrameEvent2;
-	struct caer_frame_event currentFrameEvent3;
+	struct caer_frame_event currentFrameEvent[APS_ROI_REGIONS_MAX];
 	struct caer_imu6_event currentIMU6Event;
 };
 
