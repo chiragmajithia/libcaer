@@ -32,7 +32,7 @@ static inline void updateROISizes(davisState state) {
 
 		// Position is already set to startCol/Row, so we don't have to reset
 		// it here. We only have to calcualte size from start and end.
-		if (endColumn < state->apsSizeX) {
+		if (startColumn < state->apsSizeX) {
 			state->apsROISizeX[i] = U16T(endColumn + 1 - startColumn);
 			state->apsROISizeY[i] = U16T(endRow + 1 - startRow);
 		}
@@ -2005,18 +2005,18 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	state->imuGyroScale = calculateIMUGyroScale(U8T(param32));
 
 	// Default APS settings (for event parsing).
-	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &param32);
+	uint32_t param32start = 0;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
 
-	// If EndColumn0 is bigger or equal to APS size, disable ROI region 0.
-	if (param32 < state->apsSizeX) {
-		uint32_t param32start = 0;
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, &param32start);
+	// If StartColumn0 is bigger or equal to APS size X, disable ROI region 0.
+	if (param32start < state->apsSizeX) {
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, &param32);
 
 		state->apsROISizeX[0] = U16T(param32 + 1 - param32start);
 		state->apsROIPositionX[0] = U16T(param32start);
 
-		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
 		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, &param32start);
+		spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, &param32);
 
 		state->apsROISizeY[0] = U16T(param32 + 1 - param32start);
 		state->apsROIPositionY[0] = U16T(param32start);
