@@ -145,6 +145,9 @@ extern "C" {
 #define DAVISRGB_CONFIG_APS_GSTXFALL    54
 #define DAVISRGB_CONFIG_APS_GSFDRESET   55
 
+// Special control for taking snapshots.
+#define DAVIS_CONFIG_APS_SNAPSHOT 80
+
 #define DAVIS_CONFIG_IMU_RUN                     0
 #define DAVIS_CONFIG_IMU_TEMP_STANDBY            1
 #define DAVIS_CONFIG_IMU_ACCEL_STANDBY           2

@@ -809,7 +809,6 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 			switch (paramAddr) {
 				case DAVIS_CONFIG_MUX_RUN:
 				case DAVIS_CONFIG_MUX_TIMESTAMP_RUN:
-				case DAVIS_CONFIG_MUX_TIMESTAMP_RESET:
 				case DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE:
 				case DAVIS_CONFIG_MUX_DROP_DVS_ON_TRANSFER_STALL:
 				case DAVIS_CONFIG_MUX_DROP_APS_ON_TRANSFER_STALL:
@@ -817,6 +816,34 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_MUX_DROP_EXTINPUT_ON_TRANSFER_STALL:
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_MUX, paramAddr, param));
 					break;
+
+				case DAVIS_CONFIG_MUX_TIMESTAMP_RESET: {
+					// Use multi-command VR for more efficient implementation of reset,
+					// that also guarantees returning to the default state.
+					if (param) {
+						uint8_t spiMultiConfig[6 + 6] = { 0 };
+
+						spiMultiConfig[0] = DAVIS_CONFIG_MUX;
+						spiMultiConfig[1] = DAVIS_CONFIG_MUX_TIMESTAMP_RESET;
+						spiMultiConfig[2] = 0x00;
+						spiMultiConfig[3] = 0x00;
+						spiMultiConfig[4] = 0x00;
+						spiMultiConfig[5] = 0x01;
+
+						spiMultiConfig[6] = DAVIS_CONFIG_MUX;
+						spiMultiConfig[7] = DAVIS_CONFIG_MUX_TIMESTAMP_RESET;
+						spiMultiConfig[8] = 0x00;
+						spiMultiConfig[9] = 0x00;
+						spiMultiConfig[10] = 0x00;
+						spiMultiConfig[11] = 0x00;
+
+						return (libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_FPGA_CONFIG_MULTIPLE, 2, 0, spiMultiConfig, sizeof(spiMultiConfig), 0)
+							== sizeof(spiMultiConfig));
+					}
+					break;
+				}
 
 				default:
 					return (false);
@@ -1028,6 +1055,34 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 						return (false);
 					}
 					break;
+
+				case DAVIS_CONFIG_APS_SNAPSHOT: {
+					// Use multi-command VR for more efficient implementation of snapshot,
+					// that also guarantees returning to the default state (not running).
+					if (param) {
+						uint8_t spiMultiConfig[6 + 6] = { 0 };
+
+						spiMultiConfig[0] = DAVIS_CONFIG_APS;
+						spiMultiConfig[1] = DAVIS_CONFIG_APS_RUN;
+						spiMultiConfig[2] = 0x00;
+						spiMultiConfig[3] = 0x00;
+						spiMultiConfig[4] = 0x00;
+						spiMultiConfig[5] = 0x01;
+
+						spiMultiConfig[6] = DAVIS_CONFIG_APS;
+						spiMultiConfig[7] = DAVIS_CONFIG_APS_RUN;
+						spiMultiConfig[8] = 0x00;
+						spiMultiConfig[9] = 0x00;
+						spiMultiConfig[10] = 0x00;
+						spiMultiConfig[11] = 0x00;
+
+						return (libusb_control_transfer(state->deviceHandle,
+							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+							VENDOR_REQUEST_FPGA_CONFIG_MULTIPLE, 2, 0, spiMultiConfig, sizeof(spiMultiConfig), 0)
+							== sizeof(spiMultiConfig));
+					}
+					break;
+				}
 
 				default:
 					return (false);
@@ -1403,13 +1458,17 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 			switch (paramAddr) {
 				case DAVIS_CONFIG_MUX_RUN:
 				case DAVIS_CONFIG_MUX_TIMESTAMP_RUN:
-				case DAVIS_CONFIG_MUX_TIMESTAMP_RESET:
 				case DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE:
 				case DAVIS_CONFIG_MUX_DROP_DVS_ON_TRANSFER_STALL:
 				case DAVIS_CONFIG_MUX_DROP_APS_ON_TRANSFER_STALL:
 				case DAVIS_CONFIG_MUX_DROP_IMU_ON_TRANSFER_STALL:
 				case DAVIS_CONFIG_MUX_DROP_EXTINPUT_ON_TRANSFER_STALL:
 					return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_MUX, paramAddr, param));
+					break;
+
+				case DAVIS_CONFIG_MUX_TIMESTAMP_RESET:
+					// Always false because it's an impulse, it resets itself automatically.
+					*param = false;
 					break;
 
 				default:
@@ -1637,6 +1696,11 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					else {
 						return (false);
 					}
+					break;
+
+				case DAVIS_CONFIG_APS_SNAPSHOT:
+					// Always false because it's an impulse, it resets itself automatically.
+					*param = false;
 					break;
 
 				default:
