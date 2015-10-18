@@ -2254,7 +2254,7 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 				// Verify device firmware version.
 				if (U8T(devDesc.bcdDevice & 0x00FF) < requiredFirmwareVersion) {
 					caerLog(CAER_LOG_CRITICAL, __func__,
-						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'http://inilabs.com/support/reflashing/'.",
 						U8T(devDesc.bcdDevice & 0x00FF), requiredFirmwareVersion);
 
 					continue;
@@ -2349,7 +2349,7 @@ static libusb_device_handle *davisDeviceOpen(libusb_context *devContext, uint16_
 					devHandle = NULL;
 
 					caerLog(CAER_LOG_CRITICAL, __func__,
-						"Device logic revision too old. You have revision %" PRIu16 "; but at least revision %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						"Device logic revision too old. You have revision %" PRIu16 "; but at least revision %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'http://inilabs.com/support/reflashing/'.",
 						logicVersion, requiredLogicRevision);
 
 					continue;

@@ -655,7 +655,7 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 				// Verify device firmware version.
 				if (U8T(devDesc.bcdDevice & 0x00FF) < requiredFirmwareVersion) {
 					caerLog(CAER_LOG_CRITICAL, __func__,
-						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'https://goo.gl/TGM0w1'.",
+						"Device firmware version too old. You have version %" PRIu8 "; but at least version %" PRIu16 " is required. Please updated by following the Flashy upgrade documentation at 'http://inilabs.com/support/reflashing/'.",
 						U8T(devDesc.bcdDevice & 0x00FF), requiredFirmwareVersion);
 
 					continue;
