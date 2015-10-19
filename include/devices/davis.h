@@ -527,42 +527,123 @@ struct caer_davis_info {
  */
 struct caer_davis_info caerDavisInfoGet(caerDeviceHandle handle);
 
+/**
+ * On-chip voltage digital-to-analog converter configuration.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 struct caer_bias_vdac {
+	// Voltage, between 0 and 63, as a fraction of 1/64th of VDD=3.3V.
 	uint8_t voltageValue;
+	// Current, between 0 and 7, that drives the voltage.
 	uint8_t currentValue;
 };
 
+/**
+ * Transform VDAC bias structure into internal integer representation,
+ * suited for sending directly to the device via caerDeviceConfigSet().
+ *
+ * @param vdacBias VDAC bias structure.
+ *
+ * @return internal integer representation for device configuration.
+ */
 uint16_t caerBiasVDACGenerate(struct caer_bias_vdac vdacBias);
+/**
+ * Transform internal integer representation, as received by calls to
+ * caerDeviceConfigGet(), into a VDAC bias structure, for easier
+ * handling and understanding of the various parameters.
+ *
+ * @param vdacBias internal integer representation from device.
+ *
+ * @return VDAC bias structure.
+ */
 struct caer_bias_vdac caerBiasVDACParse(uint16_t vdacBias);
 
+/**
+ * On-chip coarse-fine bias current configuration.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 struct caer_bias_coarsefine {
+	// Coarse current, from 0 to 7, creates big variations in output current.
 	uint8_t coarseValue;
+	// Fine current, from 0 to 255, creates small variations in output current.
 	uint8_t fineValue;
+	// Whether this bias is enabled or not.
 	bool enabled;
+	// Bias sex: true for 'N' type, false for 'P' type.
 	bool sexN;
+	// Bias type: true for 'Normal', false for 'Cascode'.
 	bool typeNormal;
+	// Bias current level: true for 'Normal, false for 'Low'.
 	bool currentLevelNormal;
 };
 
+/**
+ * Transform coarse-fine bias structure into internal integer representation,
+ * suited for sending directly to the device via caerDeviceConfigSet().
+ *
+ * @param coarseFineBias coarse-fine bias structure.
+ *
+ * @return internal integer representation for device configuration.
+ */
 uint16_t caerBiasCoarseFineGenerate(struct caer_bias_coarsefine coarseFineBias);
+/**
+ * Transform internal integer representation, as received by calls to
+ * caerDeviceConfigGet(), into a coarse-fine bias structure, for easier
+ * handling and understanding of the various parameters.
+ *
+ * @param coarseFineBias internal integer representation from device.
+ *
+ * @return coarse-fine bias structure.
+ */
 struct caer_bias_coarsefine caerBiasCoarseFineParse(uint16_t coarseFineBias);
 
+/**
+ * Shifted-source bias operating mode.
+ */
 enum caer_bias_shiftedsource_operating_mode {
 	SHIFTED_SOURCE = 0, HI_Z = 1, TIED_TO_RAIL = 2,
 };
 
+/**
+ * Shifted-source bias voltage level.
+ */
 enum caer_bias_shiftedsource_voltage_level {
 	SPLIT_GATE = 0, SINGLE_DIODE = 1, DOUBLE_DIODE = 2,
 };
 
+/**
+ * On-chip shifted-source bias current configuration.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 struct caer_bias_shiftedsource {
+	// Shifted-source bias level, from 0 to 63.
 	uint8_t refValue;
+	// Shifted-source bias current for buffer amplifier, from 0 to 63.
 	uint8_t regValue;
+	// Shifted-source operating mode (see enum caer_bias_shiftedsource_operating_mode).
 	enum caer_bias_shiftedsource_operating_mode operatingMode;
+	// Shifted-source voltage level (see enum caer_bias_shiftedsource_voltage_level).
 	enum caer_bias_shiftedsource_voltage_level voltageLevel;
 };
 
+/**
+ * Transform shifted-source bias structure into internal integer representation,
+ * suited for sending directly to the device via caerDeviceConfigSet().
+ *
+ * @param shiftedSourceBias shifted-source bias structure.
+ *
+ * @return internal integer representation for device configuration.
+ */
 uint16_t caerBiasShiftedSourceGenerate(struct caer_bias_shiftedsource shiftedSourceBias);
+/**
+ * Transform internal integer representation, as received by calls to
+ * caerDeviceConfigGet(), into a shifted-source bias structure, for easier
+ * handling and understanding of the various parameters.
+ *
+ * @param shiftedSourceBias internal integer representation from device.
+ *
+ * @return shifted-source bias structure.
+ */
 struct caer_bias_shiftedsource caerBiasShiftedSourceParse(uint16_t shiftedSourceBias);
 
 #ifdef __cplusplus
