@@ -17,7 +17,13 @@ extern "C" {
 #include "../events/frame.h"
 #include "../events/imu6.h"
 
+/**
+ * Device type definition for iniLabs DAVIS FX2-based boards, like DAVIS240a/b/c.
+ */
 #define CAER_DEVICE_DAVIS_FX2 1
+/**
+ * Device type definition for iniLabs  DAVIS FX3-based boards, like DAVIS640.
+ */
 #define CAER_DEVICE_DAVIS_FX3 2
 
 #define DAVIS_CHIP_DAVIS240A 0
@@ -463,34 +469,62 @@ extern "C" {
 #define DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO      146
 #define DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI   147
 
+/**
+ * DAVIS device-related information.
+ */
 struct caer_davis_info {
+	// Unique device identifier. Also 'source' for events.
 	uint16_t deviceID;
+	// Device information string, for logging purposes.
 	char *deviceString;
-	// System information fields
+	// Logic (FPGA/CPLD) version.
 	uint16_t logicVersion;
+	// Whether the device is a time-stamp master or slave.
 	bool deviceIsMaster;
+	// Clock in MHz for main logic (FPGA/CPLD).
 	uint16_t logicClock;
+	// Clock in MHz for ADC/APS logic (FPGA/CPLD).
 	uint16_t adcClock;
-	// Chip information fields
+	// Chip identifier/type.
 	uint16_t chipID;
-	// DVS specific fields
+	// DVS X axis resolution.
 	uint16_t dvsSizeX;
+	// DVS Y axis resolution.
 	uint16_t dvsSizeY;
+	// Feature test: DVS pixel-level filtering.
 	bool dvsHasPixelFilter;
+	// Feature test: DVS Background Activity filter.
 	bool dvsHasBackgroundActivityFilter;
+	// Feature test: fake event generator (testing/debug).
 	bool dvsHasTestEventGenerator;
-	// APS specific fields
+	// APS X axis resolution.
 	uint16_t apsSizeX;
+	// APS Y axis resolution.
 	uint16_t apsSizeY;
+	// APS color filter type.
 	uint8_t apsColorFilter;
+	// Feature test: APS supports Global Shutter.
 	bool apsHasGlobalShutter;
+	// Feature test: APS supports Quadruple Region-of-Interest readout.
 	bool apsHasQuadROI;
+	// Feature test: APS supports External ADC for getting the image.
 	bool apsHasExternalADC;
+	// Feature test: APS supports Internal (on-chip) ADC for getting the image.
 	bool apsHasInternalADC;
-	// ExtInput specific fields
+	// Feature test: External Input module supports Signal-Generation.
 	bool extInputHasGenerator;
 };
 
+/**
+ * Return basic information on the device, such as its ID, its
+ * resolution, the logic version, and so on. See the 'struct
+ * caer_davis_info' documentation for more details.
+ *
+ * @param handle a valid device handle.
+ *
+ * @return a copy of the device information structure if successful,
+ *         an empty structure (all zeros) on failure.
+ */
 struct caer_davis_info caerDavisInfoGet(caerDeviceHandle handle);
 
 struct caer_bias_vdac {

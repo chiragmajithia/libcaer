@@ -5,6 +5,9 @@
 #include "davis_fx2.h"
 #include "davis_fx3.h"
 
+/**
+ * Number of devices supported by this library.
+ */
 #define SUPPORTED_DEVICES_NUMBER 3
 
 // Supported devices and their functions.

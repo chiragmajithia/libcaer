@@ -180,6 +180,18 @@ bool dvs128Close(caerDeviceHandle cdh) {
 struct caer_dvs128_info caerDVS128InfoGet(caerDeviceHandle cdh) {
 	dvs128Handle handle = (dvs128Handle) cdh;
 
+	// Check if the pointer is valid.
+	if (handle == NULL) {
+		struct caer_dvs128_info emptyInfo = { 0 };
+		return (emptyInfo);
+	}
+
+	// Check if device type is supported.
+	if (handle->deviceType != CAER_DEVICE_DVS128) {
+		struct caer_dvs128_info emptyInfo = { 0 };
+		return (emptyInfo);
+	}
+
 	// Return a copy of the device information.
 	return (handle->info);
 }

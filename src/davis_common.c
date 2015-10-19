@@ -324,6 +324,18 @@ bool davisCommonClose(davisHandle handle) {
 struct caer_davis_info caerDavisInfoGet(caerDeviceHandle cdh) {
 	davisHandle handle = (davisHandle) cdh;
 
+	// Check if the pointer is valid.
+	if (handle == NULL) {
+		struct caer_davis_info emptyInfo = { 0 };
+		return (emptyInfo);
+	}
+
+	// Check if device type is supported.
+	if (handle->deviceType != CAER_DEVICE_DAVIS_FX2 && handle->deviceType != CAER_DEVICE_DAVIS_FX3) {
+		struct caer_davis_info emptyInfo = { 0 };
+		return (emptyInfo);
+	}
+
 	// Return a copy of the device information.
 	return (handle->info);
 }
