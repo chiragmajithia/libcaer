@@ -27,6 +27,16 @@ $ make
 
 $ make install
 
+DOCUMENTATION:
+
+The API documentation for a release can be found at docs/api_doc.pdf.
+Also check the examples/ directory and the iniLabs Support website.
+
+For the development tree, you can generate the documentation using:
+
+$ make doc    - to generate docs/latex/ and docs/html/ documentation files.
+$ make pdf    - to generate a PDF from the LaTeX sources at docs/latex/refman.pdf.
+
 USAGE:
 
 See examples/ directory. Usual usage is (simplified):
@@ -43,4 +53,4 @@ caerDeviceDataStop(h);
 caerDeviceClose(&h);
 
 All configuration parameters and event types are specified in the
-public headers.
+public headers and documented there.
