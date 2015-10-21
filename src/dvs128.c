@@ -930,7 +930,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		if (state->currentPolarityPacket == NULL) {
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
-				I32T(atomic_load(&state->maxPolarityPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
+				I32T(atomic_load_explicit(&state->maxPolarityPacketSize, memory_order_relaxed)),
+				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
@@ -939,7 +940,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		if (state->currentSpecialPacket == NULL) {
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
-				I32T(atomic_load(&state->maxSpecialPacketSize)), I16T(handle->info.deviceID), state->wrapOverflow);
+				I32T(atomic_load_explicit(&state->maxSpecialPacketSize, memory_order_relaxed)),
+				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
@@ -1071,19 +1073,20 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				(0);
 
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerCommit = (((polaritySize + specialSize) >= atomic_load(&state->maxPacketContainerSize))
-			|| (polarityInterval >= atomic_load(&state->maxPacketContainerInterval))
-			|| (specialInterval >= atomic_load(&state->maxPacketContainerInterval)));
+		bool containerCommit = (((polaritySize + specialSize)
+			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed))
+			|| (polarityInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed))
+			|| (specialInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed)));
 
 		// Trigger if any of the packet-specific thresholds are met.
 		bool polarityPacketCommit = ((polaritySize
 			>= caerEventPacketHeaderGetEventCapacity(&state->currentPolarityPacket->packetHeader))
-			|| (polarityInterval >= atomic_load(&state->maxPolarityPacketInterval)));
+			|| (polarityInterval >= atomic_load_explicit(&state->maxPolarityPacketInterval, memory_order_relaxed)));
 
 		// Trigger if any of the packet-specific thresholds are met.
 		bool specialPacketCommit = ((specialSize
 			>= caerEventPacketHeaderGetEventCapacity(&state->currentSpecialPacket->packetHeader))
-			|| (specialInterval >= atomic_load(&state->maxSpecialPacketInterval)));
+			|| (specialInterval >= atomic_load_explicit(&state->maxSpecialPacketInterval, memory_order_relaxed)));
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
