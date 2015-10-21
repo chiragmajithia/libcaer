@@ -911,11 +911,54 @@ extern "C" {
  */
 #define DAVIS_CONFIG_IMU_GYRO_FULL_SCALE         9
 
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enable the signal detector module. It generates events
+ * when it sees certain types of signals, such as edges or
+ * pulses of a defined length, on the IN JACK signal.
+ * This can be useful to inject events into the event
+ * stream in response to external stimuli or controls,
+ * such as turning on a LED lamp.
+ */
 #define DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR               0
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT_RISING_EDGE event when a
+ * rising edge is detected (transition from low voltage to high).
+ */
 #define DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES        1
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT_FALLING_EDGE event when a
+ * falling edge is detected (transition from high voltage to low).
+ */
 #define DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES       2
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT_PULSE event when a pulse, of
+ * a specified, configurable polarity and length, is detected.
+ * See DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY and
+ * DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH for more details.
+ */
 #define DAVIS_CONFIG_EXTINPUT_DETECT_PULSES              3
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the polarity the pulse must exhibit to be detected as such.
+ * '1' means active high; a pulse will start when the signal
+ * goes from low to high and will continue to be seen as the
+ * same pulse as long as it stays high.
+ * '0' means active low; a pulse will start when the signal
+ * goes from high to low and will continue to be seen as the
+ * same pulse as long as it stays low.
+ */
 #define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY      4
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the minimal length that a pulse must have to trigger the
+ * sending of a special event. This is measured in cycles
+ * at LogicClock frequency (see 'struct caer_davis_info' for
+ * details on how to get the frequency).
+ */
 #define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH        5
 /**
  * Parameter address for module DAVIS_CONFIG_EXTINPUT:
@@ -926,19 +969,113 @@ extern "C" {
  * documentation to get this information.
  */
 #define DAVIS_CONFIG_EXTINPUT_HAS_GENERATOR              6
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enable the signal generator module. It generates a
+ * PWM-like signal based on configurable parameters and
+ * outputs it on the OUT JACK signal.
+ */
 #define DAVIS_CONFIG_EXTINPUT_RUN_GENERATOR              7
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * instead of generating a PWM-like signal by using the
+ * configured parameters, use a signal on the FPGA/CPLD
+ * that's passed as an input to the External Input module.
+ * By default this is disabled and tied to ground, but
+ * it can be useful for customized logic designs.
+ */
 #define DAVIS_CONFIG_EXTINPUT_GENERATE_USE_CUSTOM_SIGNAL 8
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * polarity of the PWM-like signal to be generated.
+ * '1' means active high, '0' means active low.
+ */
 #define DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_POLARITY    9
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the interval between the start of two consecutive pulses,
+ * expressed in cycles at LogicClock frequency (see
+ * 'struct caer_davis_info' for details on how to get the frequency).
+ * This must be bigger or equal to DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH.
+ * To generate a signal with 50% duty cycle, this would
+ * have to be exactly double of DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH.
+ */
 #define DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL    10
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the length a pulse stays active, expressed in cycles at
+ * LogicClock frequency (see 'struct caer_davis_info' for
+ * details on how to get the frequency). This must be
+ * smaller or equal to DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL.
+ * To generate a signal with 50% duty cycle, this would
+ * have to be exactly half of DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL.
+ */
 #define DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH      11
 
+/**
+ * Parameter address for module DAVIS_CONFIG_SYSINFO:
+ * read-only parameter, the version of the logic currently
+ * running on the device's FPGA/CPLD. It usually represents
+ * a specific SVN revision, at which the logic code was
+ * synthesized.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
 #define DAVIS_CONFIG_SYSINFO_LOGIC_VERSION    0
+/**
+ * Parameter address for module DAVIS_CONFIG_SYSINFO:
+ * read-only parameter, an integer used to identify the different
+ * types of sensor chips used on the device.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
 #define DAVIS_CONFIG_SYSINFO_CHIP_IDENTIFIER  1
+/**
+ * Parameter address for module DAVIS_CONFIG_SYSINFO:
+ * read-only parameter, whether the device is currently a timestamp
+ * master or slave when synchronizing multiple devices together.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
 #define DAVIS_CONFIG_SYSINFO_DEVICE_IS_MASTER 2
+/**
+ * Parameter address for module DAVIS_CONFIG_SYSINFO:
+ * read-only parameter, the frequency in MHz at which the main
+ * FPGA/CPLD logic is running.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
 #define DAVIS_CONFIG_SYSINFO_LOGIC_CLOCK      3
+/**
+ * Parameter address for module DAVIS_CONFIG_SYSINFO:
+ * read-only parameter, the frequency in MHz at which the FPGA/CPLD
+ * logic related to APS frame grabbing is running.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
 #define DAVIS_CONFIG_SYSINFO_ADC_CLOCK        4
 
+/**
+ * Parameter address for module DAVIS_CONFIG_USB:
+ * enable the USB FIFO module, which transfers the data from the
+ * FPGA/CPLD to the USB chip, to be then sent to the host.
+ * Turning this off will suppress any USB data communication!
+ */
 #define DAVIS_CONFIG_USB_RUN                0
+/**
+ * Parameter address for module DAVIS_CONFIG_USB:
+ * the time delay after which a packet of data is committed to
+ * USB, even if it is not full yet (short USB packet).
+ * The value is in 125µs time-slices, corresponding to how
+ * USB schedules its operations (a value of 4 for example
+ * would mean waiting at most 0.5ms until sending a short
+ * USB packet to the host).
+ */
 #define DAVIS_CONFIG_USB_EARLY_PACKET_DELAY 1
 
 #define DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL 0
