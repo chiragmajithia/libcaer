@@ -9,11 +9,11 @@ static atomic_int caerLogFileDescriptor1 = ATOMIC_VAR_INIT(STDERR_FILENO);
 static atomic_int caerLogFileDescriptor2 = ATOMIC_VAR_INIT(-1);
 
 void caerLogLevelSet(uint8_t logLevel) {
-	atomic_store(&caerLogLevel, logLevel);
+	atomic_store_explicit(&caerLogLevel, logLevel, memory_order_relaxed);
 }
 
 uint8_t caerLogLevelGet(void) {
-	return (atomic_load(&caerLogLevel));
+	return (atomic_load_explicit(&caerLogLevel, memory_order_relaxed));
 }
 
 void caerLogFileDescriptorsSet(int fd1, int fd2) {
@@ -22,8 +22,8 @@ void caerLogFileDescriptorsSet(int fd1, int fd2) {
 		fd2 = -1;
 	}
 
-	atomic_store(&caerLogFileDescriptor1, fd1);
-	atomic_store(&caerLogFileDescriptor2, fd2);
+	atomic_store_explicit(&caerLogFileDescriptor1, fd1, memory_order_relaxed);
+	atomic_store_explicit(&caerLogFileDescriptor2, fd2, memory_order_relaxed);
 }
 
 void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
@@ -34,7 +34,7 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 	}
 
 	// Only log messages above the specified level.
-	if (logLevel <= atomic_load(&caerLogLevel)) {
+	if (logLevel <= atomic_load_explicit(&caerLogLevel, memory_order_relaxed)) {
 		// First prepend the time.
 		time_t currentTimeEpoch = time(NULL);
 
@@ -101,14 +101,14 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 
 		va_list argptr;
 
-		int logFileDescriptor1 = atomic_load(&caerLogFileDescriptor1);
+		int logFileDescriptor1 = atomic_load_explicit(&caerLogFileDescriptor1, memory_order_relaxed);
 		if (logFileDescriptor1 >= 0) {
 			va_start(argptr, format);
 			vdprintf(logFileDescriptor1, logString, argptr);
 			va_end(argptr);
 		}
 
-		int logFileDescriptor2 = atomic_load(&caerLogFileDescriptor2);
+		int logFileDescriptor2 = atomic_load_explicit(&caerLogFileDescriptor2, memory_order_relaxed);
 		if (logFileDescriptor2 >= 0) {
 			va_start(argptr, format);
 			vdprintf(logFileDescriptor2, logString, argptr);

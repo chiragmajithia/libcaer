@@ -154,24 +154,26 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	davisState state = &handle->state;
 
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
-	atomic_store(&state->dataExchangeBufferSize, 64);
-	atomic_store(&state->dataExchangeBlocking, false);
-	atomic_store(&state->dataExchangeStartProducers, true);
-	atomic_store(&state->dataExchangeStopProducers, true);
-	atomic_store(&state->usbBufferNumber, 8);
-	atomic_store(&state->usbBufferSize, 8192);
+	atomic_store_explicit(&state->dataExchangeBufferSize, 64, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeBlocking, false, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeStartProducers, true, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeStopProducers, true, memory_order_relaxed);
+	atomic_store_explicit(&state->usbBufferNumber, 8, memory_order_relaxed);
+	atomic_store_explicit(&state->usbBufferSize, 8192, memory_order_relaxed);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store(&state->maxPacketContainerSize, 4096 + 128 + 4 + 8);
-	atomic_store(&state->maxPacketContainerInterval, 5000);
-	atomic_store(&state->maxPolarityPacketSize, 4096);
-	atomic_store(&state->maxPolarityPacketInterval, 5000);
-	atomic_store(&state->maxSpecialPacketSize, 128);
-	atomic_store(&state->maxSpecialPacketInterval, 1000);
-	atomic_store(&state->maxFramePacketSize, 4);
-	atomic_store(&state->maxFramePacketInterval, 50000);
-	atomic_store(&state->maxIMU6PacketSize, 8);
-	atomic_store(&state->maxIMU6PacketInterval, 5000);
+	atomic_store_explicit(&state->maxPacketContainerSize, 4096 + 128 + 4 + 8, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerInterval, 5000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPolarityPacketSize, 4096, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPolarityPacketInterval, 5000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxSpecialPacketSize, 128, memory_order_relaxed);
+	atomic_store_explicit(&state->maxSpecialPacketInterval, 1000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxFramePacketSize, 4, memory_order_relaxed);
+	atomic_store_explicit(&state->maxFramePacketInterval, 50000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxIMU6PacketSize, 8, memory_order_relaxed);
+	atomic_store_explicit(&state->maxIMU6PacketInterval, 5000, memory_order_relaxed);
+
+	atomic_thread_fence(memory_order_release);
 
 	// Search for device and open it.
 	// Initialize libusb using a separate context for each device.
@@ -729,14 +731,14 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
 					break;
 
 				default:
@@ -2117,7 +2119,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	}
 
 	// Wait for the data acquisition thread to be ready.
-	while (!atomic_load(&state->dataAcquisitionThreadRun)) {
+	while (!atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)) {
 		;
 	}
 
@@ -2200,7 +2202,7 @@ caerEventPacketContainer davisCommonDataGet(caerDeviceHandle cdh) {
 
 	// Didn't find any event container, either report this or retry, depending
 	// on blocking setting.
-	if (atomic_load(&state->dataExchangeBlocking)) {
+	if (atomic_load_explicit(&state->dataExchangeBlocking, memory_order_relaxed)) {
 		// Don't retry right away in a tight loop, back off and wait a little.
 		// If no data is available, sleep for a millisecond to avoid wasting resources.
 		struct timespec noDataSleep = { .tv_sec = 0, .tv_nsec = 1000000 };
@@ -2620,7 +2622,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 							// Update Master/Slave status on incoming TS resets. Done in main thread
 							// to avoid deadlock inside callback.
-							atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 1);
+							atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 1,
+								memory_order_relaxed);
 
 							break;
 						}
@@ -3512,9 +3515,10 @@ static int davisDataAcquisitionThread(void *inPtr) {
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
-	while (atomic_load(&state->dataAcquisitionThreadRun) && state->activeDataTransfers > 0) {
+	while (atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)
+		&& state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
-		if (atomic_load(&state->dataAcquisitionThreadConfigUpdate) != 0) {
+		if (atomic_load_explicit(&state->dataAcquisitionThreadConfigUpdate, memory_order_relaxed) != 0) {
 			davisDataAcquisitionThreadConfig(handle);
 		}
 

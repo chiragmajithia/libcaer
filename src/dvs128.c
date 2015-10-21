@@ -70,20 +70,22 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	dvs128State state = &handle->state;
 
 	// Initialize state variables to default values (if not zero, taken care of by calloc above).
-	atomic_store(&state->dataExchangeBufferSize, 64);
-	atomic_store(&state->dataExchangeBlocking, false);
-	atomic_store(&state->dataExchangeStartProducers, true);
-	atomic_store(&state->dataExchangeStopProducers, true);
-	atomic_store(&state->usbBufferNumber, 8);
-	atomic_store(&state->usbBufferSize, 4096);
+	atomic_store_explicit(&state->dataExchangeBufferSize, 64, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeBlocking, false, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeStartProducers, true, memory_order_relaxed);
+	atomic_store_explicit(&state->dataExchangeStopProducers, true, memory_order_relaxed);
+	atomic_store_explicit(&state->usbBufferNumber, 8, memory_order_relaxed);
+	atomic_store_explicit(&state->usbBufferSize, 4096, memory_order_relaxed);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store(&state->maxPacketContainerSize, 4096 + 128);
-	atomic_store(&state->maxPacketContainerInterval, 5000);
-	atomic_store(&state->maxPolarityPacketSize, 4096);
-	atomic_store(&state->maxPolarityPacketInterval, 5000);
-	atomic_store(&state->maxSpecialPacketSize, 128);
-	atomic_store(&state->maxSpecialPacketInterval, 1000);
+	atomic_store_explicit(&state->maxPacketContainerSize, 4096 + 128, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerInterval, 5000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPolarityPacketSize, 4096, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPolarityPacketInterval, 5000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxSpecialPacketSize, 128, memory_order_relaxed);
+	atomic_store_explicit(&state->maxSpecialPacketInterval, 1000, memory_order_relaxed);
+
+	atomic_thread_fence(memory_order_release);
 
 	// Search for device and open it.
 	// Initialize libusb using a separate context for each device.
@@ -229,14 +231,14 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
+					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
 					break;
 
 				default:
@@ -563,7 +565,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	}
 
 	// Wait for the data acquisition thread to be ready.
-	while (!atomic_load(&state->dataAcquisitionThreadRun)) {
+	while (!atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)) {
 		;
 	}
 
@@ -632,7 +634,7 @@ caerEventPacketContainer dvs128DataGet(caerDeviceHandle cdh) {
 
 	// Didn't find any event container, either report this or retry, depending
 	// on blocking setting.
-	if (atomic_load(&state->dataExchangeBlocking)) {
+	if (atomic_load_explicit(&state->dataExchangeBlocking, memory_order_relaxed)) {
 		// Don't retry right away in a tight loop, back off and wait a little.
 		// If no data is available, sleep for a millisecond to avoid wasting resources.
 		struct timespec noDataSleep = { .tv_sec = 0, .tv_nsec = 1000000 };
@@ -1175,9 +1177,10 @@ static int dvs128DataAcquisitionThread(void *inPtr) {
 	// Handle USB events (1 second timeout).
 	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
 
-	while (atomic_load(&state->dataAcquisitionThreadRun) && state->activeDataTransfers > 0) {
+	while (atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)
+		&& state->activeDataTransfers > 0) {
 		// Check config refresh, in this case to adjust buffer sizes.
-		if (atomic_load(&state->dataAcquisitionThreadConfigUpdate) != 0) {
+		if (atomic_load_explicit(&state->dataAcquisitionThreadConfigUpdate, memory_order_relaxed) != 0) {
 			dvs128DataAcquisitionThreadConfig(handle);
 		}
 

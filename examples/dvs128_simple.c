@@ -9,7 +9,7 @@ static atomic_bool globalShutdown = ATOMIC_VAR_INIT(false);
 static void globalShutdownSignalHandler(int signal) {
 	// Simply set the running flag to false on SIGTERM and SIGINT (CTRL+C) for global shutdown.
 	if (signal == SIGTERM || signal == SIGINT) {
-		atomic_store(&globalShutdown, true);
+		atomic_store_explicit(&globalShutdown, true, memory_order_relaxed);
 	}
 }
 
@@ -68,7 +68,7 @@ int main(void) {
 	// Let's turn on blocking data-get mode to avoid wasting resources.
 	caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
 
-	while (!atomic_load(&globalShutdown)) {
+	while (!atomic_load_explicit(&globalShutdown, memory_order_relaxed)) {
 		caerEventPacketContainer packetContainer = caerDeviceDataGet(dvs128_handle);
 		if (packetContainer == NULL) {
 			continue; // Skip if nothing there.
