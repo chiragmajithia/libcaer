@@ -44,6 +44,15 @@ struct caer_frame_event_packet {
 
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
 
+/**
+ *
+ * The source for this function is available in src/events.c.
+ *
+ * @param eventCapacity
+ * @param eventSource
+ * @param tsOverflow
+ * @return
+ */
 caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
 static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket packet, int32_t n) {

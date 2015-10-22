@@ -1,8 +1,11 @@
-/*
- * packetContainer.h
+/**
+ * @file packetContainer.h
  *
- *  Created on: May 25, 2015
- *      Author: llongi
+ * EventPacketContainer format definition and handling functions.
+ * An EventPacketContainer is a logical construct that contains packets
+ * of events (EventPackets) of different event types, with the aim of
+ * keeping related events of differing types, such as DVS and IMU data,
+ * together. Such a relation is usually based on time intervals.
  */
 
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_
@@ -14,18 +17,45 @@ extern "C" {
 
 #include "common.h"
 
-// Use signed integers for maximum compatibility with other languages.
+/**
+ * EventPacketContainer data structure definition.
+ * Signed integers are used for compatibility with languages that
+ * do not have them, such as Java.
+ */
 struct caer_event_packet_container {
-	int32_t eventPacketsNumber; // Number of different event packets contained.
+	// Number of different event packets contained.
+	int32_t eventPacketsNumber;
+	// Array of pointers to the actual event packets.
 	caerEventPacketHeader eventPackets[];
 }__attribute__((__packed__));
 
-// Keep several packets of multiple types together, for easy time-based association.
+/**
+ * Type for pointer to EventPacketContainer data structure.
+ */
 typedef struct caer_event_packet_container *caerEventPacketContainer;
 
+/**
+ * Allocate a new EventPacketContainer with enough space to
+ * store up to the given number of EventPackets.
+ * All packets will be NULL initially.
+ *
+ * @param eventPacketsNumber the maximum number of EventPackets that can
+ *                           be stored in this container.
+ *
+ * @return a valid EventPacketContainer handle or NULL on error.
+ */
 caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber);
 
+/**
+ * Free the memory occupied by an EventPacketContainer, as well as
+ * freeing all of its contained EventPackets and their memory.
+ * If you don't want the contained EventPackets to be freed, make
+ * sure that you set their reference to NULL before calling this.
+
+ * @param container the container to be freed.
+ */
 void caerEventPacketContainerFree(caerEventPacketContainer container);
+
 
 static inline int32_t caerEventPacketContainerGetEventPacketsNumber(caerEventPacketContainer container) {
 	// Non-existing (empty) containers have no valid packets in them!

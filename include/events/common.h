@@ -1,8 +1,7 @@
-/*
- * common.h
+/**
+ * @file common.h
  *
- *  Created on: Nov 26, 2013
- *      Author: chtekk
+ * EventPacketContainer format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_COMMON_H_

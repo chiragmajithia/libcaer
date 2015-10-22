@@ -1,8 +1,7 @@
-/*
- * special.h
+/**
+ * @file special.h
  *
- *  Created on: Nov 28, 2013
- *      Author: llongi
+ * EventPacketContainer format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_SPECIAL_H_
