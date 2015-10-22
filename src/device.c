@@ -124,8 +124,6 @@ bool caerDeviceSendDefaultConfig(caerDeviceHandle handle) {
 	return (defaultConfigSenders[handle->deviceType](handle));
 }
 
-// Negative addresses are used for host-side configuration.
-// Positive addresses (including zero) are used for device-side configuration.
 bool caerDeviceConfigSet(caerDeviceHandle handle, int8_t modAddr, uint8_t paramAddr, uint32_t param) {
 	// Check if the pointer is valid.
 	if (handle == NULL) {
