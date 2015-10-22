@@ -731,14 +731,14 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				default:
@@ -2626,8 +2626,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 							// Update Master/Slave status on incoming TS resets. Done in main thread
 							// to avoid deadlock inside callback.
-							atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 1,
-								memory_order_relaxed);
+							atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 1);
 
 							break;
 						}

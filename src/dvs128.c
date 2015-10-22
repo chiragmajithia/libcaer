@@ -231,14 +231,14 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					atomic_store(&state->usbBufferNumber, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				case CAER_HOST_CONFIG_USB_BUFFER_SIZE:
 					atomic_store(&state->usbBufferSize, param);
 
 					// Notify data acquisition thread to change buffers.
-					atomic_fetch_or_explicit(&state->dataAcquisitionThreadConfigUpdate, 1 << 0, memory_order_release);
+					atomic_fetch_or(&state->dataAcquisitionThreadConfigUpdate, 1 << 0);
 					break;
 
 				default:
