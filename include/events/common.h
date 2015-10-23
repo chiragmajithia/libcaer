@@ -31,6 +31,8 @@ enum caer_default_event_types {
 	EAR_EVENT = 6,
 };
 
+#define CAER_EVENT_PACKET_HEADER_SIZE 28
+
 // Use signed integers for maximum compatibility with other languages.
 struct caer_event_packet_header {
 	int16_t eventType; // Numerical type ID, unique to each event type (see enum).
@@ -53,7 +55,8 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	if (eventType < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventType() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventType() with negative value!");
 #endif
 		return;
 	}
@@ -89,7 +92,8 @@ static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader heade
 	if (eventSize < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventSize() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventSize() with negative value!");
 #endif
 		return;
 	}
@@ -174,7 +178,8 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 	if (eventsValid < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
 #if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "EventPacket Header", "Called caerEventPacketHeaderSetEventValid() with negative value!");
+		caerLog(CAER_LOG_CRITICAL, "EventPacket Header",
+			"Called caerEventPacketHeaderSetEventValid() with negative value!");
 #endif
 		return;
 	}
@@ -195,7 +200,7 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, in
 
 	// Return a pointer to the specified event.
 	return (((uint8_t *) headerPtr)
-		+ (sizeof(struct caer_event_packet_header) + U64T(n * caerEventPacketHeaderGetEventSize(headerPtr))));
+		+ (CAER_EVENT_PACKET_HEADER_SIZE + U64T(n * caerEventPacketHeaderGetEventSize(headerPtr))));
 }
 
 static inline int32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
@@ -203,8 +208,8 @@ static inline int32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPack
 }
 
 static inline int64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
-	return (I64T((U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT)
-		| U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr))));
+	return (I64T(
+		(U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT) | U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr))));
 }
 
 static inline bool caerGenericEventIsValid(void *eventPtr) {
