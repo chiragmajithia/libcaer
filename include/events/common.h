@@ -219,6 +219,22 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
 	return (*((uint8_t *) eventPtr) & VALID_MARK_MASK);
 }
 
+#define CAER_ITERATOR_ALL_START(PACKET_HEADER, EVENT_TYPE) \
+	for (size_t caerIteratorCounter = 0; \
+		caerIteratorCounter < caerEventPacketHeaderGetEventNumber(PACKET_HEADER); \
+		caerIteratorCounter++) { \
+		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter);
+
+#define CAER_ITERATOR_ALL_END }
+
+#define CAER_ITERATOR_VALID_START(PACKET_HEADER, EVENT_TYPE) \
+	for (size_t caerIteratorCounter = 0; \
+		caerIteratorCounter < caerEventPacketHeaderGetEventValid(PACKET_HEADER); \
+		caerIteratorCounter++) { \
+		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter);
+
+#define CAER_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif
