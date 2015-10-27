@@ -13,44 +13,106 @@ extern "C" {
 
 #include "../libcaer.h"
 
-// 0 in the 0th bit means invalid, 1 means valid.
-// This way zeroing-out an event packet sets all its events to invalid.
+/**
+ * Generic validity mark:
+ * this bit is used to mark whether an event is still
+ * valid or not, and can be used to efficiently filter
+ * out events from a packet.
+ * The caerXXXEventValidate() and caerXXXEventInvalidate()
+ * functions should be used to toggle this!
+ * 0 in the 0th bit of the first byte means invalid, 1 means valid.
+ * This way zeroing-out an event packet sets all its events to invalid.
+ */
 #define VALID_MARK_SHIFT 0
 #define VALID_MARK_MASK 0x00000001
 
-// Timestamps have 31 significant bits, so TSOverflow needs to be shifted by that amount.
+/**
+ * 64bit timestamp support:
+ * since timestamps wrap around after some time, being only 31 bit (32 bit signed int),
+ * another timestamp at the packet level provides another 31 bit (32 bit signed int),
+ * to enable the generation of a 62 bit (64 bit signed int) microsecond timestamp which
+ * is guaranteed to never wrap around (in the next 146'138 years at least).
+ * The TSOverflow needs to be shifted by 31 thus when constructing such a timestamp.
+ */
 #define TS_OVERFLOW_SHIFT 31
 
+/**
+ * List of supported event types.
+ * Each event type has its own integer representation.
+ * All event types below 100 are reserved for use
+ * by libcaer and cAER.
+ * DO NOT USE THEM FOR YOUR OWN EVENT TYPES!
+ */
 enum caer_default_event_types {
-	SPECIAL_EVENT = 0,
-	POLARITY_EVENT = 1,
-	FRAME_EVENT = 2,
-	IMU6_EVENT = 3,
-	IMU9_EVENT = 4,
-	SAMPLE_EVENT = 5,
-	EAR_EVENT = 6,
+	SPECIAL_EVENT = 0,  //!< SPECIAL_EVENT
+	POLARITY_EVENT = 1, //!< POLARITY_EVENT
+	FRAME_EVENT = 2,    //!< FRAME_EVENT
+	IMU6_EVENT = 3,     //!< IMU6_EVENT
+	IMU9_EVENT = 4,     //!< IMU9_EVENT
+	SAMPLE_EVENT = 5,   //!< SAMPLE_EVENT
+	EAR_EVENT = 6,      //!< EAR_EVENT
 };
 
+/**
+ * Size of the EventPacket header.
+ * This is constant across all supported systems.
+ */
 #define CAER_EVENT_PACKET_HEADER_SIZE 28
 
-// Use signed integers for maximum compatibility with other languages.
+/**
+ * EventPacket header data structure definition.
+ * The size, also defined in CAER_EVENT_PACKET_HEADER_SIZE,
+ * must always be constant. The header is common to all
+ * types of event packets and is always the very first
+ * member of an event packet data structure.
+ * Signed integers are used for compatibility with languages that
+ * do not have unsigned ones, such as Java.
+ */
 struct caer_event_packet_header {
-	int16_t eventType; // Numerical type ID, unique to each event type (see enum).
-	int16_t eventSource; // Numerical source ID, unique inside a process.
-	int32_t eventSize; // Size of one event in bytes.
-	int32_t eventTSOffset; // Offset in bytes at which the main 32bit time-stamp can be found.
-	int32_t eventTSOverflow; // Overflow counter for the standard 32bit event time-stamp.
-	int32_t eventCapacity; // Maximum number of events this packet can store.
-	int32_t eventNumber; // Total number of events present in this packet (valid + invalid).
-	int32_t eventValid; // Total number of valid events present in this packet.
+	// Numerical type ID, unique to each event type (see 'enum caer_default_event_types').
+	int16_t eventType;
+	// Numerical source ID, unique inside a process, identifies who generated the events.
+	int16_t eventSource;
+	// Size of one event in bytes.
+	int32_t eventSize;
+	// Offset from the start of an event, in bytes, at which the main 32 bit time-stamp can be found.
+	int32_t eventTSOffset;
+	// Overflow counter for the standard 32bit event time-stamp. Used to generate the 64 bit time-stamp.
+	int32_t eventTSOverflow;
+	// Maximum number of events this packet can store.
+	int32_t eventCapacity;
+	// Total number of events present in this packet (valid + invalid).
+	int32_t eventNumber;
+	// Total number of valid events present in this packet.
+	int32_t eventValid;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to EventPacket header data structure.
+ */
 typedef struct caer_event_packet_header *caerEventPacketHeader;
 
+/**
+ * Return the numerical event type ID, representing the event type this
+ * EventPacket is containing.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the numerical event type.
+ */
 static inline int16_t caerEventPacketHeaderGetEventType(caerEventPacketHeader header) {
 	return (le16toh(header->eventType));
 }
 
+/**
+ * Set the numerical event type ID, representing the event type this
+ * EventPacket will contain.
+ * All event types below 100 are reserved for use by libcaer and cAER.
+ * DO NOT USE THEM FOR YOUR OWN EVENT TYPES!
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventType the numerical event type.
+ */
 static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader header, int16_t eventType) {
 	if (eventType < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -64,10 +126,28 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	header->eventType = htole16(eventType);
 }
 
+/**
+ * Get the numerical event source ID, representing the event source
+ * that generated all the events present in this packet.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the numerical event source ID.
+ */
 static inline int16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
 	return (le16toh(header->eventSource));
 }
 
+/**
+ * Set the numerical event source ID, representing the event source
+ * that generated all the events present in this packet.
+ * This ID should be unique at least within a process, if not within
+ * the whole system, to guarantee correct identification of who
+ * generated an event later on.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventSource the numerical event source ID.
+ */
 static inline void caerEventPacketHeaderSetEventSource(caerEventPacketHeader header, int16_t eventSource) {
 	if (eventSource < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -81,10 +161,25 @@ static inline void caerEventPacketHeaderSetEventSource(caerEventPacketHeader hea
 	header->eventSource = htole16(eventSource);
 }
 
+/**
+ * Get the size of a single event, in bytes.
+ * All events inside an event packet always have the same size.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the event size in bytes.
+ */
 static inline int32_t caerEventPacketHeaderGetEventSize(caerEventPacketHeader header) {
 	return (le32toh(header->eventSize));
 }
 
+/**
+ * Set the size of a single event, in bytes.
+ * All events inside an event packet always have the same size.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventSize the event size in bytes.
+ */
 static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader header, int32_t eventSize) {
 	if (eventSize < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -98,10 +193,33 @@ static inline void caerEventPacketHeaderSetEventSize(caerEventPacketHeader heade
 	header->eventSize = htole32(eventSize);
 }
 
+/**
+ * Get the offset, in bytes, to where the field with the main
+ * 32 bit timestamp is stored. This is useful for generic access
+ * to the timestamp field, given that different event types might
+ * have it at different offsets or might even have multiple
+ * timestamps, in which case this offset references the 'main'
+ * timestamp, the most representative one.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the event timestamp offset in bytes.
+ */
 static inline int32_t caerEventPacketHeaderGetEventTSOffset(caerEventPacketHeader header) {
 	return (le32toh(header->eventTSOffset));
 }
 
+/**
+ * Set the offset, in bytes, to where the field with the main
+ * 32 bit timestamp is stored. This is useful for generic access
+ * to the timestamp field, given that different event types might
+ * have it at different offsets or might even have multiple
+ * timestamps, in which case this offset references the 'main'
+ * timestamp, the most representative one.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventTSOffset the event timestamp offset in bytes.
+ */
 static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader header, int32_t eventTSOffset) {
 	if (eventTSOffset < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -115,11 +233,33 @@ static inline void caerEventPacketHeaderSetEventTSOffset(caerEventPacketHeader h
 	header->eventTSOffset = htole32(eventTSOffset);
 }
 
+/**
+ * Get the 32 bit timestamp overflow counter (in microseconds). This is per-packet
+ * and is used to generate a 64 bit timestamp that never wraps around.
+ * Since timestamps wrap around after some time, being only 31 bit (32 bit signed int),
+ * another timestamp at the packet level provides another 31 bit (32 bit signed int),
+ * to enable the generation of a 62 bit (64 bit signed int) microsecond timestamp which
+ * is guaranteed to never wrap around (in the next 146'138 years at least).
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the packet-level timestamp overflow counter, in microseconds.
+ */
 static inline int32_t caerEventPacketHeaderGetEventTSOverflow(caerEventPacketHeader header) {
 	return (le32toh(header->eventTSOverflow));
 }
 
-// Limit TSOverflow to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32 bit timestamp overflow counter (in microseconds). This is per-packet
+ * and is used to generate a 64 bit timestamp that never wraps around.
+ * Since timestamps wrap around after some time, being only 31 bit (32 bit signed int),
+ * another timestamp at the packet level provides another 31 bit (32 bit signed int),
+ * to enable the generation of a 62 bit (64 bit signed int) microsecond timestamp which
+ * is guaranteed to never wrap around (in the next 146'138 years at least).
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventTSOverflow the packet-level timestamp overflow counter, in microseconds.
+ */
 static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader header, int32_t eventTSOverflow) {
 	if (eventTSOverflow < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -133,10 +273,25 @@ static inline void caerEventPacketHeaderSetEventTSOverflow(caerEventPacketHeader
 	header->eventTSOverflow = htole32(eventTSOverflow);
 }
 
+/**
+ * Get the maximum number of events this packet can store.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the number of events this packet can hold.
+ */
 static inline int32_t caerEventPacketHeaderGetEventCapacity(caerEventPacketHeader header) {
 	return (le32toh(header->eventCapacity));
 }
 
+/**
+ * Set the maximum number of events this packet can store.
+ * This is determined at packet allocation time and should
+ * not be changed during the life-time of the packet.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventsCapacity the number of events this packet can hold.
+ */
 static inline void caerEventPacketHeaderSetEventCapacity(caerEventPacketHeader header, int32_t eventsCapacity) {
 	if (eventsCapacity < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -150,10 +305,25 @@ static inline void caerEventPacketHeaderSetEventCapacity(caerEventPacketHeader h
 	header->eventCapacity = htole32(eventsCapacity);
 }
 
+/**
+ * Get the number of events currently stored in this packet,
+ * considering both valid and invalid events.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the number of events in this packet.
+ */
 static inline int32_t caerEventPacketHeaderGetEventNumber(caerEventPacketHeader header) {
 	return (le32toh(header->eventNumber));
 }
 
+/**
+ * Set the number of events currently stored in this packet,
+ * considering both valid and invalid events.
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventsNumber the number of events in this packet.
+ */
 static inline void caerEventPacketHeaderSetEventNumber(caerEventPacketHeader header, int32_t eventsNumber) {
 	if (eventsNumber < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -167,10 +337,25 @@ static inline void caerEventPacketHeaderSetEventNumber(caerEventPacketHeader hea
 	header->eventNumber = htole32(eventsNumber);
 }
 
+/**
+ * Get the number of valid events in this packet, disregarding
+ * invalid ones (where the invalid mark is set).
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the number of valid events in this packet.
+ */
 static inline int32_t caerEventPacketHeaderGetEventValid(caerEventPacketHeader header) {
 	return (le32toh(header->eventValid));
 }
 
+/**
+ * Set the number of valid events in this packet, disregarding
+ * invalid ones (where the invalid mark is set).
+ *
+ * @param header a valid EventPacket header pointer. Cannot be NULL.
+ * @param eventsValid the number of valid events in this packet.
+ */
 static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader header, int32_t eventsValid) {
 	if (eventsValid < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
@@ -184,6 +369,15 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 	header->eventValid = htole32(eventsValid);
 }
 
+/**
+ * Get a generic pointer to an event, without having to know what event
+ * type the packet is containing.
+ *
+ * @param headerPtr a valid EventPacket header pointer. Cannot be NULL.
+ * @param n the index of the returned event.
+ *
+ * @return a generic pointer to the requested event.
+ */
 static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(headerPtr)) {
@@ -200,15 +394,42 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, in
 		+ (CAER_EVENT_PACKET_HEADER_SIZE + U64T(n * caerEventPacketHeaderGetEventSize(headerPtr))));
 }
 
+/**
+ * Get the main 32 bit timestamp for a generic event, without having to
+ * know what event type the packet is containing.
+ *
+ * @param eventPtr a generic pointer to an event. Cannot be NULL.
+ * @param headerPtr a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the main 32 bit timestamp of this event.
+ */
 static inline int32_t caerGenericEventGetTimestamp(void *eventPtr, caerEventPacketHeader headerPtr) {
 	return (le32toh(*((int32_t *) (((uint8_t *) eventPtr) + U64T(caerEventPacketHeaderGetEventTSOffset(headerPtr))))));
 }
 
+/**
+ * Get the main 64 bit timestamp for a generic event, without having to
+ * know what event type the packet is containing. This takes the
+ * per-packet timestamp into account too, generating a timestamp
+ * that doesn't suffer from overflow problems.
+ *
+ * @param eventPtr a generic pointer to an event. Cannot be NULL.
+ * @param headerPtr a valid EventPacket header pointer. Cannot be NULL.
+ *
+ * @return the main 64 bit timestamp of this event.
+ */
 static inline int64_t caerGenericEventGetTimestamp64(void *eventPtr, caerEventPacketHeader headerPtr) {
 	return (I64T(
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(headerPtr)) << TS_OVERFLOW_SHIFT) | U64T(caerGenericEventGetTimestamp(eventPtr, headerPtr))));
 }
 
+/**
+ * Check if the given generic event is valid or not.
+ *
+ * @param eventPtr a generic pointer to an event. Cannot be NULL.
+ *
+ * @return true if the event is valid, false otherwise.
+ */
 static inline bool caerGenericEventIsValid(void *eventPtr) {
 	// Look at first byte of event memory's lowest bit.
 	// This should always work since first event member must contain the valid mark
@@ -216,20 +437,44 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
 	return (*((uint8_t *) eventPtr) & VALID_MARK_MASK);
 }
 
+/**
+ * Iterator over all events in a packet.
+ * Returns the current index in the 'caerIteratorCounter' variable of type
+ * 'size_t' and the current event in the 'caerIteratorElement' variable
+ * of type EVENT_TYPE.
+ *
+ * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
+ * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
+ */
 #define CAER_ITERATOR_ALL_START(PACKET_HEADER, EVENT_TYPE) \
 	for (size_t caerIteratorCounter = 0; \
 		caerIteratorCounter < caerEventPacketHeaderGetEventNumber(PACKET_HEADER); \
 		caerIteratorCounter++) { \
 		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter);
 
+/**
+ * Iterator close statement.
+ */
 #define CAER_ITERATOR_ALL_END }
 
+/**
+ * Iterator over only the valid events in a packet.
+ * Returns the current index in the 'caerIteratorCounter' variable of type
+ * 'size_t' and the current event in the 'caerIteratorElement' variable
+ * of type EVENT_TYPE.
+ *
+ * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
+ * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
+ */
 #define CAER_ITERATOR_VALID_START(PACKET_HEADER, EVENT_TYPE) \
 	for (size_t caerIteratorCounter = 0; \
 		caerIteratorCounter < caerEventPacketHeaderGetEventValid(PACKET_HEADER); \
 		caerIteratorCounter++) { \
 		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter);
 
+/**
+ * Iterator close statement.
+ */
 #define CAER_ITERATOR_VALID_END }
 
 #ifdef __cplusplus
