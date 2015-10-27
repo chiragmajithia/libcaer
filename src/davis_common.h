@@ -120,7 +120,7 @@ struct davis_state {
 	atomic_int_fast32_t maxSpecialPacketSize;
 	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Current composite events, for later copy, to not loose them on commits.
-	struct caer_frame_event currentFrameEvent[APS_ROI_REGIONS_MAX];
+	caerFrameEvent currentFrameEvent[APS_ROI_REGIONS_MAX];
 	struct caer_imu6_event currentIMU6Event;
 };
 

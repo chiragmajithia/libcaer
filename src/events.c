@@ -37,25 +37,11 @@ void caerEventPacketContainerFree(caerEventPacketContainer container) {
 		caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(container, i);
 
 		if (packetHeader != NULL) {
-			caerEventPacketFree(packetHeader);
+			free(packetHeader);
 		}
 	}
 
 	free(container);
-}
-
-void caerEventPacketFree(caerEventPacketHeader header) {
-	if (header == NULL) {
-		return;
-	}
-
-	// Frame packets contain multiple memory blocks, need to free them here!
-	if (caerEventPacketHeaderGetEventType(header) == FRAME_EVENT) {
-		caerFrameEventPacketFreePixels(header);
-	}
-
-	// Free packet memory.
-	free(header);
 }
 
 caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
@@ -77,7 +63,7 @@ caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SPECIAL_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_special_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -104,7 +90,7 @@ caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, i
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, POLARITY_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_polarity_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -112,8 +98,10 @@ caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, i
 	return (packet);
 }
 
-caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
-	size_t eventSize = sizeof(struct caer_frame_event);
+caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow,
+	int32_t maxLengthX, int32_t maxLengthY, int16_t maxChannelNumber) {
+	size_t pixelSize = sizeof(uint16_t) * (size_t) maxLengthX * (size_t) maxLengthY * (size_t) maxChannelNumber;
+	size_t eventSize = sizeof(struct caer_frame_event) + pixelSize;
 	size_t eventPacketSize = sizeof(struct caer_frame_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
@@ -131,51 +119,12 @@ caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, FRAME_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_frame_event, ts_startexposure));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
 	return (packet);
-}
-
-void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber,
-	uint8_t roiIdentifier, int32_t positionX, int32_t positionY) {
-	size_t pixelSize = sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber;
-
-	uint16_t *pixels = calloc(1, pixelSize);
-	if (pixels == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
-		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Failed to allocate %zu bytes of memory for pixels. Error: %d.",
-			pixelSize, errno);
-#endif
-		return;
-	}
-
-	// Fill in header fields.
-	frameEvent->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
-	frameEvent->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
-	frameEvent->lengthX = htole32(lengthX);
-	frameEvent->lengthY = htole32(lengthY);
-	frameEvent->positionX = htole32(positionX);
-	frameEvent->positionY = htole32(positionY);
-	frameEvent->pixels = pixels;
-}
-
-void caerFrameEventPacketFreePixels(caerEventPacketHeader header) {
-	if (header == NULL || caerEventPacketHeaderGetEventType(header) != FRAME_EVENT) {
-		return;
-	}
-
-	// Frame also needs all pixel memory freed!
-	for (int32_t i = 0; i < caerEventPacketHeaderGetEventNumber(header); i++) {
-		caerFrameEvent frame = caerFrameEventPacketGetEvent((caerFrameEventPacket) header, i);
-
-		if (frame != NULL && frame->pixels != NULL) {
-			free(frame->pixels);
-			frame->pixels = NULL;
-		}
-	}
 }
 
 caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
@@ -197,7 +146,7 @@ caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t e
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU6_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu6_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -224,7 +173,7 @@ caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t e
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, IMU9_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_imu9_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -251,7 +200,7 @@ caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventCapacity, int16
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, SAMPLE_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_sample_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
@@ -278,7 +227,7 @@ caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eve
 	// Fill in header fields.
 	caerEventPacketHeaderSetEventType(&packet->packetHeader, EAR_EVENT);
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
-	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I16T(eventSize));
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_ear_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);

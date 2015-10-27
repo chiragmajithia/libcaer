@@ -15,31 +15,42 @@ extern "C" {
 #include "common.h"
 
 // All pixels are always normalized to 16bit depth.
-// Multiple channels (RGB for example) are possible, up to 128 channels.
-// Also, up to 64 different Regions of Interest (ROI) can be tracked.
+// Multiple channels (RGB for example) are possible, up to 64 channels.
+// Also, up to 128 different Regions of Interest (ROI) can be tracked.
 #define CHANNEL_NUMBER_SHIFT 1
-#define CHANNEL_NUMBER_MASK 0x0000007F
-#define ROI_IDENTIFIER_SHIFT 8
-#define ROI_IDENTIFIER_MASK 0x0000003F
+#define CHANNEL_NUMBER_MASK 0x0000003F
+#define ROI_IDENTIFIER_SHIFT 7
+#define ROI_IDENTIFIER_MASK 0x0000007F
 
 struct caer_frame_event {
-	uint32_t info; // First because of valid mark.
+	// First because of valid mark. Also contains ROI region.
+	uint32_t info;
+	// Start of Frame (SOF) timestamp.
 	int32_t ts_startframe;
+	// End of Frame (EOF) timestamp.
 	int32_t ts_endframe;
+	// Start of Exposure (SOE) timestamp.
 	int32_t ts_startexposure;
+	// End of Exposure (EOE) timestamp.
 	int32_t ts_endexposure;
+	// X axis length in pixels.
 	int32_t lengthX;
+	// Y axis length in pixels.
 	int32_t lengthY;
+	// X axis position (lower left offset) in pixels.
 	int32_t positionX;
+	// Y axis position (lower left offset) in pixels.
 	int32_t positionY;
-	uint16_t *pixels;
+	// Pixel array, 16bit unsigned integers, normalized.
+	uint16_t pixels[];
 }__attribute__((__packed__));
 
 typedef struct caer_frame_event *caerFrameEvent;
 
 struct caer_frame_event_packet {
 	struct caer_event_packet_header packetHeader;
-	struct caer_frame_event events[];
+// All events follow here. To calculate position, use the
+// 'eventSize' field in the packetHeader.
 }__attribute__((__packed__));
 
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
@@ -51,9 +62,14 @@ typedef struct caer_frame_event_packet *caerFrameEventPacket;
  * @param eventCapacity
  * @param eventSource
  * @param tsOverflow
+ * @param maxLengthX
+ * @param maxLengthY
+ * @param maxChannelNumber
+ *
  * @return
  */
-caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
+caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow,
+	int32_t maxLengthX, int32_t maxLengthY, int16_t maxChannelNumber);
 
 static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
@@ -67,15 +83,9 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 	}
 
 	// Return a pointer to the specified event.
-	return (packet->events + n);
+	return ((caerFrameEvent) (((uint8_t *) &packet->packetHeader)
+		+ (CAER_EVENT_PACKET_HEADER_SIZE + U64T(n * caerEventPacketHeaderGetEventSize(&packet->packetHeader)))));
 }
-
-// Allocate effective pixel memory for frame event.
-void caerFrameEventAllocatePixels(caerFrameEvent frameEvent, int32_t lengthX, int32_t lengthY, uint8_t channelNumber,
-	uint8_t roiIdentifier, int32_t positionX, int32_t positionY);
-
-// Used in caerEventPacketFree(), due to more involved freeing of Frame Event packets.
-void caerFrameEventPacketFreePixels(caerEventPacketHeader packet);
 
 static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_startframe));
@@ -228,12 +238,12 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 	}
 }
 
-static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
-}
-
 static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
 	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
+}
+
+static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t roiIdentifier) {
+	event->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
 }
 
 static inline int32_t caerFrameEventGetLengthX(caerFrameEvent event) {
@@ -244,12 +254,43 @@ static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
 	return (le32toh(event->lengthY));
 }
 
+static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
+	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
+}
+
+static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent event, int32_t lengthX, int32_t lengthY,
+	uint8_t channelNumber, caerFrameEventPacket packet) {
+	// Verify lengths and channel number don't exceed allocated space.
+	size_t neededMemory = sizeof(struct caer_frame_event)
+		+ (sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber);
+	if (neededMemory > (size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader)) {
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(CAER_LOG_CRITICAL, "Frame Event",
+			"Called caerFrameEventSetLengthXLengthYChannelNumber() with values that result in requiring %zu bytes, which exceeds the maximum allocated event size of %zu bytes.",
+			neededMemory, (size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader));
+#endif
+		return;
+	}
+
+	event->lengthX = htole32(lengthX);
+	event->lengthY = htole32(lengthY);
+	event->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
+}
+
 static inline int32_t caerFrameEventGetPositionX(caerFrameEvent event) {
 	return (le32toh(event->positionX));
 }
 
+static inline void caerFrameEventSetPositionX(caerFrameEvent event, int32_t positionX) {
+	event->positionX = htole32(positionX);
+}
+
 static inline int32_t caerFrameEventGetPositionY(caerFrameEvent event) {
 	return (le32toh(event->positionY));
+}
+
+static inline void caerFrameEventSetPositionY(caerFrameEvent event, int32_t positionY) {
+	event->positionY = htole32(positionY);
 }
 
 static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress) {

@@ -64,9 +64,6 @@ static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader heade
 	header->eventType = htole16(eventType);
 }
 
-// Generic event packet freeing function. Automatically figures out event type.
-void caerEventPacketFree(caerEventPacketHeader header);
-
 static inline int16_t caerEventPacketHeaderGetEventSource(caerEventPacketHeader header) {
 	return (le16toh(header->eventSource));
 }
