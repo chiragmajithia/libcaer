@@ -22,6 +22,7 @@ extern "C" {
 #define ROI_IDENTIFIER_SHIFT 7
 #define ROI_IDENTIFIER_MASK 0x0000007F
 
+// (0, 0) is situated in the lower left corner, like in OpenGL.
 struct caer_frame_event {
 	// First because of valid mark. Also contains ROI region.
 	uint32_t info;

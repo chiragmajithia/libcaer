@@ -20,6 +20,7 @@ extern "C" {
 #define X_ADDR_SHIFT 17
 #define X_ADDR_MASK 0x00007FFF
 
+// (0, 0) is situated in the lower left corner, like in OpenGL.
 struct caer_polarity_event {
 	uint32_t data; // First because of valid mark.
 	int32_t timestamp;
