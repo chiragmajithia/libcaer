@@ -30,7 +30,7 @@ static inline void freeAllDataMemory(dvs128State state) {
 	// already assigned to the current packet container, we
 	// free them separately from it.
 	if (state->currentPolarityPacket != NULL) {
-		caerEventPacketFree(&state->currentPolarityPacket->packetHeader);
+		free(&state->currentPolarityPacket->packetHeader);
 		state->currentPolarityPacket = NULL;
 
 		if (state->currentPacketContainer != NULL) {
@@ -39,7 +39,7 @@ static inline void freeAllDataMemory(dvs128State state) {
 	}
 
 	if (state->currentSpecialPacket != NULL) {
-		caerEventPacketFree(&state->currentSpecialPacket->packetHeader);
+		free(&state->currentSpecialPacket->packetHeader);
 		state->currentSpecialPacket = NULL;
 
 		if (state->currentPacketContainer != NULL) {
@@ -84,6 +84,8 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	atomic_store_explicit(&state->maxPolarityPacketInterval, 5000, memory_order_relaxed);
 	atomic_store_explicit(&state->maxSpecialPacketSize, 128, memory_order_relaxed);
 	atomic_store_explicit(&state->maxSpecialPacketInterval, 1000, memory_order_relaxed);
+
+	atomic_store_explicit(&state->dvsIsMaster, true, memory_order_relaxed); // Always master by default.
 
 	atomic_thread_fence(memory_order_release);
 
@@ -306,23 +308,23 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_DVS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_DVS_RUN:
-					if (param && !state->dvsRunning) {
+					if (param && !atomic_load(&state->dvsRunning)) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 							VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 
-						state->dvsRunning = true;
+						atomic_store(&state->dvsRunning, true);
 					}
-					else if (!param && state->dvsRunning) {
+					else if (!param && atomic_load(&state->dvsRunning)) {
 						if (libusb_control_transfer(state->deviceHandle,
 							LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
 							VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0) != 0) {
 							return (false);
 						}
 
-						state->dvsRunning = false;
+						atomic_store(&state->dvsRunning, false);
 					}
 					break;
 
@@ -344,6 +346,20 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 							return (false);
 						}
 					}
+					break;
+
+				case DVS128_CONFIG_DVS_TS_MASTER:
+					if (libusb_control_transfer(state->deviceHandle,
+						LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
+						VENDOR_REQUEST_TS_MASTER, (param & 0x01), 0, NULL, 0, 0) != 0) {
+						return (false);
+					}
+					atomic_store(&state->dvsIsMaster, (param & 0x01));
+
+					// Ensure info struct also gets this update.
+					atomic_thread_fence(memory_order_seq_cst);
+					handle->info.deviceIsMaster = atomic_load(&state->dvsIsMaster);
+					atomic_thread_fence(memory_order_seq_cst);
 					break;
 
 				default:
@@ -464,13 +480,17 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 		case DVS128_CONFIG_DVS:
 			switch (paramAddr) {
 				case DVS128_CONFIG_DVS_RUN:
-					*param = state->dvsRunning;
+					*param = atomic_load(&state->dvsRunning);
 					break;
 
 				case DVS128_CONFIG_DVS_TIMESTAMP_RESET:
 				case DVS128_CONFIG_DVS_ARRAY_RESET:
 					// Always false because it's an impulse, it resets itself automatically.
 					*param = false;
+					break;
+
+				case DVS128_CONFIG_DVS_TS_MASTER:
+					*param = atomic_load(&state->dvsIsMaster);
 					break;
 
 				default:
@@ -1124,10 +1144,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 					// Re-use the event-packet container to avoid having to reallocate it.
 					// The contained event packets do have to be dropped first!
-					caerEventPacketFree(
-						caerEventPacketContainerGetEventPacket(state->currentPacketContainer, POLARITY_EVENT));
-					caerEventPacketFree(
-						caerEventPacketContainerGetEventPacket(state->currentPacketContainer, SPECIAL_EVENT));
+					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, POLARITY_EVENT));
+					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, SPECIAL_EVENT));
 
 					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT, NULL);
 					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT, NULL);

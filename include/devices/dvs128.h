@@ -46,6 +46,12 @@ extern "C" {
  * configuration switch and will reset itself right away.
  */
 #define DVS128_CONFIG_DVS_ARRAY_RESET     2
+/**
+ * Parameter address for module DVS128_CONFIG_DVS:
+ * control if this DVS is a timestamp master device.
+ * Default is enabled.
+ */
+#define DVS128_CONFIG_DVS_TS_MASTER       3
 
 /**
  * Parameter address for module DVS128_CONFIG_BIAS:

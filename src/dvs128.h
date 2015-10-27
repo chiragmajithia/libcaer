@@ -31,6 +31,7 @@
 #define VENDOR_REQUEST_SEND_BIASES 0xB8
 #define VENDOR_REQUEST_RESET_TS 0xBB
 #define VENDOR_REQUEST_RESET_ARRAY 0xBD
+#define VENDOR_REQUEST_TS_MASTER 0xBE
 
 #define BIAS_NUMBER 12
 #define BIAS_LENGTH 3
@@ -82,7 +83,8 @@ struct dvs128_state {
 	// Camera bias and settings memory (for getter operations)
 	// TODO: replace with real device calls once DVS128 logic rewritten.
 	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];
-	bool dvsRunning;
+	atomic_bool dvsRunning;
+	atomic_bool dvsIsMaster;
 };
 
 typedef struct dvs128_state *dvs128State;
