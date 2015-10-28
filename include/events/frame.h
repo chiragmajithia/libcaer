@@ -1,8 +1,7 @@
-/*
- * frame.h
+/**
+ * @file frame.h
  *
- *  Created on: Jan 6, 2014
- *      Author: llongi
+ * Frame Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_FRAME_H_
@@ -239,6 +238,14 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 	}
 }
 
+static inline size_t caerFrameEventPacketGetPixelsSize(caerFrameEventPacket packet) {
+	return ((size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader) - sizeof(struct caer_frame_event));
+}
+
+static inline size_t caerFrameEventPacketGetPixelsMaxIndex(caerFrameEventPacket packet) {
+	return (caerFrameEventPacketGetPixelsSize(packet) / sizeof(uint16_t));
+}
+
 static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
 	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
 }
@@ -276,6 +283,15 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
 	event->lengthX = htole32(lengthX);
 	event->lengthY = htole32(lengthY);
 	event->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
+}
+
+static inline size_t caerFrameEventGetPixelsMaxIndex(caerFrameEvent event) {
+	return ((size_t) (caerFrameEventGetLengthX(event) * caerFrameEventGetLengthY(event)
+		* caerFrameEventGetChannelNumber(event)));
+}
+
+static inline size_t caerFrameEventGetPixelsSize(caerFrameEvent event) {
+	return (caerFrameEventGetPixelsMaxIndex(event) * sizeof(uint16_t));
 }
 
 static inline int32_t caerFrameEventGetPositionX(caerFrameEvent event) {

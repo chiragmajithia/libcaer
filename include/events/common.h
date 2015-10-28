@@ -1,7 +1,11 @@
 /**
  * @file common.h
  *
- * EventPacketContainer format definition and handling functions.
+ * Common EventPacket header format definition and handling functions.
+ * Every EventPacket, of any type, has as a first member a common header,
+ * which describes various properties of the contained events. This allows
+ * easy parsing of events. See the 'struct caer_event_packet_header'
+ * documentation for more details.
  */
 
 #ifndef LIBCAER_EVENTS_COMMON_H_

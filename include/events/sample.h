@@ -1,8 +1,7 @@
-/*
- * sample.h
+/**
+ * @file sample.h
  *
- *  Created on: Jan 6, 2014
- *      Author: llongi
+ * Sample (ADC) Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_SAMPLE_H_

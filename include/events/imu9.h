@@ -1,8 +1,7 @@
-/*
- * imu9.h
+/**
+ * @file imu9.h
  *
- *  Created on: Jan 6, 2014
- *      Author: llongi
+ * IMU9 (9 axes) Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_IMU9_H_

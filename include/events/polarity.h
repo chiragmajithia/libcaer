@@ -1,7 +1,7 @@
 /**
  * @file polarity.h
  *
- * EventPacketContainer format definition and handling functions.
+ * Polarity Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_POLARITY_H_

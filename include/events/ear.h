@@ -1,8 +1,7 @@
-/*
- * ear.h
+/**
+ * @file ear.h
  *
- *  Created on: Jan 6, 2014
- *      Author: llongi
+ * Ear (Cochlea) Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_EAR_H_

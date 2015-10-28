@@ -1,7 +1,7 @@
 /**
  * @file special.h
  *
- * EventPacketContainer format definition and handling functions.
+ * Special Events format definition and handling functions.
  */
 
 #ifndef LIBCAER_EVENTS_SPECIAL_H_
