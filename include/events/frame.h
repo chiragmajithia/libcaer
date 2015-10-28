@@ -269,9 +269,9 @@ static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
 static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent event, int32_t lengthX, int32_t lengthY,
 	uint8_t channelNumber, caerFrameEventPacket packet) {
 	// Verify lengths and channel number don't exceed allocated space.
-	size_t neededMemory = sizeof(struct caer_frame_event)
-		+ (sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber);
-	if (neededMemory > (size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader)) {
+	size_t neededMemory = (sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber);
+
+	if (neededMemory > caerFrameEventPacketGetPixelsSize(packet)) {
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetLengthXLengthYChannelNumber() with values that result in requiring %zu bytes, which exceeds the maximum allocated event size of %zu bytes.",

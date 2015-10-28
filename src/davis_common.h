@@ -19,6 +19,8 @@
 
 #define APS_ADC_DEPTH 10
 
+#define APS_ADC_CHANNELS 1
+
 #define APS_ROI_REGIONS_MAX 4
 
 #define IMU6_COUNT 15

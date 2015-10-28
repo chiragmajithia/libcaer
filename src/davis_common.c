@@ -62,7 +62,7 @@ static inline void initFrame(davisState state) {
 
 	// Setup frame. Only ROI region 0 is supported currently.
 	caerFrameEventSetLengthXLengthYChannelNumber(state->currentFrameEvent[0], state->apsROISizeX[0],
-		state->apsROISizeY[0], 1, state->currentFramePacket);
+		state->apsROISizeY[0], APS_ADC_CHANNELS, state->currentFramePacket);
 	caerFrameEventSetROIIdentifier(state->currentFrameEvent[0], 0);
 	caerFrameEventSetPositionX(state->currentFrameEvent[0], state->apsROIPositionX[0]);
 	caerFrameEventSetPositionY(state->currentFrameEvent[0], state->apsROIPositionY[0]);
@@ -2065,7 +2065,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 
 	// Allocate memory for the current FrameEvents. Use contiguous memory for all ROI FrameEvents.
 	size_t eventSize = sizeof(struct caer_frame_event)
-		+ ((size_t) state->apsSizeX * (size_t) state->apsSizeY * 1 * sizeof(uint16_t));
+		+ ((size_t) state->apsSizeX * (size_t) state->apsSizeY * APS_ADC_CHANNELS * sizeof(uint16_t));
 
 	state->currentFrameEvent[0] = calloc(APS_ROI_REGIONS_MAX, eventSize);
 	if (state->currentFrameEvent[0] == NULL) {
@@ -2090,7 +2090,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->apsCurrentResetFrame = calloc((size_t) state->apsSizeX * state->apsSizeY * 1, sizeof(uint16_t));
+	state->apsCurrentResetFrame = calloc((size_t) state->apsSizeX * state->apsSizeY * APS_ADC_CHANNELS, sizeof(uint16_t));
 	if (state->currentIMU6Packet == NULL) {
 		freeAllDataMemory(state);
 
@@ -2786,8 +2786,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									state->currentFramePacket, state->currentFramePacketPosition);
 								memcpy(currentFrameEvent, state->currentFrameEvent[0],
 									sizeof(struct caer_frame_event)
-										+ ((size_t) state->currentFrameEvent[0]->lengthX
-											* (size_t) state->currentFrameEvent[0]->lengthY * 1 * sizeof(uint16_t)));
+										+ caerFrameEventGetPixelsSize(state->currentFrameEvent[0]));
 								state->currentFramePacketPosition++;
 							}
 
