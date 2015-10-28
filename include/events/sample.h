@@ -2,6 +2,8 @@
  * @file sample.h
  *
  * Sample (ADC) Events format definition and handling functions.
+ * Represents different types of ADC readings, up to 24 bits
+ * of resolution.
  */
 
 #ifndef LIBCAER_EVENTS_SAMPLE_H_
@@ -25,18 +27,42 @@ extern "C" {
 #define SAMPLE_SHIFT 8
 #define SAMPLE_MASK 0x00FFFFFF
 
+/**
+ * ADC sample event data structure definition.
+ * Contains a type indication to separate different ADC readouts,
+ * as well as a value for that readout, up to 24 bits resolution.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_sample_event {
-	uint32_t data; // First because of valid mark.
+	// Event data. First because of valid mark.
+	uint32_t data;
+	// Event timestamp.
 	int32_t timestamp;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to ADC sample event data structure.
+ */
 typedef struct caer_sample_event *caerSampleEvent;
 
+/**
+ * ADC sample event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block.
+ */
 struct caer_sample_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
+	// The events array.
 	struct caer_sample_event events[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to ADC sample event packet data structure.
+ */
 typedef struct caer_sample_event_packet *caerSampleEventPacket;
 
 caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);

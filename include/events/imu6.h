@@ -2,6 +2,9 @@
  * @file imu6.h
  *
  * IMU6 (6 axes) Events format definition and handling functions.
+ * This contains data coming from the Inertial Measurement Unit
+ * chip, with the 3-axes accelerometer and 3-axes gyroscope.
+ * Temperature is also included.
  */
 
 #ifndef LIBCAER_EVENTS_IMU6_H_
@@ -13,25 +16,57 @@ extern "C" {
 
 #include "common.h"
 
+/**
+ * IMU 6-axes event data structure definition.
+ * This contains accelerometer and gyroscope headings, plus
+ * temperature.
+ * Floats are in IEEE 754-2008 binary32 format.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_imu6_event {
-	uint32_t info; // First because of valid mark.
+	// Event information. First because of valid mark.
+	uint32_t info;
+	// Event timestamp.
 	int32_t timestamp;
+	// Acceleration in the X axis, measured in g (9.81m/s²).
 	float accel_x;
+	// Acceleration in the Y axis, measured in g (9.81m/s²).
 	float accel_y;
+	// Acceleration in the Z axis, measured in g (9.81m/s²).
 	float accel_z;
+	// Rotation in the X axis, measured in °/s.
 	float gyro_x;
+	// Rotation in the Y axis, measured in °/s.
 	float gyro_y;
+	// Rotation in the Z axis, measured in °/s.
 	float gyro_z;
+	// Temperature, measured in °C.
 	float temp;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to IMU 6-axes event data structure.
+ */
 typedef struct caer_imu6_event *caerIMU6Event;
 
+/**
+ * IMU 6-axes event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block.
+ */
 struct caer_imu6_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
+	// The events array.
 	struct caer_imu6_event events[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to IMU 6-axes event packet data structure.
+ */
 typedef struct caer_imu6_event_packet *caerIMU6EventPacket;
 
 caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);

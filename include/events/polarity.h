@@ -2,6 +2,9 @@
  * @file polarity.h
  *
  * Polarity Events format definition and handling functions.
+ * This event contains change information, with an X/Y address
+ * and an ON/OFF polarity.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
  */
 
 #ifndef LIBCAER_EVENTS_POLARITY_H_
@@ -26,19 +29,43 @@ extern "C" {
 #define X_ADDR_SHIFT 17
 #define X_ADDR_MASK 0x00007FFF
 
-// (0, 0) is situated in the lower left corner, like in OpenGL.
+/**
+ * Polarity event data structure definition.
+ * This contains the actual X/Y addresses, the polarity, as
+ * well as the 32 bit event timestamp.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_polarity_event {
-	uint32_t data; // First because of valid mark.
+	// Event data. First because of valid mark.
+	uint32_t data;
+	// Event timestamp.
 	int32_t timestamp;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to polarity event data structure.
+ */
 typedef struct caer_polarity_event *caerPolarityEvent;
 
+/**
+ * Polarity event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block.
+ */
 struct caer_polarity_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
+	// The events array.
 	struct caer_polarity_event events[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to polarity event packet data structure.
+ */
 typedef struct caer_polarity_event_packet *caerPolarityEventPacket;
 
 caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);

@@ -2,6 +2,10 @@
  * @file frame.h
  *
  * Frame Events format definition and handling functions.
+ * This event type encodes intensity frames, like you would
+ * get from a normal APS camera. It supports multiple channels
+ * for color, as well as multiple Regions of Interest (ROI).
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
  */
 
 #ifndef LIBCAER_EVENTS_FRAME_H_
@@ -25,9 +29,18 @@ extern "C" {
 #define ROI_IDENTIFIER_SHIFT 7
 #define ROI_IDENTIFIER_MASK 0x0000007F
 
-// (0, 0) is situated in the lower left corner, like in OpenGL.
+/**
+ * Frame event data structure definition.
+ * This contains the actual information on the frame (ROI, channels),
+ * several timestamps to signal start and end of capture and of exposure,
+ * as well as thea actual pixels, in a 16 bit normalized format.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_frame_event {
-	// First because of valid mark. Also contains ROI region.
+	// Event information (ROI region, channel number). First because of valid mark.
 	uint32_t info;
 	// Start of Frame (SOF) timestamp.
 	int32_t ts_startframe;
@@ -49,14 +62,30 @@ struct caer_frame_event {
 	uint16_t pixels[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to frame event data structure.
+ */
 typedef struct caer_frame_event *caerFrameEvent;
 
+/**
+ * Frame event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block. Direct access to the events
+ * array is not possible for Frame events. To calculate position
+ * offsets, use the 'eventSize' field in the packet header.
+ */
 struct caer_frame_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-// All events follow here. To calculate position, use the
-// 'eventSize' field in the packetHeader.
+	// All events follow here. Direct access to the events
+	// array is not possible. To calculate position, use the
+	// 'eventSize' field in the packetHeader.
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to frame event packet data structure.
+ */
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
 
 /**

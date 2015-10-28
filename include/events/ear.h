@@ -2,6 +2,10 @@
  * @file ear.h
  *
  * Ear (Cochlea) Events format definition and handling functions.
+ * This encodes events from a silicon cochlea chip, containing
+ * information about which ear (microphone) generated the event,
+ * as well as which channel was involved and additional information
+ * on filters and neurons.
  */
 
 #ifndef LIBCAER_EVENTS_EAR_H_
@@ -23,23 +27,47 @@ extern "C" {
 #define EAR_MASK 0x0000000F
 #define CHANNEL_SHIFT 5
 #define CHANNEL_MASK 0x000007FF
-#define GANGLION_SHIFT 16
-#define GANGLION_MASK 0x000000FF
+#define NEURON_SHIFT 16
+#define NEURON_MASK 0x000000FF
 #define FILTER_SHIFT 24
 #define FILTER_MASK 0x000000FF
 
+/**
+ * Ear (cochlea) event data structure definition.
+ * Contains information on events gotten from a cochlea chip:
+ * ears, channels, neurons and filters are stored.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_ear_event {
-	uint32_t data; // First because of valid mark.
+	// Event data. First because of valid mark.
+	uint32_t data;
+	// Event timestamp.
 	int32_t timestamp;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to ear (cochlea) event data structure.
+ */
 typedef struct caer_ear_event *caerEarEvent;
 
+/**
+ * Ear (cochlea) event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block.
+ */
 struct caer_ear_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
+	// The events array.
 	struct caer_ear_event events[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to ear (cochlea) event packet data structure.
+ */
 typedef struct caer_ear_event_packet *caerEarEventPacket;
 
 caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
@@ -127,12 +155,12 @@ static inline void caerEarEventSetEar(caerEarEvent event, uint8_t ear) {
 	event->data |= htole32((U32T(ear) & EAR_MASK) << EAR_SHIFT);
 }
 
-static inline uint8_t caerEarEventGetGanglion(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> GANGLION_SHIFT) & GANGLION_MASK);
+static inline uint8_t caerEarEventGetNeuron(caerEarEvent event) {
+	return U8T((le32toh(event->data) >> NEURON_SHIFT) & NEURON_MASK);
 }
 
-static inline void caerEarEventSetGanglion(caerEarEvent event, uint8_t ganglion) {
-	event->data |= htole32((U32T(ganglion) & GANGLION_MASK) << GANGLION_SHIFT);
+static inline void caerEarEventSetNeuron(caerEarEvent event, uint8_t neuron) {
+	event->data |= htole32((U32T(neuron) & NEURON_MASK) << NEURON_SHIFT);
 }
 
 static inline uint8_t caerEarEventGetFilter(caerEarEvent event) {

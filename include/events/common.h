@@ -26,6 +26,8 @@ extern "C" {
  * functions should be used to toggle this!
  * 0 in the 0th bit of the first byte means invalid, 1 means valid.
  * This way zeroing-out an event packet sets all its events to invalid.
+ * Care must be taken to put the field containing the validity
+ * mark always as the first member of an event.
  */
 #define VALID_MARK_SHIFT 0
 #define VALID_MARK_MASK 0x00000001
@@ -378,9 +380,9 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
  * type the packet is containing.
  *
  * @param headerPtr a valid EventPacket header pointer. Cannot be NULL.
- * @param n the index of the returned event.
+ * @param n the index of the returned event. Must be within [0,eventCapacity[ bounds.
  *
- * @return a generic pointer to the requested event.
+ * @return a generic pointer to the requested event. NULL on error.
  */
 static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, int32_t n) {
 	// Check that we're not out of bounds.

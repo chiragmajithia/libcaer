@@ -27,7 +27,7 @@ extern "C" {
 #define DATA_MASK 0x00FFFFFF
 
 /**
- * Special event type identifiers.
+ * List of all special event type identifiers.
  * Used to interpret the special event type field.
  */
 enum caer_special_event_types {
@@ -39,22 +39,63 @@ enum caer_special_event_types {
 	DVS_ROW_ONLY = 5,    //!< A DVS row-only event was detected (a row address without any following column addresses).
 };
 
+/**
+ * Special event data structure definition.
+ * This contains the actual data, as well as the 32 bit event timestamp.
+ * Signed integers are used for fields that are to be interpreted
+ * directly, for compatibility with languages that do not have
+ * unsigned integer types, such as Java.
+ */
 struct caer_special_event {
-	uint32_t data; // First because of valid mark.
+	// Event data. First because of valid mark.
+	uint32_t data;
+	// Event timestamp.
 	int32_t timestamp;
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to special event data structure.
+ */
 typedef struct caer_special_event *caerSpecialEvent;
 
+/**
+ * Special event packet data structure definition.
+ * EventPackets are always made up of the common packet header,
+ * followed by 'eventCapacity' events. Everything has to
+ * be in one contiguous memory block.
+ */
 struct caer_special_event_packet {
+	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
+	// The events array.
 	struct caer_special_event events[];
 }__attribute__((__packed__));
 
+/**
+ * Type for pointer to special event packet data structure.
+ */
 typedef struct caer_special_event_packet *caerSpecialEventPacket;
 
+/**
+ * Allocate a new special events packet.
+ * Use free() to reclaim this memory.
+ *
+ * @param eventCapacity the maximum number of events this packet will hold.
+ * @param eventSource the unique ID representing the source/generator of this packet.
+ * @param tsOverflow the current timestamp overflow counter value for this packet.
+ *
+ * @return a valid SpecialEventPacket handle or NULL on error.
+ */
 caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
+/**
+ * Get the special event at the given index from the event packet.
+ *
+ * @param packet a valid special EventPacket pointer. Cannot be NULL.
+ * @param n the index of the returned event. Must be within [0,eventCapacity[ bounds.
+ *
+ * @return the requested special event. NULL on error.
+ */
 static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
