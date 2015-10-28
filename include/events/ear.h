@@ -13,14 +13,20 @@ extern "C" {
 
 #include "common.h"
 
+/**
+ * Shift and mask values for the ear event values coming from
+ * a cochlea: the ear position (up to 16), the channel number
+ * (up to 2048), the ganglion (up to 256) and the filter (up to 256).
+ * Bit 0 is the valid mark, see 'common.h' for more details.
+ */
 #define EAR_SHIFT 1
 #define EAR_MASK 0x0000000F
-#define GANGLION_SHIFT 5
-#define GANGLION_MASK 0x000000FF
-#define FILTER_SHIFT 13
-#define FILTER_MASK 0x000000FF
-#define CHANNEL_SHIFT 21
+#define CHANNEL_SHIFT 5
 #define CHANNEL_MASK 0x000007FF
+#define GANGLION_SHIFT 16
+#define GANGLION_MASK 0x000000FF
+#define FILTER_SHIFT 24
+#define FILTER_MASK 0x000000FF
 
 struct caer_ear_event {
 	uint32_t data; // First because of valid mark.

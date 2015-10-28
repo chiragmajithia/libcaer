@@ -13,8 +13,15 @@ extern "C" {
 
 #include "common.h"
 
+/**
+ * Shift and mask values for the sample type and the actual
+ * sample value of an ADC sample.
+ * Up to 128 sample types are supported, with 24 bits of
+ * data per sample.
+ * Bit 0 is the valid mark, see 'common.h' for more details.
+ */
 #define SAMPLE_TYPE_SHIFT 1
-#define SAMPLE_TYPE_MASK 0x0000001F
+#define SAMPLE_TYPE_MASK 0x0000007F
 #define SAMPLE_SHIFT 8
 #define SAMPLE_MASK 0x00FFFFFF
 

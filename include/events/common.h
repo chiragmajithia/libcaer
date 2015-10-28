@@ -48,13 +48,13 @@ extern "C" {
  * DO NOT USE THEM FOR YOUR OWN EVENT TYPES!
  */
 enum caer_default_event_types {
-	SPECIAL_EVENT = 0,  //!< SPECIAL_EVENT
-	POLARITY_EVENT = 1, //!< POLARITY_EVENT
-	FRAME_EVENT = 2,    //!< FRAME_EVENT
-	IMU6_EVENT = 3,     //!< IMU6_EVENT
-	IMU9_EVENT = 4,     //!< IMU9_EVENT
-	SAMPLE_EVENT = 5,   //!< SAMPLE_EVENT
-	EAR_EVENT = 6,      //!< EAR_EVENT
+	SPECIAL_EVENT = 0,  //!< Special events.
+	POLARITY_EVENT = 1, //!< Polarity (change, DVS) events.
+	FRAME_EVENT = 2,    //!< Frame (intensity, APS) events.
+	IMU6_EVENT = 3,     //!< 6 axes IMU events.
+	IMU9_EVENT = 4,     //!< 9 axes IMU events.
+	SAMPLE_EVENT = 5,   //!< ADC sample events.
+	EAR_EVENT = 6,      //!< Ear (cochlea) events.
 };
 
 /**

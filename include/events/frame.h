@@ -13,9 +13,13 @@ extern "C" {
 
 #include "common.h"
 
-// All pixels are always normalized to 16bit depth.
-// Multiple channels (RGB for example) are possible, up to 64 channels.
-// Also, up to 128 different Regions of Interest (ROI) can be tracked.
+/**
+ * Shift and mask values for the channel number and ROI
+ * identifier for the 'info' field of the frame event.
+ * Multiple channels (RGB for example) are possible, up to 64 channels.
+ * Also, up to 128 different Regions of Interest (ROI) can be tracked.
+ * Bit 0 is the valid mark, see 'common.h' for more details.
+ */
 #define CHANNEL_NUMBER_SHIFT 1
 #define CHANNEL_NUMBER_MASK 0x0000003F
 #define ROI_IDENTIFIER_SHIFT 7
@@ -41,7 +45,7 @@ struct caer_frame_event {
 	int32_t positionX;
 	// Y axis position (lower left offset) in pixels.
 	int32_t positionY;
-	// Pixel array, 16bit unsigned integers, normalized.
+	// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
 	uint16_t pixels[];
 }__attribute__((__packed__));
 
