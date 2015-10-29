@@ -1078,6 +1078,17 @@ extern "C" {
  */
 #define DAVIS_CONFIG_USB_EARLY_PACKET_DELAY 1
 
+//@{
+/**
+ * Parameter address for module DAVIS128_CONFIG_BIAS:
+ * DAVIS128 chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasVDACGenerate() for VDAC (voltage) biases.
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVIS128_CONFIG_BIAS_APSOVERFLOWLEVEL 0
 #define DAVIS128_CONFIG_BIAS_APSCAS           1
 #define DAVIS128_CONFIG_BIAS_ADCREFHIGH       2
@@ -1105,7 +1116,17 @@ extern "C" {
 #define DAVIS128_CONFIG_BIAS_BIASBUFFER       34
 #define DAVIS128_CONFIG_BIAS_SSP              35
 #define DAVIS128_CONFIG_BIAS_SSN              36
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS128_CONFIG_CHIP:
+ * DAVIS128 chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ */
 #define DAVIS128_CONFIG_CHIP_DIGITALMUX0       128
 #define DAVIS128_CONFIG_CHIP_DIGITALMUX1       129
 #define DAVIS128_CONFIG_CHIP_DIGITALMUX2       130
@@ -1121,7 +1142,19 @@ extern "C" {
 #define DAVIS128_CONFIG_CHIP_USEAOUT           141
 #define DAVIS128_CONFIG_CHIP_GLOBAL_SHUTTER    142
 #define DAVIS128_CONFIG_CHIP_SELECTGRAYCOUNTER 143
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS208_CONFIG_BIAS:
+ * DAVIS208 chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasVDACGenerate() for VDAC (voltage) biases.
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVIS208_CONFIG_BIAS_APSOVERFLOWLEVEL 0
 #define DAVIS208_CONFIG_BIAS_APSCAS           1
 #define DAVIS208_CONFIG_BIAS_ADCREFHIGH       2
@@ -1153,7 +1186,17 @@ extern "C" {
 #define DAVIS208_CONFIG_BIAS_BIASBUFFER       34
 #define DAVIS208_CONFIG_BIAS_SSP              35
 #define DAVIS208_CONFIG_BIAS_SSN              36
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS208_CONFIG_CHIP:
+ * DAVIS208 chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ */
 #define DAVIS208_CONFIG_CHIP_DIGITALMUX0       128
 #define DAVIS208_CONFIG_CHIP_DIGITALMUX1       129
 #define DAVIS208_CONFIG_CHIP_DIGITALMUX2       130
@@ -1174,7 +1217,18 @@ extern "C" {
 #define DAVIS208_CONFIG_CHIP_SELECTSENSE       147
 #define DAVIS208_CONFIG_CHIP_SELECTPOSFB       148
 #define DAVIS208_CONFIG_CHIP_SELECTHIGHPASS    149
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS240_CONFIG_BIAS:
+ * DAVIS240chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVIS240_CONFIG_BIAS_DIFFBN             0
 #define DAVIS240_CONFIG_BIAS_ONBN               1
 #define DAVIS240_CONFIG_BIAS_OFFBN              2
@@ -1197,7 +1251,19 @@ extern "C" {
 #define DAVIS240_CONFIG_BIAS_BIASBUFFER         19
 #define DAVIS240_CONFIG_BIAS_SSP                20
 #define DAVIS240_CONFIG_BIAS_SSN                21
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS240_CONFIG_CHIP:
+ * DAVIS240 chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ * On DAVIS240B cameras, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL
+ * can be used to enable the test pixel array.
+ */
 #define DAVIS240_CONFIG_CHIP_DIGITALMUX0         128
 #define DAVIS240_CONFIG_CHIP_DIGITALMUX1         129
 #define DAVIS240_CONFIG_CHIP_DIGITALMUX2         130
@@ -1213,7 +1279,19 @@ extern "C" {
 #define DAVIS240_CONFIG_CHIP_AERNAROW            140
 #define DAVIS240_CONFIG_CHIP_USEAOUT             141
 #define DAVIS240_CONFIG_CHIP_GLOBAL_SHUTTER      142
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS346_CONFIG_BIAS:
+ * DAVIS346 chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasVDACGenerate() for VDAC (voltage) biases.
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVIS346_CONFIG_BIAS_APSOVERFLOWLEVEL 0
 #define DAVIS346_CONFIG_BIAS_APSCAS           1
 #define DAVIS346_CONFIG_BIAS_ADCREFHIGH       2
@@ -1242,7 +1320,17 @@ extern "C" {
 #define DAVIS346_CONFIG_BIAS_BIASBUFFER       34
 #define DAVIS346_CONFIG_BIAS_SSP              35
 #define DAVIS346_CONFIG_BIAS_SSN              36
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS346_CONFIG_CHIP:
+ * DAVIS346 chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ */
 #define DAVIS346_CONFIG_CHIP_DIGITALMUX0       128
 #define DAVIS346_CONFIG_CHIP_DIGITALMUX1       129
 #define DAVIS346_CONFIG_CHIP_DIGITALMUX2       130
@@ -1259,7 +1347,19 @@ extern "C" {
 #define DAVIS346_CONFIG_CHIP_GLOBAL_SHUTTER    142
 #define DAVIS346_CONFIG_CHIP_SELECTGRAYCOUNTER 143
 #define DAVIS346_CONFIG_CHIP_TESTADC           144
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS640_CONFIG_BIAS:
+ * DAVIS640 chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasVDACGenerate() for VDAC (voltage) biases.
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVIS640_CONFIG_BIAS_APSOVERFLOWLEVEL 0
 #define DAVIS640_CONFIG_BIAS_APSCAS           1
 #define DAVIS640_CONFIG_BIAS_ADCREFHIGH       2
@@ -1288,7 +1388,17 @@ extern "C" {
 #define DAVIS640_CONFIG_BIAS_BIASBUFFER       34
 #define DAVIS640_CONFIG_BIAS_SSP              35
 #define DAVIS640_CONFIG_BIAS_SSN              36
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVIS640_CONFIG_CHIP:
+ * DAVIS640 chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ */
 #define DAVIS640_CONFIG_CHIP_DIGITALMUX0       128
 #define DAVIS640_CONFIG_CHIP_DIGITALMUX1       129
 #define DAVIS640_CONFIG_CHIP_DIGITALMUX2       130
@@ -1305,7 +1415,19 @@ extern "C" {
 #define DAVIS640_CONFIG_CHIP_GLOBAL_SHUTTER    142
 #define DAVIS640_CONFIG_CHIP_SELECTGRAYCOUNTER 143
 #define DAVIS640_CONFIG_CHIP_TESTADC           144
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVISRGB_CONFIG_BIAS:
+ * DAVISRGB chip biases.
+ * Bias configuration values must be generated using the proper
+ * functions, which are:
+ * - caerBiasVDACGenerate() for VDAC (voltage) biases.
+ * - caerBiasCoarseFineGenerate() for coarse-fine (current) biases.
+ * - caerBiasShiftedSourceGenerate() for shifted-source biases.
+ * See 'http://inilabs.com/support/biasing/' for more details.
+ */
 #define DAVISRGB_CONFIG_BIAS_APSCAS             0
 #define DAVISRGB_CONFIG_BIAS_OVG1LO             1
 #define DAVISRGB_CONFIG_BIAS_OVG2LO             2
@@ -1340,7 +1462,17 @@ extern "C" {
 #define DAVISRGB_CONFIG_BIAS_BIASBUFFER         34
 #define DAVISRGB_CONFIG_BIAS_SSP                35
 #define DAVISRGB_CONFIG_BIAS_SSN                36
+//@}
 
+//@{
+/**
+ * Parameter address for module DAVISRGB_CONFIG_CHIP:
+ * DAVISRGB chip configuration.
+ * These are for expert control and should never be used
+ * or changed unless for advanced debugging purposes.
+ * To change the Global Shutter configuration, please use
+ * DAVIS_CONFIG_APS_GLOBAL_SHUTTER instead.
+ */
 #define DAVISRGB_CONFIG_CHIP_DIGITALMUX0       128
 #define DAVISRGB_CONFIG_CHIP_DIGITALMUX1       129
 #define DAVISRGB_CONFIG_CHIP_DIGITALMUX2       130
@@ -1359,6 +1491,7 @@ extern "C" {
 #define DAVISRGB_CONFIG_CHIP_ADJUSTOVG1LO      145
 #define DAVISRGB_CONFIG_CHIP_ADJUSTOVG2LO      146
 #define DAVISRGB_CONFIG_CHIP_ADJUSTTX2OVG2HI   147
+//@}
 
 /**
  * DAVIS device-related information.
