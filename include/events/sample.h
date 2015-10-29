@@ -213,18 +213,48 @@ static inline void caerSampleEventInvalidate(caerSampleEvent event, caerSampleEv
 	}
 }
 
+/**
+ * Get the ADC sample event type. This is useful to distinguish
+ * between different measurements, for example from two separate
+ * microphones on a device.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ *
+ * @return the ADC sample type.
+ */
 static inline uint8_t caerSampleEventGetType(caerSampleEvent event) {
 	return U8T((le32toh(event->data) >> SAMPLE_TYPE_SHIFT) & SAMPLE_TYPE_MASK);
 }
 
+/**
+ * Set the ADC sample event type. This is useful to distinguish
+ * between different measurements, for example from two separate
+ * microphones on a device.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ * @param type the ADC sample type.
+ */
 static inline void caerSampleEventSetType(caerSampleEvent event, uint8_t type) {
 	event->data |= htole32((U32T(type) & SAMPLE_TYPE_MASK) << SAMPLE_TYPE_SHIFT);
 }
 
+/**
+ * Get the ADC sample value. Up to 24 bits of resolution are possible.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ *
+ * @return the ADC sample value.
+ */
 static inline uint32_t caerSampleEventGetSample(caerSampleEvent event) {
 	return U32T((le32toh(event->data) >> SAMPLE_SHIFT) & SAMPLE_MASK);
 }
 
+/**
+ * Set the ADC sample value. Up to 24 bits of resolution are possible.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ * @param sample the ADC sample value.
+ */
 static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t sample) {
 	event->data |= htole32((U32T(sample) & SAMPLE_MASK) << SAMPLE_SHIFT);
 }

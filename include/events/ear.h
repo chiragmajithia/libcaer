@@ -218,12 +218,60 @@ static inline void caerEarEventInvalidate(caerEarEvent event, caerEarEventPacket
 	}
 }
 
+/**
+ * Get the numerical ID of the ear (microphone).
+ * Usually, 0 is left, 1 is right for 2 ear cochleas.
+ * For 4 ear cochleas, 0 is front left, 1 is front right,
+ * 2 is back left and 3 is back right.
+ *
+ * @param event a valid EarEvent pointer. Cannot be NULL.
+ *
+ * @return the ear (microphone) ID.
+ */
 static inline uint8_t caerEarEventGetEar(caerEarEvent event) {
 	return U8T((le32toh(event->data) >> EAR_SHIFT) & EAR_MASK);
 }
 
+/**
+ * Set the numerical ID of the ear (microphone).
+ * Usually, 0 is left, 1 is right for 2 ear cochleas.
+ * For 4 ear cochleas, 0 is front left, 1 is front right,
+ * 2 is back left and 3 is back right.
+ *
+ * @param event a valid EarEvent pointer. Cannot be NULL.
+ * @param ear the ear (microphone) ID.
+ */
 static inline void caerEarEventSetEar(caerEarEvent event, uint8_t ear) {
 	event->data |= htole32((U32T(ear) & EAR_MASK) << EAR_SHIFT);
+}
+
+/**
+ * Get the channel (frequency band) ID.
+ * The channels count from 0 upward, where 0 is the highest
+ * frequency channel, while higher numbers are progressively
+ * lower frequency channels. This is derived from how the actual
+ * human ear works.
+ *
+ * @param event a valid EarEvent pointer. Cannot be NULL.
+ *
+ * @return the channel (frequency band) ID.
+ */
+static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
+	return U8T((le32toh(event->data) >> CHANNEL_SHIFT) & CHANNEL_MASK);
+}
+
+/**
+ * Set the channel (frequency band) ID.
+ * The channels count from 0 upward, where 0 is the highest
+ * frequency channel, while higher numbers are progressively
+ * lower frequency channels. This is derived from how the actual
+ * human ear works.
+ *
+ * @param event a valid EarEvent pointer. Cannot be NULL.
+ * @param channel the channel (frequency band) ID.
+ */
+static inline void caerEarEventSetChannel(caerEarEvent event, uint16_t channel) {
+	event->data |= htole32((U32T(channel) & CHANNEL_MASK) << CHANNEL_SHIFT);
 }
 
 static inline uint8_t caerEarEventGetNeuron(caerEarEvent event) {
@@ -240,14 +288,6 @@ static inline uint8_t caerEarEventGetFilter(caerEarEvent event) {
 
 static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
 	event->data |= htole32((U32T(filter) & FILTER_MASK) << FILTER_SHIFT);
-}
-
-static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> CHANNEL_SHIFT) & CHANNEL_MASK);
-}
-
-static inline void caerEarEventSetChannel(caerEarEvent event, uint16_t channel) {
-	event->data |= htole32((U32T(channel) & CHANNEL_MASK) << CHANNEL_SHIFT);
 }
 
 #ifdef __cplusplus

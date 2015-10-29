@@ -216,26 +216,69 @@ static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPola
 	}
 }
 
+/**
+ * Get the change event polarity. 1 is ON, 0 is OFF.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ *
+ * @return event polarity value.
+ */
 static inline bool caerPolarityEventGetPolarity(caerPolarityEvent event) {
 	return ((le32toh(event->data) >> POLARITY_SHIFT) & POLARITY_MASK);
 }
 
+/**
+ * Set the change event polarity. 1 is ON, 0 is OFF.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ * @param polarity event polarity value.
+ */
 static inline void caerPolarityEventSetPolarity(caerPolarityEvent event, bool polarity) {
 	event->data |= htole32((U32T(polarity) & POLARITY_MASK) << POLARITY_SHIFT);
 }
 
+/**
+ * Get the Y (row) address for a change event, in pixels.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ *
+ * @return the event Y address.
+ */
 static inline uint16_t caerPolarityEventGetY(caerPolarityEvent event) {
 	return U16T((le32toh(event->data) >> Y_ADDR_SHIFT) & Y_ADDR_MASK);
 }
 
+/**
+ * Set the Y (row) address for a change event, in pixels.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ * @param yAddress the event Y address.
+ */
 static inline void caerPolarityEventSetY(caerPolarityEvent event, uint16_t yAddress) {
 	event->data |= htole32((U32T(yAddress) & Y_ADDR_MASK) << Y_ADDR_SHIFT);
 }
 
+/**
+ * Get the X (column) address for a change event, in pixels.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ *
+ * @return the event X address.
+ */
 static inline uint16_t caerPolarityEventGetX(caerPolarityEvent event) {
 	return U16T((le32toh(event->data) >> X_ADDR_SHIFT) & X_ADDR_MASK);
 }
 
+/**
+ * Set the X (column) address for a change event, in pixels.
+ * The (0, 0) address is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid PolarityEvent pointer. Cannot be NULL.
+ * @param xAddress the event X address.
+ */
 static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddress) {
 	event->data |= htole32((U32T(xAddress) & X_ADDR_MASK) << X_ADDR_SHIFT);
 }
