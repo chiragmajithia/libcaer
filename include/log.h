@@ -34,7 +34,7 @@ extern "C" {
 #define CAER_LOG_DEBUG     (7)
 //@}
 
-/*
+/**
  * Set the system-wide log level.
  * Log messages will only be printed if their level is equal or above
  * this level.
