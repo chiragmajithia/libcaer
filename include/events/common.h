@@ -104,7 +104,7 @@ typedef struct caer_event_packet_header *caerEventPacketHeader;
  *
  * @param header a valid EventPacket header pointer. Cannot be NULL.
  *
- * @return the numerical event type.
+ * @return the numerical event type (see 'enum caer_default_event_types').
  */
 static inline int16_t caerEventPacketHeaderGetEventType(caerEventPacketHeader header) {
 	return (le16toh(header->eventType));
@@ -117,7 +117,7 @@ static inline int16_t caerEventPacketHeaderGetEventType(caerEventPacketHeader he
  * DO NOT USE THEM FOR YOUR OWN EVENT TYPES!
  *
  * @param header a valid EventPacket header pointer. Cannot be NULL.
- * @param eventType the numerical event type.
+ * @param eventType the numerical event type (see 'enum caer_default_event_types').
  */
 static inline void caerEventPacketHeaderSetEventType(caerEventPacketHeader header, int16_t eventType) {
 	if (eventType < 0) {

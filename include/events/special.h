@@ -224,18 +224,48 @@ static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecia
 	}
 }
 
+/**
+ * Get the numerical special event type.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ *
+ * @return the special event type (see 'enum caer_special_event_types').
+ */
 static inline uint8_t caerSpecialEventGetType(caerSpecialEvent event) {
 	return U8T((le32toh(event->data) >> TYPE_SHIFT) & TYPE_MASK);
 }
 
+/**
+ * Set the numerical special event type.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param type the special event type (see 'enum caer_special_event_types').
+ */
 static inline void caerSpecialEventSetType(caerSpecialEvent event, uint8_t type) {
 	event->data |= htole32((U32T(type) & TYPE_MASK) << TYPE_SHIFT);
 }
 
+/**
+ * Get the special event data. Its meaning depends on the type.
+ * Current types that make use of it are (see 'enum caer_special_event_types'):
+ * - DVS_ROW_ONLY: encodes the address of the row from the row-only event.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ *
+ * @return the special event data.
+ */
 static inline uint32_t caerSpecialEventGetData(caerSpecialEvent event) {
 	return U32T((le32toh(event->data) >> DATA_SHIFT) & DATA_MASK);
 }
 
+/**
+ * Set the special event data. Its meaning depends on the type.
+ * Current types that make use of it are (see 'enum caer_special_event_types'):
+ * - DVS_ROW_ONLY: encodes the address of the row from the row-only event.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param data the special event data.
+ */
 static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data) {
 	event->data |= htole32((U32T(data) & DATA_MASK) << DATA_SHIFT);
 }
