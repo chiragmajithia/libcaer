@@ -217,58 +217,163 @@ static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPac
 	}
 }
 
+/**
+ * Get the X axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the X axis.
+ */
 static inline float caerIMU6EventGetAccelX(caerIMU6Event event) {
 	return (le32toh(event->accel_x));
 }
 
+/**
+ * Set the X axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param accelX acceleration on the X axis.
+ */
 static inline void caerIMU6EventSetAccelX(caerIMU6Event event, float accelX) {
 	event->accel_x = htole32(accelX);
 }
 
+/**
+ * Get the Y axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the Y axis.
+ */
 static inline float caerIMU6EventGetAccelY(caerIMU6Event event) {
 	return (le32toh(event->accel_y));
 }
 
+/**
+ * Set the Y axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param accelY acceleration on the Y axis.
+ */
 static inline void caerIMU6EventSetAccelY(caerIMU6Event event, float accelY) {
 	event->accel_y = htole32(accelY);
 }
 
+/**
+ * Get the Z axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the Z axis.
+ */
 static inline float caerIMU6EventGetAccelZ(caerIMU6Event event) {
 	return (le32toh(event->accel_z));
 }
 
+/**
+ * Set the Z axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param accelZ acceleration on the Z axis.
+ */
 static inline void caerIMU6EventSetAccelZ(caerIMU6Event event, float accelZ) {
 	event->accel_z = htole32(accelZ);
 }
 
+/**
+ * Get the X axis (roll) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the X axis (roll).
+ */
 static inline float caerIMU6EventGetGyroX(caerIMU6Event event) {
 	return (le32toh(event->gyro_x));
 }
 
+/**
+ * Set the X axis (roll) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param gyroX angular velocity on the X axis (roll).
+ */
 static inline void caerIMU6EventSetGyroX(caerIMU6Event event, float gyroX) {
 	event->gyro_x = htole32(gyroX);
 }
 
+/**
+ * Get the Y axis (pitch) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the Y axis (pitch).
+ */
 static inline float caerIMU6EventGetGyroY(caerIMU6Event event) {
 	return (le32toh(event->gyro_y));
 }
 
+/**
+ * Set the Y axis (pitch) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param gyroY angular velocity on the Y axis (pitch).
+ */
 static inline void caerIMU6EventSetGyroY(caerIMU6Event event, float gyroY) {
 	event->gyro_y = htole32(gyroY);
 }
 
+/**
+ * Get the Z axis (yaw) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the Z axis (yaw).
+ */
 static inline float caerIMU6EventGetGyroZ(caerIMU6Event event) {
 	return (le32toh(event->gyro_z));
 }
 
+/**
+ * Set the Z axis (yaw) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param gyroZ angular velocity on the Z axis (yaw).
+ */
 static inline void caerIMU6EventSetGyroZ(caerIMU6Event event, float gyroZ) {
 	event->gyro_z = htole32(gyroZ);
 }
 
+/**
+ * Get the temperature reading.
+ * This is in °C.
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return temperature in °C.
+ */
 static inline float caerIMU6EventGetTemp(caerIMU6Event event) {
 	return (le32toh(event->temp));
 }
 
+/**
+ * Set the temperature reading.
+ * This is in °C.
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param temp temperature in °C.
+ */
 static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
 	event->temp = htole32(temp);
 }

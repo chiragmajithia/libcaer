@@ -225,84 +225,234 @@ static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPac
 	}
 }
 
+/**
+ * Get the X axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the X axis.
+ */
 static inline float caerIMU9EventGetAccelX(caerIMU9Event event) {
 	return (le32toh(event->accel_x));
 }
 
+/**
+ * Set the X axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param accelX acceleration on the X axis.
+ */
 static inline void caerIMU9EventSetAccelX(caerIMU9Event event, float accelX) {
 	event->accel_x = htole32(accelX);
 }
 
+/**
+ * Get the Y axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the Y axis.
+ */
 static inline float caerIMU9EventGetAccelY(caerIMU9Event event) {
 	return (le32toh(event->accel_y));
 }
 
+/**
+ * Set the Y axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param accelY acceleration on the Y axis.
+ */
 static inline void caerIMU9EventSetAccelY(caerIMU9Event event, float accelY) {
 	event->accel_y = htole32(accelY);
 }
 
+/**
+ * Get the Z axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return acceleration on the Z axis.
+ */
 static inline float caerIMU9EventGetAccelZ(caerIMU9Event event) {
 	return (le32toh(event->accel_z));
 }
 
+/**
+ * Set the Z axis acceleration reading (from accelerometer).
+ * This is in g (1 g = 9.81 m/s²).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param accelZ acceleration on the Z axis.
+ */
 static inline void caerIMU9EventSetAccelZ(caerIMU9Event event, float accelZ) {
 	event->accel_z = htole32(accelZ);
 }
 
+/**
+ * Get the X axis (roll) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the X axis (roll).
+ */
 static inline float caerIMU9EventGetGyroX(caerIMU9Event event) {
 	return (le32toh(event->gyro_x));
 }
 
+/**
+ * Set the X axis (roll) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param gyroX angular velocity on the X axis (roll).
+ */
 static inline void caerIMU9EventSetGyroX(caerIMU9Event event, float gyroX) {
 	event->gyro_x = htole32(gyroX);
 }
 
+/**
+ * Get the Y axis (pitch) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the Y axis (pitch).
+ */
 static inline float caerIMU9EventGetGyroY(caerIMU9Event event) {
 	return (le32toh(event->gyro_y));
 }
 
+/**
+ * Set the Y axis (pitch) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param gyroY angular velocity on the Y axis (pitch).
+ */
 static inline void caerIMU9EventSetGyroY(caerIMU9Event event, float gyroY) {
 	event->gyro_y = htole32(gyroY);
 }
 
+/**
+ * Get the Z axis (yaw) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return angular velocity on the Z axis (yaw).
+ */
 static inline float caerIMU9EventGetGyroZ(caerIMU9Event event) {
 	return (le32toh(event->gyro_z));
 }
 
+/**
+ * Set the Z axis (yaw) angular velocity reading (from gyroscope).
+ * This is in °/s (deg/sec).
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param gyroZ angular velocity on the Z axis (yaw).
+ */
 static inline void caerIMU9EventSetGyroZ(caerIMU9Event event, float gyroZ) {
 	event->gyro_z = htole32(gyroZ);
 }
 
-static inline float caerIMU9EventGetCompX(caerIMU9Event event) {
-	return (le32toh(event->comp_x));
-}
-
-static inline void caerIMU9EventSetCompX(caerIMU9Event event, float compX) {
-	event->comp_x = htole32(compX);
-}
-
-static inline float caerIMU9EventGetCompY(caerIMU9Event event) {
-	return (le32toh(event->comp_y));
-}
-
-static inline void caerIMU9EventSetCompY(caerIMU9Event event, float compY) {
-	event->comp_y = htole32(compY);
-}
-
-static inline float caerIMU9EventGetCompZ(caerIMU9Event event) {
-	return (le32toh(event->comp_z));
-}
-
-static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
-	event->comp_z = htole32(compZ);
-}
-
+/**
+ * Get the temperature reading.
+ * This is in °C.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return temperature in °C.
+ */
 static inline float caerIMU9EventGetTemp(caerIMU9Event event) {
 	return (le32toh(event->temp));
 }
 
+/**
+ * Set the temperature reading.
+ * This is in °C.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param temp temperature in °C.
+ */
 static inline void caerIMU9EventSetTemp(caerIMU9Event event, float temp) {
 	event->temp = htole32(temp);
+}
+
+/**
+ * Get the X axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return X axis compass heading.
+ */
+static inline float caerIMU9EventGetCompX(caerIMU9Event event) {
+	return (le32toh(event->comp_x));
+}
+
+/**
+ * Set the X axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param compX X axis compass heading.
+ */
+static inline void caerIMU9EventSetCompX(caerIMU9Event event, float compX) {
+	event->comp_x = htole32(compX);
+}
+
+/**
+ * Get the Y axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return Y axis compass heading.
+ */
+static inline float caerIMU9EventGetCompY(caerIMU9Event event) {
+	return (le32toh(event->comp_y));
+}
+
+/**
+ * Set the Y axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param compY Y axis compass heading.
+ */
+static inline void caerIMU9EventSetCompY(caerIMU9Event event, float compY) {
+	event->comp_y = htole32(compY);
+}
+
+/**
+ * Get the Z axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return Z axis compass heading.
+ */
+static inline float caerIMU9EventGetCompZ(caerIMU9Event event) {
+	return (le32toh(event->comp_z));
+}
+
+/**
+ * Set the Z axis compass heading (from magnetometer).
+ * This is in µT.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param compZ Z axis compass heading.
+ */
+static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
+	event->comp_z = htole32(compZ);
 }
 
 #ifdef __cplusplus
