@@ -455,6 +455,45 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
 	event->comp_z = htole32(compZ);
 }
 
+/**
+ * Iterator over all IMU9 events in a packet.
+ * Returns the current index in the 'caerIMU9IteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerIMU9IteratorElement' variable
+ * of type caerIMU9Event.
+ *
+ * PACKED_HEADER: a valid IMU9EventPacket pointer. Cannot be NULL.
+ */
+#define CAER_IMU9_ITERATOR_ALL_START(IMU9_PACKET) \
+	for (int32_t caerIMU9IteratorCounter = 0; \
+		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU9_PACKET->packetHeader); \
+		caerIMU9IteratorCounter++) { \
+		caerIMU9Event caerIMU9IteratorElement = caerIMU9EventPacketGetEvent(IMU9_PACKET, caerIMU9IteratorCounter);
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_IMU9_ITERATOR_ALL_END }
+
+/**
+ * Iterator over only the valid IMU9 events in a packet.
+ * Returns the current index in the 'caerIMU9IteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerIMU9IteratorElement' variable
+ * of type caerIMU9Event.
+ *
+ * PACKED_HEADER: a valid IMU9EventPacket pointer. Cannot be NULL.
+ */
+#define CAER_IMU9_ITERATOR_VALID_START(IMU9_PACKET) \
+	for (int32_t caerIMU9IteratorCounter = 0; \
+		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU9_PACKET->packetHeader); \
+		caerIMU9IteratorCounter++) { \
+		caerIMU9Event caerIMU9IteratorElement = caerIMU9EventPacketGetEvent(IMU9_PACKET, caerIMU9IteratorCounter); \
+		if (!caerIMU9EventIsValid(caerIMU9IteratorElement)) { continue; } // Skip invalid IMU9 events.
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_IMU9_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif

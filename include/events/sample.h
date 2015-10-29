@@ -259,6 +259,45 @@ static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t samp
 	event->data |= htole32((U32T(sample) & SAMPLE_MASK) << SAMPLE_SHIFT);
 }
 
+/**
+ * Iterator over all sample events in a packet.
+ * Returns the current index in the 'caerSampleIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerSampleIteratorElement' variable
+ * of type caerSampleEvent.
+ *
+ * PACKED_HEADER: a valid SampleEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_SAMPLE_ITERATOR_ALL_START(SAMPLE_PACKET) \
+	for (int32_t caerSampleIteratorCounter = 0; \
+		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&SAMPLE_PACKET->packetHeader); \
+		caerSampleIteratorCounter++) { \
+		caerSampleEvent caerSampleIteratorElement = caerSampleEventPacketGetEvent(SAMPLE_PACKET, caerSampleIteratorCounter);
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_SAMPLE_ITERATOR_ALL_END }
+
+/**
+ * Iterator over only the valid sample events in a packet.
+ * Returns the current index in the 'caerSampleIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerSampleIteratorElement' variable
+ * of type caerSampleEvent.
+ *
+ * PACKED_HEADER: a valid SampleEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_SAMPLE_ITERATOR_VALID_START(SAMPLE_PACKET) \
+	for (int32_t caerSampleIteratorCounter = 0; \
+		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&SAMPLE_PACKET->packetHeader); \
+		caerSampleIteratorCounter++) { \
+		caerSampleEvent caerSampleIteratorElement = caerSampleEventPacketGetEvent(SAMPLE_PACKET, caerSampleIteratorCounter); \
+		if (!caerSampleEventIsValid(caerSampleIteratorElement)) { continue; } // Skip invalid sample events.
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_SAMPLE_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif

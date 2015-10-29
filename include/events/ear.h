@@ -290,6 +290,45 @@ static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
 	event->data |= htole32((U32T(filter) & FILTER_MASK) << FILTER_SHIFT);
 }
 
+/**
+ * Iterator over all ear events in a packet.
+ * Returns the current index in the 'caerEarIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerEarIteratorElement' variable
+ * of type caerEarEvent.
+ *
+ * PACKED_HEADER: a valid EarEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_EAR_ITERATOR_ALL_START(EAR_PACKET) \
+	for (int32_t caerEarIteratorCounter = 0; \
+		caerEarIteratorCounter < caerEventPacketHeaderGetEventNumber(&EAR_PACKET->packetHeader); \
+		caerEarIteratorCounter++) { \
+		caerEarEvent caerEarIteratorElement = caerEarEventPacketGetEvent(EAR_PACKET, caerEarIteratorCounter);
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_EAR_ITERATOR_ALL_END }
+
+/**
+ * Iterator over only the valid ear events in a packet.
+ * Returns the current index in the 'caerEarIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerEarIteratorElement' variable
+ * of type caerEarEvent.
+ *
+ * PACKED_HEADER: a valid EarEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_EAR_ITERATOR_VALID_START(EAR_PACKET) \
+	for (int32_t caerEarIteratorCounter = 0; \
+		caerEarIteratorCounter < caerEventPacketHeaderGetEventNumber(&EAR_PACKET->packetHeader); \
+		caerEarIteratorCounter++) { \
+		caerEarEvent caerEarIteratorElement = caerEarEventPacketGetEvent(EAR_PACKET, caerEarIteratorCounter); \
+		if (!caerEarEventIsValid(caerEarIteratorElement)) { continue; } // Skip invalid ear events.
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_EAR_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif

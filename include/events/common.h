@@ -444,43 +444,43 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
 }
 
 /**
- * Iterator over all events in a packet.
+ * Generic iterator over all events in a packet.
  * Returns the current index in the 'caerIteratorCounter' variable of type
- * 'size_t' and the current event in the 'caerIteratorElement' variable
+ * 'int32_t' and the current event in the 'caerIteratorElement' variable
  * of type EVENT_TYPE.
  *
  * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
  * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
  */
 #define CAER_ITERATOR_ALL_START(PACKET_HEADER, EVENT_TYPE) \
-	for (size_t caerIteratorCounter = 0; \
+	for (int32_t caerIteratorCounter = 0; \
 		caerIteratorCounter < caerEventPacketHeaderGetEventNumber(PACKET_HEADER); \
 		caerIteratorCounter++) { \
 		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter);
 
 /**
- * Iterator close statement.
+ * Generic iterator close statement.
  */
 #define CAER_ITERATOR_ALL_END }
 
 /**
- * Iterator over only the valid events in a packet.
+ * Generic iterator over only the valid events in a packet.
  * Returns the current index in the 'caerIteratorCounter' variable of type
- * 'size_t' and the current event in the 'caerIteratorElement' variable
+ * 'int32_t' and the current event in the 'caerIteratorElement' variable
  * of type EVENT_TYPE.
  *
  * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
  * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
  */
 #define CAER_ITERATOR_VALID_START(PACKET_HEADER, EVENT_TYPE) \
-	for (size_t caerIteratorCounter = 0; \
+	for (int32_t caerIteratorCounter = 0; \
 		caerIteratorCounter < caerEventPacketHeaderGetEventNumber(PACKET_HEADER); \
 		caerIteratorCounter++) { \
 		EVENT_TYPE caerIteratorElement = (EVENT_TYPE) caerGenericEventGetEvent(PACKET_HEADER, caerIteratorCounter); \
 		if (!caerGenericEventIsValid(caerIteratorElement)) { continue; } // Skip invalid events.
 
 /**
- * Iterator close statement.
+ * Generic iterator close statement.
  */
 #define CAER_ITERATOR_VALID_END }
 

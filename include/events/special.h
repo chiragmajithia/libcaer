@@ -270,6 +270,45 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
 	event->data |= htole32((U32T(data) & DATA_MASK) << DATA_SHIFT);
 }
 
+/**
+ * Iterator over all special events in a packet.
+ * Returns the current index in the 'caerSpecialIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerSpecialIteratorElement' variable
+ * of type caerSpecialEvent.
+ *
+ * PACKED_HEADER: a valid SpecialEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_SPECIAL_ITERATOR_ALL_START(SPECIAL_PACKET) \
+	for (int32_t caerSpecialIteratorCounter = 0; \
+		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&SPECIAL_PACKET->packetHeader); \
+		caerSpecialIteratorCounter++) { \
+		caerSpecialEvent caerSpecialIteratorElement = caerSpecialEventPacketGetEvent(SPECIAL_PACKET, caerSpecialIteratorCounter);
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_SPECIAL_ITERATOR_ALL_END }
+
+/**
+ * Iterator over only the valid special events in a packet.
+ * Returns the current index in the 'caerSpecialIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerSpecialIteratorElement' variable
+ * of type caerSpecialEvent.
+ *
+ * PACKED_HEADER: a valid SpecialEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_SPECIAL_ITERATOR_VALID_START(SPECIAL_PACKET) \
+	for (int32_t caerSpecialIteratorCounter = 0; \
+		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&SPECIAL_PACKET->packetHeader); \
+		caerSpecialIteratorCounter++) { \
+		caerSpecialEvent caerSpecialIteratorElement = caerSpecialEventPacketGetEvent(SPECIAL_PACKET, caerSpecialIteratorCounter); \
+		if (!caerSpecialEventIsValid(caerSpecialIteratorElement)) { continue; } // Skip invalid special events.
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_SPECIAL_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif
