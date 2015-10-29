@@ -78,9 +78,9 @@ typedef struct caer_frame_event *caerFrameEvent;
 struct caer_frame_event_packet {
 	// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-	// All events follow here. Direct access to the events
-	// array is not possible. To calculate position, use the
-	// 'eventSize' field in the packetHeader.
+// All events follow here. Direct access to the events
+// array is not possible. To calculate position, use the
+// 'eventSize' field in the packetHeader.
 }__attribute__((__packed__));
 
 /**
@@ -91,12 +91,12 @@ typedef struct caer_frame_event_packet *caerFrameEventPacket;
 /**
  * Allocate a new frame events packet.
  * Use free() to reclaim this memory.
- * The frame events allocate memory for a maximum sized pixel array, depending
+ * The frame events allocate memory for a maximum sized pixels array, depending
  * on the parameters passed to this function, so that every event occupies the
  * same amount of memory (constant size). The actual frames inside of it
  * might be smaller than that, for example when using ROI, and their actual size
  * is stored inside the frame event and should always be queried from there.
- * The unused part of a pixel array is guaranteed to be zeros.
+ * The unused part of a pixels array is guaranteed to be zeros.
  *
  * @param eventCapacity the maximum number of events this packet will hold.
  * @param eventSource the unique ID representing the source/generator of this packet.
@@ -447,34 +447,98 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 	}
 }
 
+/**
+ * Get the maximum size of the pixels array in bytes, based upon how
+ * much memory was allocated to it by 'caerFrameEventPacketAllocate()'.
+ *
+ * @param packet a valid FrameEventPacket pointer. Cannot be NULL.
+ *
+ * @return maximum pixels array size in bytes.
+ */
 static inline size_t caerFrameEventPacketGetPixelsSize(caerFrameEventPacket packet) {
 	return ((size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader) - sizeof(struct caer_frame_event));
 }
 
+/**
+ * Get the maximum index into the pixels array, based upon how
+ * much memory was allocated to it by 'caerFrameEventPacketAllocate()'.
+ *
+ * @param packet a valid FrameEventPacket pointer. Cannot be NULL.
+ *
+ * @return maximum pixels array index.
+ */
 static inline size_t caerFrameEventPacketGetPixelsMaxIndex(caerFrameEventPacket packet) {
 	return (caerFrameEventPacketGetPixelsSize(packet) / sizeof(uint16_t));
 }
 
+/**
+ * Get the numerical identifier for the Region of Interest
+ * (ROI) region, to distinguish between multiple of them.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return numerical ROI identifier.
+ */
 static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
 	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
 }
 
+/**
+ * Set the numerical identifier for the Region of Interest
+ * (ROI) region, to distinguish between multiple of them.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param roiIdentifier numerical ROI identifier.
+ */
 static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t roiIdentifier) {
 	event->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
 }
 
+/**
+ * Get the actual X axis length for the current frame.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return frame X axis length.
+ */
 static inline int32_t caerFrameEventGetLengthX(caerFrameEvent event) {
 	return (le32toh(event->lengthX));
 }
 
+/**
+ * Get the actual Y axis length for the current frame.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return frame Y axis length.
+ */
 static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
 	return (le32toh(event->lengthY));
 }
 
+/**
+ * Get the actual channel number for the current frame.
+ * This can be used to store RGB frames for example.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return frame channel number.
+ */
 static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
 	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
 }
 
+/**
+ * Set the X and Y axes length and the channel number for a frame,
+ * while taking into account the maximum amount of memory available
+ * for the pixel array, as allocated in 'caerFrameEventPacketAllocate()'.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param lengthX the frame's X axis length.
+ * @param lengthY the frame's Y axis length.
+ * @param channelNumber the number of channels for this frame.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent event, int32_t lengthX, int32_t lengthY,
 	uint8_t channelNumber, caerFrameEventPacket packet) {
 	// Verify lengths and channel number don't exceed allocated space.
@@ -494,31 +558,93 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
 	event->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
 }
 
+/**
+ * Get the maximum valid index into the pixel array, at which
+ * you can still get valid pixels.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return maximum valid pixels array index.
+ */
 static inline size_t caerFrameEventGetPixelsMaxIndex(caerFrameEvent event) {
 	return ((size_t) (caerFrameEventGetLengthX(event) * caerFrameEventGetLengthY(event)
 		* caerFrameEventGetChannelNumber(event)));
 }
 
+/**
+ * Get the maximum size of the pixels array in bytes, in which
+ * you can still get valid pixels.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return maximum valid pixels array size in bytes.
+ */
 static inline size_t caerFrameEventGetPixelsSize(caerFrameEvent event) {
 	return (caerFrameEventGetPixelsMaxIndex(event) * sizeof(uint16_t));
 }
 
+/**
+ * Get the X axis position offset.
+ * This is used to place partial frames, like the ones gotten from
+ * ROI readouts, in the visual space.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return X axis position offset.
+ */
 static inline int32_t caerFrameEventGetPositionX(caerFrameEvent event) {
 	return (le32toh(event->positionX));
 }
 
+/**
+ * Set the X axis position offset.
+ * This is used to place partial frames, like the ones gotten from
+ * ROI readouts, in the visual space.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param positionX X axis position offset.
+ */
 static inline void caerFrameEventSetPositionX(caerFrameEvent event, int32_t positionX) {
 	event->positionX = htole32(positionX);
 }
 
+/**
+ * Get the Y axis position offset.
+ * This is used to place partial frames, like the ones gotten from
+ * ROI readouts, in the visual space.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return Y axis position offset.
+ */
 static inline int32_t caerFrameEventGetPositionY(caerFrameEvent event) {
 	return (le32toh(event->positionY));
 }
 
+/**
+ * Set the Y axis position offset.
+ * This is used to place partial frames, like the ones gotten from
+ * ROI readouts, in the visual space.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param positionY Y axis position offset.
+ */
 static inline void caerFrameEventSetPositionY(caerFrameEvent event, int32_t positionY) {
 	event->positionY = htole32(positionY);
 }
 
+/**
+ * Get the pixel value at the specified (X, Y) address.
+ * (X, Y) are checked against the actual possible values for this frame.
+ * Different channels are not taken into account!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (checked).
+ * @param yAddress Y address value (checked).
+ *
+ * @return pixel value (normalized to 16 bit depth).
+ */
 static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
@@ -545,6 +671,17 @@ static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAdd
 	return (le16toh(event->pixels[(yAddress * xLength) + xAddress]));
 }
 
+/**
+ * Set the pixel value at the specified (X, Y) address.
+ * (X, Y) are checked against the actual possible values for this frame.
+ * Different channels are not taken into account!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (checked).
+ * @param yAddress Y address value (checked).
+ * @param pixelValue pixel value (normalized to 16 bit depth).
+ */
 static inline void caerFrameEventSetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress, uint16_t pixelValue) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
@@ -571,6 +708,20 @@ static inline void caerFrameEventSetPixel(caerFrameEvent event, int32_t xAddress
 	event->pixels[(yAddress * xLength) + xAddress] = htole16(pixelValue);
 }
 
+/**
+ * Get the pixel value at the specified (X, Y) address, taking into
+ * account the specified channel.
+ * (X, Y) and the channel number are checked against the actual
+ * possible values for this frame.
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (checked).
+ * @param yAddress Y address value (checked).
+ * @param channel the channel number (checked).
+ *
+ * @return pixel value (normalized to 16 bit depth).
+ */
 static inline uint16_t caerFrameEventGetPixelForChannel(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel) {
 	// Check frame bounds first.
@@ -609,6 +760,19 @@ static inline uint16_t caerFrameEventGetPixelForChannel(caerFrameEvent event, in
 	return (le16toh(event->pixels[(((yAddress * xLength) + xAddress) * channelNumber) + channel]));
 }
 
+/**
+ * Set the pixel value at the specified (X, Y) address, taking into
+ * account the specified channel.
+ * (X, Y) and the channel number are checked against the actual
+ * possible values for this frame.
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (checked).
+ * @param yAddress Y address value (checked).
+ * @param channel the channel number (checked).
+ * @param pixelValue pixel value (normalized to 16 bit depth).
+ */
 static inline void caerFrameEventSetPixelForChannel(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel, uint16_t pixelValue) {
 	// Check frame bounds first.
@@ -647,17 +811,51 @@ static inline void caerFrameEventSetPixelForChannel(caerFrameEvent event, int32_
 	event->pixels[(((yAddress * xLength) + xAddress) * channelNumber) + channel] = htole16(pixelValue);
 }
 
+/**
+ * Get the pixel value at the specified (X, Y) address.
+ * No checks on (X, Y) are performed!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (unchecked).
+ * @param yAddress Y address value (unchecked).
+ *
+ * @return pixel value (normalized to 16 bit depth).
+ */
 static inline uint16_t caerFrameEventGetPixelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress) {
 	// Get pixel value at specified position.
 	return (le16toh(event->pixels[(yAddress * caerFrameEventGetLengthX(event)) + xAddress]));
 }
 
+/**
+ * Set the pixel value at the specified (X, Y) address.
+ * No checks on (X, Y) are performed!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (unchecked).
+ * @param yAddress Y address value (unchecked).
+ * @param pixelValue pixel value (normalized to 16 bit depth).
+ */
 static inline void caerFrameEventSetPixelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint16_t pixelValue) {
 	// Set pixel value at specified position.
 	event->pixels[(yAddress * caerFrameEventGetLengthX(event)) + xAddress] = htole16(pixelValue);
 }
 
+/**
+ * Get the pixel value at the specified (X, Y) address, taking into
+ * account the specified channel.
+ * No checks on (X, Y) and the channel number are performed!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (unchecked).
+ * @param yAddress Y address value (unchecked).
+ * @param channel the channel number (unchecked).
+ *
+ * @return pixel value (normalized to 16 bit depth).
+ */
 static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel) {
 	// Get pixel value at specified position.
@@ -666,6 +864,18 @@ static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent eve
 			+ channel]));
 }
 
+/**
+ * Set the pixel value at the specified (X, Y) address, taking into
+ * account the specified channel.
+ * No checks on (X, Y) and the channel number are performed!
+ * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param xAddress X address value (unchecked).
+ * @param yAddress Y address value (unchecked).
+ * @param channel the channel number (unchecked).
+ * @param pixelValue pixel value (normalized to 16 bit depth).
+ */
 static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel, uint16_t pixelValue) {
 	// Set pixel value at specified position.
@@ -673,9 +883,19 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
 		+ channel] = htole16(pixelValue);
 }
 
-// Direct access to underlying memory. Remember the uint16_t's are little-endian!
+/**
+ * Get a direct reference to the underlying pixels array.
+ * This can be used to both get and set values.
+ * No checks at all are performed at any point, nor any
+ * conversions, use this at your own risk!
+ * Remember that the 16 bit pixel values are in little-endian!
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return the pixels array (16 bit integers are little-endian).
+ */
 static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) {
-	// Get pixel array.
+	// Get pixels array.
 	return (event->pixels);
 }
 
