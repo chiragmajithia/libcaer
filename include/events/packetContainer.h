@@ -23,9 +23,9 @@ extern "C" {
  * do not have unsigned ones, such as Java.
  */
 struct caer_event_packet_container {
-	// Number of different event packets contained.
+	/// Number of different event packets contained.
 	int32_t eventPacketsNumber;
-	// Array of pointers to the actual event packets.
+	/// Array of pointers to the actual event packets.
 	caerEventPacketHeader eventPackets[];
 }__attribute__((__packed__));
 

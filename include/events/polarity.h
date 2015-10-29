@@ -39,9 +39,9 @@ extern "C" {
  * unsigned integer types, such as Java.
  */
 struct caer_polarity_event {
-	// Event data. First because of valid mark.
+	/// Event data. First because of valid mark.
 	uint32_t data;
-	// Event timestamp.
+	/// Event timestamp.
 	int32_t timestamp;
 }__attribute__((__packed__));
 
@@ -57,9 +57,9 @@ typedef struct caer_polarity_event *caerPolarityEvent;
  * be in one contiguous memory block.
  */
 struct caer_polarity_event_packet {
-	// The common event packet header.
+	/// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-	// The events array.
+	/// The events array.
 	struct caer_polarity_event events[];
 }__attribute__((__packed__));
 

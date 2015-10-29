@@ -40,25 +40,25 @@ extern "C" {
  * unsigned integer types, such as Java.
  */
 struct caer_frame_event {
-	// Event information (ROI region, channel number). First because of valid mark.
+	/// Event information (ROI region, channel number). First because of valid mark.
 	uint32_t info;
-	// Start of Frame (SOF) timestamp.
+	/// Start of Frame (SOF) timestamp.
 	int32_t ts_startframe;
-	// End of Frame (EOF) timestamp.
+	/// End of Frame (EOF) timestamp.
 	int32_t ts_endframe;
-	// Start of Exposure (SOE) timestamp.
+	/// Start of Exposure (SOE) timestamp.
 	int32_t ts_startexposure;
-	// End of Exposure (EOE) timestamp.
+	/// End of Exposure (EOE) timestamp.
 	int32_t ts_endexposure;
-	// X axis length in pixels.
+	/// X axis length in pixels.
 	int32_t lengthX;
-	// Y axis length in pixels.
+	/// Y axis length in pixels.
 	int32_t lengthY;
-	// X axis position (lower left offset) in pixels.
+	/// X axis position (lower left offset) in pixels.
 	int32_t positionX;
-	// Y axis position (lower left offset) in pixels.
+	/// Y axis position (lower left offset) in pixels.
 	int32_t positionY;
-	// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
+	/// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
 	uint16_t pixels[];
 }__attribute__((__packed__));
 
@@ -76,11 +76,11 @@ typedef struct caer_frame_event *caerFrameEvent;
  * offsets, use the 'eventSize' field in the packet header.
  */
 struct caer_frame_event_packet {
-	// The common event packet header.
+	/// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-// All events follow here. Direct access to the events
-// array is not possible. To calculate position, use the
-// 'eventSize' field in the packetHeader.
+	/// All events follow here. Direct access to the events
+	/// array is not possible. To calculate position, use the
+	/// 'eventSize' field in the packetHeader.
 }__attribute__((__packed__));
 
 /**

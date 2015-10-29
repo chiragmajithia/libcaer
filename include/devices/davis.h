@@ -1497,45 +1497,45 @@ extern "C" {
  * DAVIS device-related information.
  */
 struct caer_davis_info {
-	// Unique device identifier. Also 'source' for events.
+	/// Unique device identifier. Also 'source' for events.
 	uint16_t deviceID;
-	// Device information string, for logging purposes.
+	/// Device information string, for logging purposes.
 	char *deviceString;
-	// Logic (FPGA/CPLD) version.
+	/// Logic (FPGA/CPLD) version.
 	uint16_t logicVersion;
-	// Whether the device is a time-stamp master or slave.
+	/// Whether the device is a time-stamp master or slave.
 	bool deviceIsMaster;
-	// Clock in MHz for main logic (FPGA/CPLD).
+	/// Clock in MHz for main logic (FPGA/CPLD).
 	uint16_t logicClock;
-	// Clock in MHz for ADC/APS logic (FPGA/CPLD).
+	/// Clock in MHz for ADC/APS logic (FPGA/CPLD).
 	uint16_t adcClock;
-	// Chip identifier/type.
+	/// Chip identifier/type.
 	uint16_t chipID;
-	// DVS X axis resolution.
+	/// DVS X axis resolution.
 	uint16_t dvsSizeX;
-	// DVS Y axis resolution.
+	/// DVS Y axis resolution.
 	uint16_t dvsSizeY;
-	// Feature test: DVS pixel-level filtering.
+	/// Feature test: DVS pixel-level filtering.
 	bool dvsHasPixelFilter;
-	// Feature test: DVS Background Activity filter.
+	/// Feature test: DVS Background Activity filter.
 	bool dvsHasBackgroundActivityFilter;
-	// Feature test: fake event generator (testing/debug).
+	/// Feature test: fake event generator (testing/debug).
 	bool dvsHasTestEventGenerator;
-	// APS X axis resolution.
+	/// APS X axis resolution.
 	uint16_t apsSizeX;
-	// APS Y axis resolution.
+	/// APS Y axis resolution.
 	uint16_t apsSizeY;
-	// APS color filter type.
+	/// APS color filter type.
 	uint8_t apsColorFilter;
-	// Feature test: APS supports Global Shutter.
+	/// Feature test: APS supports Global Shutter.
 	bool apsHasGlobalShutter;
-	// Feature test: APS supports Quadruple Region-of-Interest readout.
+	/// Feature test: APS supports Quadruple Region-of-Interest readout.
 	bool apsHasQuadROI;
-	// Feature test: APS supports External ADC for getting the image.
+	/// Feature test: APS supports External ADC for getting the image.
 	bool apsHasExternalADC;
-	// Feature test: APS supports Internal (on-chip) ADC for getting the image.
+	/// Feature test: APS supports Internal (on-chip) ADC for getting the image.
 	bool apsHasInternalADC;
-	// Feature test: External Input module supports Signal-Generation.
+	/// Feature test: External Input module supports Signal-Generation.
 	bool extInputHasGenerator;
 };
 
@@ -1556,9 +1556,9 @@ struct caer_davis_info caerDavisInfoGet(caerDeviceHandle handle);
  * See 'http://inilabs.com/support/biasing/' for more details.
  */
 struct caer_bias_vdac {
-	// Voltage, between 0 and 63, as a fraction of 1/64th of VDD=3.3V.
+	/// Voltage, between 0 and 63, as a fraction of 1/64th of VDD=3.3V.
 	uint8_t voltageValue;
-	// Current, between 0 and 7, that drives the voltage.
+	/// Current, between 0 and 7, that drives the voltage.
 	uint8_t currentValue;
 };
 
@@ -1587,11 +1587,11 @@ struct caer_bias_vdac caerBiasVDACParse(uint16_t vdacBias);
  * See 'http://inilabs.com/support/biasing/' for more details.
  */
 struct caer_bias_coarsefine {
-	// Coarse current, from 0 to 7, creates big variations in output current.
+	/// Coarse current, from 0 to 7, creates big variations in output current.
 	uint8_t coarseValue;
-	// Fine current, from 0 to 255, creates small variations in output current.
+	/// Fine current, from 0 to 255, creates small variations in output current.
 	uint8_t fineValue;
-	// Whether this bias is enabled or not.
+	/// Whether this bias is enabled or not.
 	bool enabled;
 	// Bias sex: true for 'N' type, false for 'P' type.
 	bool sexN;
@@ -1625,11 +1625,11 @@ struct caer_bias_coarsefine caerBiasCoarseFineParse(uint16_t coarseFineBias);
  * Shifted-source bias operating mode.
  */
 enum caer_bias_shiftedsource_operating_mode {
-	// Standard mode.
+	/// Standard mode.
 	SHIFTED_SOURCE = 0,
-	// High impedance (driven from outside).
+	/// High impedance (driven from outside).
 	HI_Z = 1,
-	// Tied to ground (SSN) or VDD (SSP).
+	/// Tied to ground (SSN) or VDD (SSP).
 	TIED_TO_RAIL = 2,
 };
 
@@ -1650,13 +1650,13 @@ enum caer_bias_shiftedsource_voltage_level {
  * See 'http://inilabs.com/support/biasing/' for more details.
  */
 struct caer_bias_shiftedsource {
-	// Shifted-source bias level, from 0 to 63.
+	/// Shifted-source bias level, from 0 to 63.
 	uint8_t refValue;
-	// Shifted-source bias current for buffer amplifier, from 0 to 63.
+	/// Shifted-source bias current for buffer amplifier, from 0 to 63.
 	uint8_t regValue;
-	// Shifted-source operating mode (see 'enum caer_bias_shiftedsource_operating_mode').
+	/// Shifted-source operating mode (see 'enum caer_bias_shiftedsource_operating_mode').
 	enum caer_bias_shiftedsource_operating_mode operatingMode;
-	// Shifted-source voltage level (see 'enum caer_bias_shiftedsource_voltage_level').
+	/// Shifted-source voltage level (see 'enum caer_bias_shiftedsource_voltage_level').
 	enum caer_bias_shiftedsource_voltage_level voltageLevel;
 };
 

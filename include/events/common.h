@@ -75,21 +75,21 @@ enum caer_default_event_types {
  * do not have unsigned ones, such as Java.
  */
 struct caer_event_packet_header {
-	// Numerical type ID, unique to each event type (see 'enum caer_default_event_types').
+	/// Numerical type ID, unique to each event type (see 'enum caer_default_event_types').
 	int16_t eventType;
-	// Numerical source ID, unique inside a process, identifies who generated the events.
+	/// Numerical source ID, unique inside a process, identifies who generated the events.
 	int16_t eventSource;
-	// Size of one event in bytes.
+	/// Size of one event in bytes.
 	int32_t eventSize;
-	// Offset from the start of an event, in bytes, at which the main 32 bit time-stamp can be found.
+	/// Offset from the start of an event, in bytes, at which the main 32 bit time-stamp can be found.
 	int32_t eventTSOffset;
-	// Overflow counter for the standard 32bit event time-stamp. Used to generate the 64 bit time-stamp.
+	/// Overflow counter for the standard 32bit event time-stamp. Used to generate the 64 bit time-stamp.
 	int32_t eventTSOverflow;
-	// Maximum number of events this packet can store.
+	/// Maximum number of events this packet can store.
 	int32_t eventCapacity;
-	// Total number of events present in this packet (valid + invalid).
+	/// Total number of events present in this packet (valid + invalid).
 	int32_t eventNumber;
-	// Total number of valid events present in this packet.
+	/// Total number of valid events present in this packet.
 	int32_t eventValid;
 }__attribute__((__packed__));
 

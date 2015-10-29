@@ -28,29 +28,29 @@ extern "C" {
  * unsigned integer types, such as Java.
  */
 struct caer_imu9_event {
-	// Event information. First because of valid mark.
+	/// Event information. First because of valid mark.
 	uint32_t info;
-	// Event timestamp.
+	/// Event timestamp.
 	int32_t timestamp;
-	// Acceleration in the X axis, measured in g (9.81m/s²).
+	/// Acceleration in the X axis, measured in g (9.81m/s²).
 	float accel_x;
-	// Acceleration in the Y axis, measured in g (9.81m/s²).
+	/// Acceleration in the Y axis, measured in g (9.81m/s²).
 	float accel_y;
-	// Acceleration in the Z axis, measured in g (9.81m/s²).
+	/// Acceleration in the Z axis, measured in g (9.81m/s²).
 	float accel_z;
-	// Rotation in the X axis, measured in °/s.
+	/// Rotation in the X axis, measured in °/s.
 	float gyro_x;
-	// Rotation in the Y axis, measured in °/s.
+	/// Rotation in the Y axis, measured in °/s.
 	float gyro_y;
-	// Rotation in the Z axis, measured in °/s.
+	/// Rotation in the Z axis, measured in °/s.
 	float gyro_z;
-	// Temperature, measured in °C.
+	/// Temperature, measured in °C.
 	float temp;
-	// Magnetometer X axis, measured in µT (magnetic flux density).
+	/// Magnetometer X axis, measured in µT (magnetic flux density).
 	float comp_x;
-	// Magnetometer Y axis, measured in µT (magnetic flux density).
+	/// Magnetometer Y axis, measured in µT (magnetic flux density).
 	float comp_y;
-	// Magnetometer Z axis, measured in µT (magnetic flux density).
+	/// Magnetometer Z axis, measured in µT (magnetic flux density).
 	float comp_z;
 }__attribute__((__packed__));
 
@@ -66,9 +66,9 @@ typedef struct caer_imu9_event *caerIMU9Event;
  * be in one contiguous memory block.
  */
 struct caer_imu9_event_packet {
-	// The common event packet header.
+	/// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-	// The events array.
+	/// The events array.
 	struct caer_imu9_event events[];
 }__attribute__((__packed__));
 
