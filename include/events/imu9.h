@@ -465,7 +465,7 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
  */
 #define CAER_IMU9_ITERATOR_ALL_START(IMU9_PACKET) \
 	for (int32_t caerIMU9IteratorCounter = 0; \
-		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU9_PACKET->packetHeader); \
+		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&(IMU9_PACKET)->packetHeader); \
 		caerIMU9IteratorCounter++) { \
 		caerIMU9Event caerIMU9IteratorElement = caerIMU9EventPacketGetEvent(IMU9_PACKET, caerIMU9IteratorCounter);
 
@@ -484,7 +484,7 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
  */
 #define CAER_IMU9_ITERATOR_VALID_START(IMU9_PACKET) \
 	for (int32_t caerIMU9IteratorCounter = 0; \
-		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU9_PACKET->packetHeader); \
+		caerIMU9IteratorCounter < caerEventPacketHeaderGetEventNumber(&(IMU9_PACKET)->packetHeader); \
 		caerIMU9IteratorCounter++) { \
 		caerIMU9Event caerIMU9IteratorElement = caerIMU9EventPacketGetEvent(IMU9_PACKET, caerIMU9IteratorCounter); \
 		if (!caerIMU9EventIsValid(caerIMU9IteratorElement)) { continue; } // Skip invalid IMU9 events.

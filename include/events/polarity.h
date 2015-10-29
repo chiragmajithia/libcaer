@@ -293,7 +293,7 @@ static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddr
  */
 #define CAER_POLARITY_ITERATOR_ALL_START(POLARITY_PACKET) \
 	for (int32_t caerPolarityIteratorCounter = 0; \
-		caerPolarityIteratorCounter < caerEventPacketHeaderGetEventNumber(&POLARITY_PACKET->packetHeader); \
+		caerPolarityIteratorCounter < caerEventPacketHeaderGetEventNumber(&(POLARITY_PACKET)->packetHeader); \
 		caerPolarityIteratorCounter++) { \
 		caerPolarityEvent caerPolarityIteratorElement = caerPolarityEventPacketGetEvent(POLARITY_PACKET, caerPolarityIteratorCounter);
 
@@ -312,7 +312,7 @@ static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddr
  */
 #define CAER_POLARITY_ITERATOR_VALID_START(POLARITY_PACKET) \
 	for (int32_t caerPolarityIteratorCounter = 0; \
-		caerPolarityIteratorCounter < caerEventPacketHeaderGetEventNumber(&POLARITY_PACKET->packetHeader); \
+		caerPolarityIteratorCounter < caerEventPacketHeaderGetEventNumber(&(POLARITY_PACKET)->packetHeader); \
 		caerPolarityIteratorCounter++) { \
 		caerPolarityEvent caerPolarityIteratorElement = caerPolarityEventPacketGetEvent(POLARITY_PACKET, caerPolarityIteratorCounter); \
 		if (!caerPolarityEventIsValid(caerPolarityIteratorElement)) { continue; } // Skip invalid polarity events.

@@ -280,7 +280,7 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
  */
 #define CAER_SPECIAL_ITERATOR_ALL_START(SPECIAL_PACKET) \
 	for (int32_t caerSpecialIteratorCounter = 0; \
-		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&SPECIAL_PACKET->packetHeader); \
+		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&(SPECIAL_PACKET)->packetHeader); \
 		caerSpecialIteratorCounter++) { \
 		caerSpecialEvent caerSpecialIteratorElement = caerSpecialEventPacketGetEvent(SPECIAL_PACKET, caerSpecialIteratorCounter);
 
@@ -299,7 +299,7 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
  */
 #define CAER_SPECIAL_ITERATOR_VALID_START(SPECIAL_PACKET) \
 	for (int32_t caerSpecialIteratorCounter = 0; \
-		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&SPECIAL_PACKET->packetHeader); \
+		caerSpecialIteratorCounter < caerEventPacketHeaderGetEventNumber(&(SPECIAL_PACKET)->packetHeader); \
 		caerSpecialIteratorCounter++) { \
 		caerSpecialEvent caerSpecialIteratorElement = caerSpecialEventPacketGetEvent(SPECIAL_PACKET, caerSpecialIteratorCounter); \
 		if (!caerSpecialEventIsValid(caerSpecialIteratorElement)) { continue; } // Skip invalid special events.

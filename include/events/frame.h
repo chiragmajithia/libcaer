@@ -909,7 +909,7 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
  */
 #define CAER_FRAME_ITERATOR_ALL_START(FRAME_PACKET) \
 	for (int32_t caerFrameIteratorCounter = 0; \
-		caerFrameIteratorCounter < caerEventPacketHeaderGetEventNumber(&FRAME_PACKET->packetHeader); \
+		caerFrameIteratorCounter < caerEventPacketHeaderGetEventNumber(&(FRAME_PACKET)->packetHeader); \
 		caerFrameIteratorCounter++) { \
 		caerFrameEvent caerFrameIteratorElement = caerFrameEventPacketGetEvent(FRAME_PACKET, caerFrameIteratorCounter);
 
@@ -928,7 +928,7 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
  */
 #define CAER_FRAME_ITERATOR_VALID_START(FRAME_PACKET) \
 	for (int32_t caerFrameIteratorCounter = 0; \
-		caerFrameIteratorCounter < caerEventPacketHeaderGetEventNumber(&FRAME_PACKET->packetHeader); \
+		caerFrameIteratorCounter < caerEventPacketHeaderGetEventNumber(&(FRAME_PACKET)->packetHeader); \
 		caerFrameIteratorCounter++) { \
 		caerFrameEvent caerFrameIteratorElement = caerFrameEventPacketGetEvent(FRAME_PACKET, caerFrameIteratorCounter); \
 		if (!caerFrameEventIsValid(caerFrameIteratorElement)) { continue; } // Skip invalid frame events.

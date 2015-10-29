@@ -388,7 +388,7 @@ static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
  */
 #define CAER_IMU6_ITERATOR_ALL_START(IMU6_PACKET) \
 	for (int32_t caerIMU6IteratorCounter = 0; \
-		caerIMU6IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU6_PACKET->packetHeader); \
+		caerIMU6IteratorCounter < caerEventPacketHeaderGetEventNumber(&(IMU6_PACKET)->packetHeader); \
 		caerIMU6IteratorCounter++) { \
 		caerIMU6Event caerIMU6IteratorElement = caerIMU6EventPacketGetEvent(IMU6_PACKET, caerIMU6IteratorCounter);
 
@@ -407,7 +407,7 @@ static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
  */
 #define CAER_IMU6_ITERATOR_VALID_START(IMU6_PACKET) \
 	for (int32_t caerIMU6IteratorCounter = 0; \
-		caerIMU6IteratorCounter < caerEventPacketHeaderGetEventNumber(&IMU6_PACKET->packetHeader); \
+		caerIMU6IteratorCounter < caerEventPacketHeaderGetEventNumber(&(IMU6_PACKET)->packetHeader); \
 		caerIMU6IteratorCounter++) { \
 		caerIMU6Event caerIMU6IteratorElement = caerIMU6EventPacketGetEvent(IMU6_PACKET, caerIMU6IteratorCounter); \
 		if (!caerIMU6EventIsValid(caerIMU6IteratorElement)) { continue; } // Skip invalid IMU6 events.

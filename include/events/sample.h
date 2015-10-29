@@ -269,7 +269,7 @@ static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t samp
  */
 #define CAER_SAMPLE_ITERATOR_ALL_START(SAMPLE_PACKET) \
 	for (int32_t caerSampleIteratorCounter = 0; \
-		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&SAMPLE_PACKET->packetHeader); \
+		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&(SAMPLE_PACKET)->packetHeader); \
 		caerSampleIteratorCounter++) { \
 		caerSampleEvent caerSampleIteratorElement = caerSampleEventPacketGetEvent(SAMPLE_PACKET, caerSampleIteratorCounter);
 
@@ -288,7 +288,7 @@ static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t samp
  */
 #define CAER_SAMPLE_ITERATOR_VALID_START(SAMPLE_PACKET) \
 	for (int32_t caerSampleIteratorCounter = 0; \
-		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&SAMPLE_PACKET->packetHeader); \
+		caerSampleIteratorCounter < caerEventPacketHeaderGetEventNumber(&(SAMPLE_PACKET)->packetHeader); \
 		caerSampleIteratorCounter++) { \
 		caerSampleEvent caerSampleIteratorElement = caerSampleEventPacketGetEvent(SAMPLE_PACKET, caerSampleIteratorCounter); \
 		if (!caerSampleEventIsValid(caerSampleIteratorElement)) { continue; } // Skip invalid sample events.
