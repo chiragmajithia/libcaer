@@ -91,7 +91,7 @@ caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int
 /**
  * Get the special event at the given index from the event packet.
  *
- * @param packet a valid special EventPacket pointer. Cannot be NULL.
+ * @param packet a valid SpecialEventPacket pointer. Cannot be NULL.
  * @param n the index of the returned event. Must be within [0,eventCapacity[ bounds.
  *
  * @return the requested special event. NULL on error.
@@ -111,16 +111,43 @@ static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPa
 	return (packet->events + n);
 }
 
+/**
+ * Get the 32bit event timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond timestamp.
+ */
 static inline int32_t caerSpecialEventGetTimestamp(caerSpecialEvent event) {
 	return (le32toh(event->timestamp));
 }
 
+/**
+ * Get the 64bit event timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param packet the SpecialEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond timestamp.
+ */
 static inline int64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, caerSpecialEventPacket packet) {
 	return (I64T(
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerSpecialEventGetTimestamp(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit event timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t timestamp) {
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!

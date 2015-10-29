@@ -89,21 +89,35 @@ struct caer_frame_event_packet {
 typedef struct caer_frame_event_packet *caerFrameEventPacket;
 
 /**
+ * Allocate a new frame events packet.
+ * Use free() to reclaim this memory.
+ * The frame events allocate memory for a maximum sized pixel array, depending
+ * on the parameters passed to this function, so that every event occupies the
+ * same amount of memory (constant size). The actual frames inside of it
+ * might be smaller than that, for example when using ROI, and their actual size
+ * is stored inside the frame event and should always be queried from there.
+ * The unused part of a pixel array is guaranteed to be zeros.
  *
- * The source for this function is available in src/events.c.
+ * @param eventCapacity the maximum number of events this packet will hold.
+ * @param eventSource the unique ID representing the source/generator of this packet.
+ * @param tsOverflow the current timestamp overflow counter value for this packet.
+ * @param maxLengthX the maximum expected X axis size for frames in this packet.
+ * @param maxLengthY the maximum expected Y axis size for frames in this packet.
+ * @param maxChannelNumber the maximum expected number of channels for frames in this packet.
  *
- * @param eventCapacity
- * @param eventSource
- * @param tsOverflow
- * @param maxLengthX
- * @param maxLengthY
- * @param maxChannelNumber
- *
- * @return
+ * @return a valid FrameEventPacket handle or NULL on error.
  */
 caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow,
 	int32_t maxLengthX, int32_t maxLengthY, int16_t maxChannelNumber);
 
+/**
+ * Get the frame event at the given index from the event packet.
+ *
+ * @param packet a valid FrameEventPacket pointer. Cannot be NULL.
+ * @param n the index of the returned event. Must be within [0,eventCapacity[ bounds.
+ *
+ * @return the requested frame event. NULL on error.
+ */
 static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
@@ -120,10 +134,32 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 		+ (CAER_EVENT_PACKET_HEADER_SIZE + U64T(n * caerEventPacketHeaderGetEventSize(&packet->packetHeader)))));
 }
 
+/**
+ * Get the 32bit start of frame timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond start of frame timestamp.
+ */
 static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_startframe));
 }
 
+/**
+ * Get the 64bit start of frame timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond start of frame timestamp.
+ */
 static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
@@ -131,7 +167,12 @@ static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, ca
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSStartOfFrame(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit start of frame timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t startFrame) {
 	if (startFrame < 0) {
 		// Negative means using the 31st bit!
@@ -144,10 +185,32 @@ static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t
 	event->ts_startframe = htole32(startFrame);
 }
 
+/**
+ * Get the 32bit end of frame timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond end of frame timestamp.
+ */
 static inline int32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 	return (le32toh(event->ts_endframe));
 }
 
+/**
+ * Get the 64bit end of frame timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond end of frame timestamp.
+ */
 static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
@@ -155,7 +218,12 @@ static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caer
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSEndOfFrame(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit end of frame timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, int32_t endFrame) {
 	if (endFrame < 0) {
 		// Negative means using the 31st bit!
@@ -168,10 +236,32 @@ static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, int32_t e
 	event->ts_endframe = htole32(endFrame);
 }
 
+/**
+ * Get the 32bit start of exposure timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond start of exposure timestamp.
+ */
 static inline int32_t caerFrameEventGetTSStartOfExposure(caerFrameEvent event) {
 	return (le32toh(event->ts_startexposure));
 }
 
+/**
+ * Get the 64bit start of exposure timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond start of exposure timestamp.
+ */
 static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
@@ -179,7 +269,12 @@ static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event,
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSStartOfExposure(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit start of exposure timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int32_t startExposure) {
 	if (startExposure < 0) {
 		// Negative means using the 31st bit!
@@ -192,10 +287,32 @@ static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int3
 	event->ts_startexposure = htole32(startExposure);
 }
 
+/**
+ * Get the 32bit end of exposure timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond end of exposure timestamp.
+ */
 static inline int32_t caerFrameEventGetTSEndOfExposure(caerFrameEvent event) {
 	return (le32toh(event->ts_endexposure));
 }
 
+/**
+ * Get the 64bit end of exposure timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond end of exposure timestamp.
+ */
 static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.
@@ -203,7 +320,12 @@ static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, c
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerFrameEventGetTSEndOfExposure(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit end of exposure timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_t endExposure) {
 	if (endExposure < 0) {
 		// Negative means using the 31st bit!
@@ -216,17 +338,45 @@ static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_
 	event->ts_endexposure = htole32(endExposure);
 }
 
-// Exposure total length.
+/**
+ * The total length, in microseconds, of the frame exposure time.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return the exposure time in microseconds.
+ */
 static inline int32_t caerFrameEventGetExposureLength(caerFrameEvent event) {
 	return (caerFrameEventGetTSEndOfExposure(event) - caerFrameEventGetTSStartOfExposure(event));
 }
 
-// Median of exposure timestamp.
+/**
+ * Get the 32bit event timestamp, in microseconds.
+ * This is a median of the exposure timestamps.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond timestamp.
+ */
 static inline int32_t caerFrameEventGetTimestamp(caerFrameEvent event) {
 	return (caerFrameEventGetTSStartOfExposure(event) + (caerFrameEventGetExposureLength(event) / 2));
 }
 
-// Median of exposure timestamp (64bit).
+/**
+ * Get the 64bit event timestamp, in microseconds.
+ * This is a median of the exposure timestamps.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond timestamp.
+ */
 static inline int64_t caerFrameEventGetTimestamp64(caerFrameEvent event, caerFrameEventPacket packet) {
 	// Even if frames have multiple time-stamps, it's not possible for later time-stamps to
 	// be in a different TSOverflow period, since in those rare cases the event is dropped.

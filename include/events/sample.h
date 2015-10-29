@@ -65,8 +65,26 @@ struct caer_sample_event_packet {
  */
 typedef struct caer_sample_event_packet *caerSampleEventPacket;
 
+/**
+ * Allocate a new ADC sample events packet.
+ * Use free() to reclaim this memory.
+ *
+ * @param eventCapacity the maximum number of events this packet will hold.
+ * @param eventSource the unique ID representing the source/generator of this packet.
+ * @param tsOverflow the current timestamp overflow counter value for this packet.
+ *
+ * @return a valid SampleEventPacket handle or NULL on error.
+ */
 caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow);
 
+/**
+ * Get the ADC sample event at the given index from the event packet.
+ *
+ * @param packet a valid SampleEventPacket pointer. Cannot be NULL.
+ * @param n the index of the returned event. Must be within [0,eventCapacity[ bounds.
+ *
+ * @return the requested ADC sample event. NULL on error.
+ */
 static inline caerSampleEvent caerSampleEventPacketGetEvent(caerSampleEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
@@ -82,16 +100,43 @@ static inline caerSampleEvent caerSampleEventPacketGetEvent(caerSampleEventPacke
 	return (packet->events + n);
 }
 
+/**
+ * Get the 32bit event timestamp, in microseconds.
+ * Be aware that this wraps around! You can either ignore this fact,
+ * or handle the special 'TIMESTAMP_WRAP' event that is generated when
+ * this happens, or use the 64bit timestamp which never wraps around.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ *
+ * @return this event's 32bit microsecond timestamp.
+ */
 static inline int32_t caerSampleEventGetTimestamp(caerSampleEvent event) {
 	return (le32toh(event->timestamp));
 }
 
+/**
+ * Get the 64bit event timestamp, in microseconds.
+ * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
+ * for more details on the 64bit timestamp.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ * @param packet the SampleEventPacket pointer for the packet containing this event. Cannot be NULL.
+ *
+ * @return this event's 64bit microsecond timestamp.
+ */
 static inline int64_t caerSampleEventGetTimestamp64(caerSampleEvent event, caerSampleEventPacket packet) {
 	return (I64T(
 		(U64T(caerEventPacketHeaderGetEventTSOverflow(&packet->packetHeader)) << TS_OVERFLOW_SHIFT) | U64T(caerSampleEventGetTimestamp(event))));
 }
 
-// Limit Timestamp to 31 bits for compatibility with languages that have no unsigned integer (Java).
+/**
+ * Set the 32bit event timestamp, the value has to be in microseconds.
+ *
+ * @param event a valid SampleEvent pointer. Cannot be NULL.
+ * @param timestamp a positive 32bit microsecond timestamp.
+ */
 static inline void caerSampleEventSetTimestamp(caerSampleEvent event, int32_t timestamp) {
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
