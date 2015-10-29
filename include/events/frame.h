@@ -383,10 +383,27 @@ static inline int64_t caerFrameEventGetTimestamp64(caerFrameEvent event, caerFra
 	return (caerFrameEventGetTSStartOfExposure64(event, packet) + (caerFrameEventGetExposureLength(event) / 2));
 }
 
+/**
+ * Check if this frame event is valid.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return true if valid, false if not.
+ */
 static inline bool caerFrameEventIsValid(caerFrameEvent event) {
 	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
 
+/**
+ * Validate the current event by setting its valid bit to true
+ * and increasing the event packet's event count and valid
+ * event count. Only works on events that are invalid.
+ * DO NOT CALL THIS AFTER HAVING PREVIOUSLY ALREADY
+ * INVALIDATED THIS EVENT, the total count will be incorrect.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerFrameEventValidate(caerFrameEvent event, caerFrameEventPacket packet) {
 	if (!caerFrameEventIsValid(event)) {
 		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
@@ -405,6 +422,15 @@ static inline void caerFrameEventValidate(caerFrameEvent event, caerFrameEventPa
 	}
 }
 
+/**
+ * Invalidate the current event by setting its valid bit
+ * to false and decreasing the number of valid events held
+ * in the packet. Only works with events that are already
+ * valid!
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEventPacket packet) {
 	if (caerFrameEventIsValid(event)) {
 		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));

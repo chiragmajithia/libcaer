@@ -153,10 +153,27 @@ static inline void caerIMU6EventSetTimestamp(caerIMU6Event event, int32_t timest
 	event->timestamp = htole32(timestamp);
 }
 
+/**
+ * Check if this IMU 6-axes event is valid.
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ *
+ * @return true if valid, false if not.
+ */
 static inline bool caerIMU6EventIsValid(caerIMU6Event event) {
 	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
 
+/**
+ * Validate the current event by setting its valid bit to true
+ * and increasing the event packet's event count and valid
+ * event count. Only works on events that are invalid.
+ * DO NOT CALL THIS AFTER HAVING PREVIOUSLY ALREADY
+ * INVALIDATED THIS EVENT, the total count will be incorrect.
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param packet the IMU6EventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerIMU6EventValidate(caerIMU6Event event, caerIMU6EventPacket packet) {
 	if (!caerIMU6EventIsValid(event)) {
 		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
@@ -175,6 +192,15 @@ static inline void caerIMU6EventValidate(caerIMU6Event event, caerIMU6EventPacke
 	}
 }
 
+/**
+ * Invalidate the current event by setting its valid bit
+ * to false and decreasing the number of valid events held
+ * in the packet. Only works with events that are already
+ * valid!
+ *
+ * @param event a valid IMU6Event pointer. Cannot be NULL.
+ * @param packet the IMU6EventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerIMU6EventInvalidate(caerIMU6Event event, caerIMU6EventPacket packet) {
 	if (caerIMU6EventIsValid(event)) {
 		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));

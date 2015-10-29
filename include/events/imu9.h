@@ -161,10 +161,27 @@ static inline void caerIMU9EventSetTimestamp(caerIMU9Event event, int32_t timest
 	event->timestamp = htole32(timestamp);
 }
 
+/**
+ * Check if this IMU 9-axes event is valid.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ *
+ * @return true if valid, false if not.
+ */
 static inline bool caerIMU9EventIsValid(caerIMU9Event event) {
 	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
 
+/**
+ * Validate the current event by setting its valid bit to true
+ * and increasing the event packet's event count and valid
+ * event count. Only works on events that are invalid.
+ * DO NOT CALL THIS AFTER HAVING PREVIOUSLY ALREADY
+ * INVALIDATED THIS EVENT, the total count will be incorrect.
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param packet the IMU9EventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (!caerIMU9EventIsValid(event)) {
 		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
@@ -183,6 +200,15 @@ static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacke
 	}
 }
 
+/**
+ * Invalidate the current event by setting its valid bit
+ * to false and decreasing the number of valid events held
+ * in the packet. Only works with events that are already
+ * valid!
+ *
+ * @param event a valid IMU9Event pointer. Cannot be NULL.
+ * @param packet the IMU9EventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (caerIMU9EventIsValid(event)) {
 		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));

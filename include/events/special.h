@@ -160,10 +160,27 @@ static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t 
 	event->timestamp = htole32(timestamp);
 }
 
+/**
+ * Check if this special event is valid.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ *
+ * @return true if valid, false if not.
+ */
 static inline bool caerSpecialEventIsValid(caerSpecialEvent event) {
 	return ((le32toh(event->data) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
 }
 
+/**
+ * Validate the current event by setting its valid bit to true
+ * and increasing the event packet's event count and valid
+ * event count. Only works on events that are invalid.
+ * DO NOT CALL THIS AFTER HAVING PREVIOUSLY ALREADY
+ * INVALIDATED THIS EVENT, the total count will be incorrect.
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param packet the SpecialEventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialEventPacket packet) {
 	if (!caerSpecialEventIsValid(event)) {
 		event->data |= htole32(U32T(1) << VALID_MARK_SHIFT);
@@ -182,6 +199,15 @@ static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialE
 	}
 }
 
+/**
+ * Invalidate the current event by setting its valid bit
+ * to false and decreasing the number of valid events held
+ * in the packet. Only works with events that are already
+ * valid!
+ *
+ * @param event a valid SpecialEvent pointer. Cannot be NULL.
+ * @param packet the SpecialEventPacket pointer for the packet containing this event. Cannot be NULL.
+ */
 static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecialEventPacket packet) {
 	if (caerSpecialEventIsValid(event)) {
 		event->data &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
