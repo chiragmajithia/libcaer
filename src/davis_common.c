@@ -2090,7 +2090,8 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->apsCurrentResetFrame = calloc((size_t) state->apsSizeX * state->apsSizeY * APS_ADC_CHANNELS, sizeof(uint16_t));
+	state->apsCurrentResetFrame = calloc((size_t) state->apsSizeX * state->apsSizeY * APS_ADC_CHANNELS,
+		sizeof(uint16_t));
 	if (state->currentIMU6Packet == NULL) {
 		freeAllDataMemory(state);
 
@@ -3111,10 +3112,28 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						if (IS_DAVISRGB(handle->info.chipID) && state->apsGlobalShutter) {
 							// DAVIS RGB GS has inverted samples, signal read comes first
 							// and was stored above inside state->apsCurrentResetFrame.
+#if APS_DEBUG_FRAME == 1
+							// Reset read only.
+							pixelValue = (data);
+#elif APS_DEBUG_FRAME == 2
+							// Signal read only.
+							pixelValue = (state->apsCurrentResetFrame[pixelPosition]);
+#else
+							// Both/CDS done.
 							pixelValue = (data - state->apsCurrentResetFrame[pixelPosition]);
+#endif
 						}
 						else {
+#if APS_DEBUG_FRAME == 1
+							// Reset read only.
+							pixelValue = (state->apsCurrentResetFrame[pixelPosition]);
+#elif APS_DEBUG_FRAME == 2
+							// Signal read only.
+							pixelValue = (data);
+#else
+							// Both/CDS done.
 							pixelValue = (state->apsCurrentResetFrame[pixelPosition] - data);
+#endif
 						}
 
 						// Normalize the ADC value to 16bit generic depth and check for underflow.

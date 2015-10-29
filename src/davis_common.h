@@ -14,8 +14,15 @@
 #define APS_READOUT_RESET  0
 #define APS_READOUT_SIGNAL 1
 
+/**
+ * Enable APS frame debugging by only looking at the reset or signal
+ * frames, and not at the resulting correlated frame.
+ * Supported values:
+ * 0 - both/CDS (default)
+ * 1 - reset read only
+ * 2 - signal read only
+ */
 #define APS_DEBUG_FRAME 0
-// Use 1 for reset frame only, 2 for signal frame only
 
 #define APS_ADC_DEPTH 10
 
