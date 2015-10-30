@@ -25,7 +25,9 @@ extern "C" {
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
-#include <endian.h>
+
+// Use portable endian conversion functions.
+#include "portable_endian.h"
 
 // Include libcaer's log headers always.
 #include "log.h"
