@@ -1,3 +1,10 @@
+/**
+ * @file portable_endian.h
+ *
+ * Endianness conversion functions for a wide variety of systems,
+ * including Linux, FreeBSD, MacOS X and Windows.
+ */
+
 // "License": Public Domain
 // I, Mathias Panzenböck, place this file hereby into the public domain. Use it at your own risk for whatever you like.
 // In case there are jurisdictions that don't support putting things in the public domain you can also consider it to
