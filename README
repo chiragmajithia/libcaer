@@ -29,7 +29,7 @@ $ make install
 
 DOCUMENTATION:
 
-The API documentation for a release can be found at docs/api_doc.pdf.
+The API documentation for a release can be found at docs/libcaer_api_manual.pdf.
 Also check the examples/ directory and the iniLabs Support website.
 
 For the development tree, you can generate the documentation using:
