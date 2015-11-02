@@ -29,8 +29,10 @@ extern "C" {
  * Care must be taken to put the field containing the validity
  * mark always as the first member of an event.
  */
+//@{
 #define VALID_MARK_SHIFT 0
 #define VALID_MARK_MASK 0x00000001
+//@}
 
 /**
  * 64bit timestamp support:

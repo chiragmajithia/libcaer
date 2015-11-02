@@ -1593,11 +1593,11 @@ struct caer_bias_coarsefine {
 	uint8_t fineValue;
 	/// Whether this bias is enabled or not.
 	bool enabled;
-	// Bias sex: true for 'N' type, false for 'P' type.
+	/// Bias sex: true for 'N' type, false for 'P' type.
 	bool sexN;
-	// Bias type: true for 'Normal', false for 'Cascode'.
+	/// Bias type: true for 'Normal', false for 'Cascode'.
 	bool typeNormal;
-	// Bias current level: true for 'Normal, false for 'Low'.
+	/// Bias current level: true for 'Normal, false for 'Low'.
 	bool currentLevelNormal;
 };
 
@@ -1637,11 +1637,11 @@ enum caer_bias_shiftedsource_operating_mode {
  * Shifted-source bias voltage level.
  */
 enum caer_bias_shiftedsource_voltage_level {
-	// Standard mode (200-400mV).
+	/// Standard mode (200-400mV).
 	SPLIT_GATE = 0,
-	// Higher shifted-source voltage (one cascode).
+	/// Higher shifted-source voltage (one cascode).
 	SINGLE_DIODE = 1,
-	// Even higher shifted-source voltage (two cascodes).
+	/// Even higher shifted-source voltage (two cascodes).
 	DOUBLE_DIODE = 2,
 };
 

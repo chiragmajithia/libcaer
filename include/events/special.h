@@ -21,10 +21,12 @@ extern "C" {
  * Up to 128 types, with 24 bits of data each, are possible.
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
+//@{
 #define TYPE_SHIFT 1
 #define TYPE_MASK 0x0000007F
 #define DATA_SHIFT 8
 #define DATA_MASK 0x00FFFFFF
+//@}
 
 /**
  * List of all special event type identifiers.

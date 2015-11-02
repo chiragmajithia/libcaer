@@ -24,10 +24,12 @@ extern "C" {
  * Also, up to 128 different Regions of Interest (ROI) can be tracked.
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
+//@{
 #define CHANNEL_NUMBER_SHIFT 1
 #define CHANNEL_NUMBER_MASK 0x0000003F
 #define ROI_IDENTIFIER_SHIFT 7
 #define ROI_IDENTIFIER_MASK 0x0000007F
+//@}
 
 /**
  * Frame event data structure definition.
@@ -171,7 +173,7 @@ static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, ca
  * Set the 32bit start of frame timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
- * @param timestamp a positive 32bit microsecond timestamp.
+ * @param startFrame a positive 32bit microsecond timestamp.
  */
 static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t startFrame) {
 	if (startFrame < 0) {
@@ -222,7 +224,7 @@ static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caer
  * Set the 32bit end of frame timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
- * @param timestamp a positive 32bit microsecond timestamp.
+ * @param endFrame a positive 32bit microsecond timestamp.
  */
 static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, int32_t endFrame) {
 	if (endFrame < 0) {
@@ -273,7 +275,7 @@ static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event,
  * Set the 32bit start of exposure timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
- * @param timestamp a positive 32bit microsecond timestamp.
+ * @param startExposure a positive 32bit microsecond timestamp.
  */
 static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int32_t startExposure) {
 	if (startExposure < 0) {
@@ -324,7 +326,7 @@ static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, c
  * Set the 32bit end of exposure timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
- * @param timestamp a positive 32bit microsecond timestamp.
+ * @param endExposure a positive 32bit microsecond timestamp.
  */
 static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_t endExposure) {
 	if (endExposure < 0) {

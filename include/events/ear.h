@@ -23,6 +23,7 @@ extern "C" {
  * (up to 2048), the ganglion (up to 256) and the filter (up to 256).
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
+//@{
 #define EAR_SHIFT 1
 #define EAR_MASK 0x0000000F
 #define CHANNEL_SHIFT 5
@@ -31,6 +32,7 @@ extern "C" {
 #define NEURON_MASK 0x000000FF
 #define FILTER_SHIFT 24
 #define FILTER_MASK 0x000000FF
+//@}
 
 /**
  * Ear (cochlea) event data structure definition.

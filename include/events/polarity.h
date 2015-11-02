@@ -22,12 +22,14 @@ extern "C" {
  * Addresses up to 15 bit are supported. Polarity is ON(=1) or OFF(=0).
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
+//@{
 #define POLARITY_SHIFT 1
 #define POLARITY_MASK 0x00000001
 #define Y_ADDR_SHIFT 2
 #define Y_ADDR_MASK 0x00007FFF
 #define X_ADDR_SHIFT 17
 #define X_ADDR_MASK 0x00007FFF
+//@}
 
 /**
  * Polarity event data structure definition.

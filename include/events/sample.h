@@ -22,10 +22,12 @@ extern "C" {
  * data per sample.
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
+//@{
 #define SAMPLE_TYPE_SHIFT 1
 #define SAMPLE_TYPE_MASK 0x0000007F
 #define SAMPLE_SHIFT 8
 #define SAMPLE_MASK 0x00FFFFFF
+//@}
 
 /**
  * ADC sample event data structure definition.
