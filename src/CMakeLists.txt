@@ -1,7 +1,9 @@
 file(GLOB_RECURSE LIBCAER_SRC_FILES *.c)
 
-# Add --as-needed to linker flags for library.
-SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
+IF (UNIX AND NOT APPLE)
+	# Add --as-needed to linker flags for library.
+	SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
+ENDIF()
 
 ADD_LIBRARY(caer SHARED ${LIBCAER_SRC_FILES})
 
