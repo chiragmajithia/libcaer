@@ -6,8 +6,9 @@
  */
 
 #include "ringbuffer.h"
+#include "portable_aligned_alloc.h"
 #include <stdatomic.h>
-#include <stdalign.h>
+#include <stdalign.h> // To get alignas() macro.
 
 // Alignment specification support (with defines for cache line alignment).
 #undef CACHELINE_ALIGNED
@@ -34,7 +35,8 @@ RingBuffer ringBufferInit(size_t size) {
 		return (NULL);
 	}
 
-	RingBuffer rBuf = aligned_alloc(CACHELINE_SIZE, sizeof(struct ring_buffer) + (size * sizeof(atomic_uintptr_t)));
+	RingBuffer rBuf = portable_aligned_alloc(CACHELINE_SIZE,
+		sizeof(struct ring_buffer) + (size * sizeof(atomic_uintptr_t)));
 	if (rBuf == NULL) {
 		return (NULL);
 	}
