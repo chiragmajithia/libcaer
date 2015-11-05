@@ -9,3 +9,4 @@ Version: @PROJECT_VERSION_NOREV@
 Requires.private: libusb-1.0 >= 1.0.17
 Libs: -L${libdir} -lcaer
 Libs.private: @PRIVATE_LIBS@
+Cflags: -I${includedir}
