@@ -334,13 +334,13 @@ struct caer_davis_info caerDavisInfoGet(caerDeviceHandle cdh) {
 
 	// Check if the pointer is valid.
 	if (handle == NULL) {
-		struct caer_davis_info emptyInfo = { 0 };
+		struct caer_davis_info emptyInfo = { 0, .deviceString = NULL };
 		return (emptyInfo);
 	}
 
 	// Check if device type is supported.
 	if (handle->deviceType != CAER_DEVICE_DAVIS_FX2 && handle->deviceType != CAER_DEVICE_DAVIS_FX3) {
-		struct caer_davis_info emptyInfo = { 0 };
+		struct caer_davis_info emptyInfo = { 0, .deviceString = NULL };
 		return (emptyInfo);
 	}
 

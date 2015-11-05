@@ -1,8 +1,8 @@
 #ifndef PORTABLE_ALIGNED_ALLOC_H_
 #define PORTABLE_ALIGNED_ALLOC_H_
 
-#if (__STDC_VERSION__ >= 201112L || defined(_ISOC11_SOURCE))
-	#include <stdalign.h>
+#if (!defined(__APPLE__) && (__STDC_VERSION__ >= 201112L || defined(_ISOC11_SOURCE)))
+	#include <stdlib.h>
 
 	static inline void *portable_aligned_alloc(size_t alignment, size_t size) {
 		return (aligned_alloc(alignment, size));

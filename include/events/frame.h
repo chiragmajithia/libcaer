@@ -753,7 +753,7 @@ static inline uint16_t caerFrameEventGetPixelForChannel(caerFrameEvent event, in
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixelForChannel() with invalid channel number of %" PRIu8 ", should be between 0 and %" PRIu8 ".",
-			channel, channelNumber - 1);
+			channel, (uint8_t) (channelNumber - 1));
 #endif
 		return (0);
 	}
@@ -804,7 +804,7 @@ static inline void caerFrameEventSetPixelForChannel(caerFrameEvent event, int32_
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixelForChannel() with invalid channel number of %" PRIu8 ", should be between 0 and %" PRIu8 ".",
-			channel, channelNumber - 1);
+			channel, (uint8_t) (channelNumber - 1));
 #endif
 		return;
 	}
