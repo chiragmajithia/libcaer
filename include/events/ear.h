@@ -298,7 +298,7 @@ static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
  * 'int32_t' and the current event in the 'caerEarIteratorElement' variable
  * of type caerEarEvent.
  *
- * PACKED_HEADER: a valid EarEventPacket pointer. Cannot be NULL.
+ * EAR_PACKET: a valid EarEventPacket pointer. Cannot be NULL.
  */
 #define CAER_EAR_ITERATOR_ALL_START(EAR_PACKET) \
 	for (int32_t caerEarIteratorCounter = 0; \
@@ -317,7 +317,7 @@ static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
  * 'int32_t' and the current event in the 'caerEarIteratorElement' variable
  * of type caerEarEvent.
  *
- * PACKED_HEADER: a valid EarEventPacket pointer. Cannot be NULL.
+ * EAR_PACKET: a valid EarEventPacket pointer. Cannot be NULL.
  */
 #define CAER_EAR_ITERATOR_VALID_START(EAR_PACKET) \
 	for (int32_t caerEarIteratorCounter = 0; \

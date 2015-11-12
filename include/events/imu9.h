@@ -461,7 +461,7 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
  * 'int32_t' and the current event in the 'caerIMU9IteratorElement' variable
  * of type caerIMU9Event.
  *
- * PACKED_HEADER: a valid IMU9EventPacket pointer. Cannot be NULL.
+ * IMU9_PACKET: a valid IMU9EventPacket pointer. Cannot be NULL.
  */
 #define CAER_IMU9_ITERATOR_ALL_START(IMU9_PACKET) \
 	for (int32_t caerIMU9IteratorCounter = 0; \
@@ -480,7 +480,7 @@ static inline void caerIMU9EventSetCompZ(caerIMU9Event event, float compZ) {
  * 'int32_t' and the current event in the 'caerIMU9IteratorElement' variable
  * of type caerIMU9Event.
  *
- * PACKED_HEADER: a valid IMU9EventPacket pointer. Cannot be NULL.
+ * IMU9_PACKET: a valid IMU9EventPacket pointer. Cannot be NULL.
  */
 #define CAER_IMU9_ITERATOR_VALID_START(IMU9_PACKET) \
 	for (int32_t caerIMU9IteratorCounter = 0; \

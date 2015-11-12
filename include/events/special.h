@@ -278,7 +278,7 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
  * 'int32_t' and the current event in the 'caerSpecialIteratorElement' variable
  * of type caerSpecialEvent.
  *
- * PACKED_HEADER: a valid SpecialEventPacket pointer. Cannot be NULL.
+ * SPECIAL_PACKET: a valid SpecialEventPacket pointer. Cannot be NULL.
  */
 #define CAER_SPECIAL_ITERATOR_ALL_START(SPECIAL_PACKET) \
 	for (int32_t caerSpecialIteratorCounter = 0; \
@@ -297,7 +297,7 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
  * 'int32_t' and the current event in the 'caerSpecialIteratorElement' variable
  * of type caerSpecialEvent.
  *
- * PACKED_HEADER: a valid SpecialEventPacket pointer. Cannot be NULL.
+ * SPECIAL_PACKET: a valid SpecialEventPacket pointer. Cannot be NULL.
  */
 #define CAER_SPECIAL_ITERATOR_VALID_START(SPECIAL_PACKET) \
 	for (int32_t caerSpecialIteratorCounter = 0; \

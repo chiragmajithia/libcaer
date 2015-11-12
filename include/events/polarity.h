@@ -4,7 +4,8 @@
  * Polarity Events format definition and handling functions.
  * This event contains change information, with an X/Y address
  * and an ON/OFF polarity.
- * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * The (0, 0) address is in the lower left corner of the screen,
+ * like in OpenGL.
  */
 
 #ifndef LIBCAER_EVENTS_POLARITY_H_
@@ -35,7 +36,8 @@ extern "C" {
  * Polarity event data structure definition.
  * This contains the actual X/Y addresses, the polarity, as
  * well as the 32 bit event timestamp.
- * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * The (0, 0) address is in the lower left corner of the screen,
+ * like in OpenGL.
  * Signed integers are used for fields that are to be interpreted
  * directly, for compatibility with languages that do not have
  * unsigned integer types, such as Java.
@@ -291,7 +293,7 @@ static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddr
  * 'int32_t' and the current event in the 'caerPolarityIteratorElement' variable
  * of type caerPolarityEvent.
  *
- * PACKED_HEADER: a valid PolarityEventPacket pointer. Cannot be NULL.
+ * POLARITY_PACKET: a valid PolarityEventPacket pointer. Cannot be NULL.
  */
 #define CAER_POLARITY_ITERATOR_ALL_START(POLARITY_PACKET) \
 	for (int32_t caerPolarityIteratorCounter = 0; \
@@ -310,7 +312,7 @@ static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddr
  * 'int32_t' and the current event in the 'caerPolarityIteratorElement' variable
  * of type caerPolarityEvent.
  *
- * PACKED_HEADER: a valid PolarityEventPacket pointer. Cannot be NULL.
+ * POLARITY_PACKET: a valid PolarityEventPacket pointer. Cannot be NULL.
  */
 #define CAER_POLARITY_ITERATOR_VALID_START(POLARITY_PACKET) \
 	for (int32_t caerPolarityIteratorCounter = 0; \

@@ -451,7 +451,7 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
  * 'int32_t' and the current event in the 'caerIteratorElement' variable
  * of type EVENT_TYPE.
  *
- * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
+ * PACKET_HEADER: a valid EventPacket header pointer. Cannot be NULL.
  * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
  */
 #define CAER_ITERATOR_ALL_START(PACKET_HEADER, EVENT_TYPE) \
@@ -471,7 +471,7 @@ static inline bool caerGenericEventIsValid(void *eventPtr) {
  * 'int32_t' and the current event in the 'caerIteratorElement' variable
  * of type EVENT_TYPE.
  *
- * PACKED_HEADER: a valid EventPacket header pointer. Cannot be NULL.
+ * PACKET_HEADER: a valid EventPacket header pointer. Cannot be NULL.
  * EVENT_TYPE: the event pointer type for this EventPacket (ie. caerPolarityEvent or caerFrameEvent).
  */
 #define CAER_ITERATOR_VALID_START(PACKET_HEADER, EVENT_TYPE) \

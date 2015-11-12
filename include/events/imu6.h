@@ -384,7 +384,7 @@ static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
  * 'int32_t' and the current event in the 'caerIMU6IteratorElement' variable
  * of type caerIMU6Event.
  *
- * PACKED_HEADER: a valid IMU6EventPacket pointer. Cannot be NULL.
+ * IMU6_PACKET: a valid IMU6EventPacket pointer. Cannot be NULL.
  */
 #define CAER_IMU6_ITERATOR_ALL_START(IMU6_PACKET) \
 	for (int32_t caerIMU6IteratorCounter = 0; \
@@ -403,7 +403,7 @@ static inline void caerIMU6EventSetTemp(caerIMU6Event event, float temp) {
  * 'int32_t' and the current event in the 'caerIMU6IteratorElement' variable
  * of type caerIMU6Event.
  *
- * PACKED_HEADER: a valid IMU6EventPacket pointer. Cannot be NULL.
+ * IMU6_PACKET: a valid IMU6EventPacket pointer. Cannot be NULL.
  */
 #define CAER_IMU6_ITERATOR_VALID_START(IMU6_PACKET) \
 	for (int32_t caerIMU6IteratorCounter = 0; \

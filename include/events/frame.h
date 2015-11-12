@@ -5,7 +5,8 @@
  * This event type encodes intensity frames, like you would
  * get from a normal APS camera. It supports multiple channels
  * for color, as well as multiple Regions of Interest (ROI).
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the lower left corner of the screen,
+ * like in OpenGL.
  */
 
 #ifndef LIBCAER_EVENTS_FRAME_H_
@@ -907,7 +908,7 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
  * 'int32_t' and the current event in the 'caerFrameIteratorElement' variable
  * of type caerFrameEvent.
  *
- * PACKED_HEADER: a valid FrameEventPacket pointer. Cannot be NULL.
+ * FRAME_PACKET: a valid FrameEventPacket pointer. Cannot be NULL.
  */
 #define CAER_FRAME_ITERATOR_ALL_START(FRAME_PACKET) \
 	for (int32_t caerFrameIteratorCounter = 0; \
@@ -926,7 +927,7 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
  * 'int32_t' and the current event in the 'caerFrameIteratorElement' variable
  * of type caerFrameEvent.
  *
- * PACKED_HEADER: a valid FrameEventPacket pointer. Cannot be NULL.
+ * FRAME_PACKET: a valid FrameEventPacket pointer. Cannot be NULL.
  */
 #define CAER_FRAME_ITERATOR_VALID_START(FRAME_PACKET) \
 	for (int32_t caerFrameIteratorCounter = 0; \

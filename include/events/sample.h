@@ -267,7 +267,7 @@ static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t samp
  * 'int32_t' and the current event in the 'caerSampleIteratorElement' variable
  * of type caerSampleEvent.
  *
- * PACKED_HEADER: a valid SampleEventPacket pointer. Cannot be NULL.
+ * SAMPLE_PACKET: a valid SampleEventPacket pointer. Cannot be NULL.
  */
 #define CAER_SAMPLE_ITERATOR_ALL_START(SAMPLE_PACKET) \
 	for (int32_t caerSampleIteratorCounter = 0; \
@@ -286,7 +286,7 @@ static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t samp
  * 'int32_t' and the current event in the 'caerSampleIteratorElement' variable
  * of type caerSampleEvent.
  *
- * PACKED_HEADER: a valid SampleEventPacket pointer. Cannot be NULL.
+ * SAMPLE_PACKET: a valid SampleEventPacket pointer. Cannot be NULL.
  */
 #define CAER_SAMPLE_ITERATOR_VALID_START(SAMPLE_PACKET) \
 	for (int32_t caerSampleIteratorCounter = 0; \
