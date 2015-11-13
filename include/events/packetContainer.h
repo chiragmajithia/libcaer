@@ -121,7 +121,7 @@ static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerE
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerGetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
-			n, caerEventPacketContainerGetEventPacketsNumber(container));
+			n, caerEventPacketContainerGetEventPacketsNumber(container) - 1);
 #endif
 		return (NULL);
 	}
@@ -150,7 +150,7 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerSetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
-			n, caerEventPacketContainerGetEventPacketsNumber(container));
+			n, caerEventPacketContainerGetEventPacketsNumber(container) - 1);
 #endif
 		return;
 	}

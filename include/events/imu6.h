@@ -95,7 +95,7 @@ static inline caerIMU6Event caerIMU6EventPacketGetEvent(caerIMU6EventPacket pack
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU6 Event",
 			"Called caerIMU6EventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
-			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
+			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
 #endif
 		return (NULL);
 	}

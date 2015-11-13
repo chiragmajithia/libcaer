@@ -392,7 +392,7 @@ static inline void *caerGenericEventGetEvent(caerEventPacketHeader headerPtr, in
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Generic Event",
 			"Called caerGenericEventGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
-			n, caerEventPacketHeaderGetEventCapacity(headerPtr));
+			n, caerEventPacketHeaderGetEventCapacity(headerPtr) - 1);
 #endif
 		return (NULL);
 	}

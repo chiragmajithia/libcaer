@@ -127,7 +127,7 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
-			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
+			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
 #endif
 		return (NULL);
 	}

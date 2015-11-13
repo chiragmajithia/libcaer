@@ -104,7 +104,7 @@ static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPa
 #if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event",
 			"Called caerSpecialEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
-			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader));
+			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
 #endif
 		return (NULL);
 	}
