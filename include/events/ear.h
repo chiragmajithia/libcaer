@@ -164,7 +164,7 @@ static inline void caerEarEventSetTimestamp(caerEarEvent event, int32_t timestam
  * @return true if valid, false if not.
  */
 static inline bool caerEarEventIsValid(caerEarEvent event) {
-	return ((le32toh(event->data) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -179,7 +179,7 @@ static inline bool caerEarEventIsValid(caerEarEvent event) {
  */
 static inline void caerEarEventValidate(caerEarEvent event, caerEarEventPacket packet) {
 	if (!caerEarEventIsValid(event)) {
-		event->data |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -206,7 +206,7 @@ static inline void caerEarEventValidate(caerEarEvent event, caerEarEventPacket p
  */
 static inline void caerEarEventInvalidate(caerEarEvent event, caerEarEventPacket packet) {
 	if (caerEarEventIsValid(event)) {
-		event->data &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -231,7 +231,7 @@ static inline void caerEarEventInvalidate(caerEarEvent event, caerEarEventPacket
  * @return the ear (microphone) ID.
  */
 static inline uint8_t caerEarEventGetEar(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> EAR_SHIFT) & EAR_MASK);
+	return U8T(GET_NUMBITS32(event->data, EAR_SHIFT, EAR_MASK));
 }
 
 /**
@@ -244,7 +244,8 @@ static inline uint8_t caerEarEventGetEar(caerEarEvent event) {
  * @param ear the ear (microphone) ID.
  */
 static inline void caerEarEventSetEar(caerEarEvent event, uint8_t ear) {
-	event->data |= htole32((U32T(ear) & EAR_MASK) << EAR_SHIFT);
+	CLEAR_NUMBITS32(event->data, EAR_SHIFT, EAR_MASK);
+	SET_NUMBITS32(event->data, EAR_SHIFT, EAR_MASK, ear);
 }
 
 /**
@@ -259,7 +260,7 @@ static inline void caerEarEventSetEar(caerEarEvent event, uint8_t ear) {
  * @return the channel (frequency band) ID.
  */
 static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> CHANNEL_SHIFT) & CHANNEL_MASK);
+	return U16T(GET_NUMBITS32(event->data, CHANNEL_SHIFT, CHANNEL_MASK));
 }
 
 /**
@@ -273,23 +274,26 @@ static inline uint16_t caerEarEventGetChannel(caerEarEvent event) {
  * @param channel the channel (frequency band) ID.
  */
 static inline void caerEarEventSetChannel(caerEarEvent event, uint16_t channel) {
-	event->data |= htole32((U32T(channel) & CHANNEL_MASK) << CHANNEL_SHIFT);
+	CLEAR_NUMBITS32(event->data, CHANNEL_SHIFT, CHANNEL_MASK);
+	SET_NUMBITS32(event->data, CHANNEL_SHIFT, CHANNEL_MASK, channel);
 }
 
 static inline uint8_t caerEarEventGetNeuron(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> NEURON_SHIFT) & NEURON_MASK);
+	return U8T(GET_NUMBITS32(event->data, NEURON_SHIFT, NEURON_MASK));
 }
 
 static inline void caerEarEventSetNeuron(caerEarEvent event, uint8_t neuron) {
-	event->data |= htole32((U32T(neuron) & NEURON_MASK) << NEURON_SHIFT);
+	CLEAR_NUMBITS32(event->data, NEURON_SHIFT, NEURON_MASK);
+	SET_NUMBITS32(event->data, NEURON_SHIFT, NEURON_MASK, neuron);
 }
 
 static inline uint8_t caerEarEventGetFilter(caerEarEvent event) {
-	return U8T((le32toh(event->data) >> FILTER_SHIFT) & FILTER_MASK);
+	return U8T(GET_NUMBITS32(event->data, FILTER_SHIFT, FILTER_MASK));
 }
 
 static inline void caerEarEventSetFilter(caerEarEvent event, uint8_t filter) {
-	event->data |= htole32((U32T(filter) & FILTER_MASK) << FILTER_SHIFT);
+	CLEAR_NUMBITS32(event->data, FILTER_SHIFT, FILTER_MASK);
+	SET_NUMBITS32(event->data, FILTER_SHIFT, FILTER_MASK, filter);
 }
 
 /**

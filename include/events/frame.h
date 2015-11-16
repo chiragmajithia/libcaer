@@ -394,7 +394,7 @@ static inline int64_t caerFrameEventGetTimestamp64(caerFrameEvent event, caerFra
  * @return true if valid, false if not.
  */
 static inline bool caerFrameEventIsValid(caerFrameEvent event) {
-	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -409,7 +409,7 @@ static inline bool caerFrameEventIsValid(caerFrameEvent event) {
  */
 static inline void caerFrameEventValidate(caerFrameEvent event, caerFrameEventPacket packet) {
 	if (!caerFrameEventIsValid(event)) {
-		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -436,7 +436,7 @@ static inline void caerFrameEventValidate(caerFrameEvent event, caerFrameEventPa
  */
 static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEventPacket packet) {
 	if (caerFrameEventIsValid(event)) {
-		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -483,7 +483,7 @@ static inline size_t caerFrameEventPacketGetPixelsMaxIndex(caerFrameEventPacket 
  * @return numerical ROI identifier.
  */
 static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
-	return U8T((le32toh(event->info) >> ROI_IDENTIFIER_SHIFT) & ROI_IDENTIFIER_MASK);
+	return U8T(GET_NUMBITS32(event->info, ROI_IDENTIFIER_SHIFT, ROI_IDENTIFIER_MASK));
 }
 
 /**
@@ -494,7 +494,8 @@ static inline uint8_t caerFrameEventGetROIIdentifier(caerFrameEvent event) {
  * @param roiIdentifier numerical ROI identifier.
  */
 static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t roiIdentifier) {
-	event->info |= htole32((U32T(roiIdentifier) & ROI_IDENTIFIER_MASK) << ROI_IDENTIFIER_SHIFT);
+	CLEAR_NUMBITS32(event->info, ROI_IDENTIFIER_SHIFT, ROI_IDENTIFIER_MASK);
+	SET_NUMBITS32(event->info, ROI_IDENTIFIER_SHIFT, ROI_IDENTIFIER_MASK, roiIdentifier);
 }
 
 /**
@@ -528,7 +529,7 @@ static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
  * @return frame channel number.
  */
 static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return U8T((le32toh(event->info) >> CHANNEL_NUMBER_SHIFT) & CHANNEL_NUMBER_MASK);
+	return U8T(GET_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK));
 }
 
 /**
@@ -558,7 +559,8 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
 
 	event->lengthX = htole32(lengthX);
 	event->lengthY = htole32(lengthY);
-	event->info |= htole32((U32T(channelNumber) & CHANNEL_NUMBER_MASK) << CHANNEL_NUMBER_SHIFT);
+	CLEAR_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK);
+	SET_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK, channelNumber);
 }
 
 /**

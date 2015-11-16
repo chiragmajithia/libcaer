@@ -170,7 +170,7 @@ static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t 
  * @return true if valid, false if not.
  */
 static inline bool caerSpecialEventIsValid(caerSpecialEvent event) {
-	return ((le32toh(event->data) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -185,7 +185,7 @@ static inline bool caerSpecialEventIsValid(caerSpecialEvent event) {
  */
 static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialEventPacket packet) {
 	if (!caerSpecialEventIsValid(event)) {
-		event->data |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -212,7 +212,7 @@ static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialE
  */
 static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecialEventPacket packet) {
 	if (caerSpecialEventIsValid(event)) {
-		event->data &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -234,7 +234,7 @@ static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecia
  * @return the special event type (see 'enum caer_special_event_types').
  */
 static inline uint8_t caerSpecialEventGetType(caerSpecialEvent event) {
-	return U8T((le32toh(event->data) >> TYPE_SHIFT) & TYPE_MASK);
+	return U8T(GET_NUMBITS32(event->data, TYPE_SHIFT, TYPE_MASK));
 }
 
 /**
@@ -244,7 +244,8 @@ static inline uint8_t caerSpecialEventGetType(caerSpecialEvent event) {
  * @param type the special event type (see 'enum caer_special_event_types').
  */
 static inline void caerSpecialEventSetType(caerSpecialEvent event, uint8_t type) {
-	event->data |= htole32((U32T(type) & TYPE_MASK) << TYPE_SHIFT);
+	CLEAR_NUMBITS32(event->data, TYPE_SHIFT, TYPE_MASK);
+	SET_NUMBITS32(event->data, TYPE_SHIFT, TYPE_MASK, type);
 }
 
 /**
@@ -257,7 +258,7 @@ static inline void caerSpecialEventSetType(caerSpecialEvent event, uint8_t type)
  * @return the special event data.
  */
 static inline uint32_t caerSpecialEventGetData(caerSpecialEvent event) {
-	return U32T((le32toh(event->data) >> DATA_SHIFT) & DATA_MASK);
+	return U32T(GET_NUMBITS32(event->data, DATA_SHIFT, DATA_MASK));
 }
 
 /**
@@ -269,7 +270,8 @@ static inline uint32_t caerSpecialEventGetData(caerSpecialEvent event) {
  * @param data the special event data.
  */
 static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data) {
-	event->data |= htole32((U32T(data) & DATA_MASK) << DATA_SHIFT);
+	CLEAR_NUMBITS32(event->data, DATA_SHIFT, DATA_MASK);
+	SET_NUMBITS32(event->data, DATA_SHIFT, DATA_MASK, data);
 }
 
 /**

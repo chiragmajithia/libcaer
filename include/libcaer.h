@@ -78,6 +78,31 @@ extern "C" {
 #define SWAP_VAR(type, x, y) { type tmpv; tmpv = (x); (x) = (y); (y) = tmpv; }
 
 /**
+ * Clear bits given by mask (amount) and shift (position).
+ */
+//@{
+#define CLEAR_NUMBITS32(VAR, SHIFT, MASK) (VAR) &= htole32(~(U32T((MASK) << (SHIFT))))
+#define CLEAR_NUMBITS16(VAR, SHIFT, MASK) (VAR) &= htole16(~(U16T((MASK) << (SHIFT))))
+#define CLEAR_NUMBITS8(VAR, SHIFT, MASK)  (VAR) &= U8T(~(U8T((MASK) << (SHIFT))))
+//@}
+/**
+ * Set bits given by mask (amount) and shift (position) to a value.
+ */
+//@{
+#define SET_NUMBITS32(VAR, SHIFT, MASK, VALUE) (VAR) |= htole32(U32T((U32T(VALUE) & (MASK)) << (SHIFT)))
+#define SET_NUMBITS16(VAR, SHIFT, MASK, VALUE) (VAR) |= htole16(U16T((U16T(VALUE) & (MASK)) << (SHIFT)))
+#define SET_NUMBITS8(VAR, SHIFT, MASK, VALUE)  (VAR) |= U8T((U8T(VALUE) & (MASK)) << (SHIFT))
+//@}
+/**
+ * Get value of bits given by mask (amount) and shift (position).
+ */
+//@{
+#define GET_NUMBITS32(VAR, SHIFT, MASK) ((le32toh(VAR) >> (SHIFT)) & (MASK))
+#define GET_NUMBITS16(VAR, SHIFT, MASK) ((le16toh(VAR) >> (SHIFT)) & (MASK))
+#define GET_NUMBITS8(VAR, SHIFT, MASK)  ((U8T(VAR) >> (SHIFT)) & (MASK))
+//@}
+
+/**
  * Compare two strings for equality.
  *
  * @param s1 the first string, cannot be NULL.

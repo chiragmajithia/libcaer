@@ -59,6 +59,7 @@ enum caer_default_event_types {
 	IMU9_EVENT = 4,     //!< 9 axes IMU events.
 	SAMPLE_EVENT = 5,   //!< ADC sample events.
 	EAR_EVENT = 6,      //!< Ear (cochlea) events.
+	CONFIG_EVENT = 7,   //!< Device configuration events.
 };
 
 /**

@@ -164,7 +164,7 @@ static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, int32_
  * @return true if valid, false if not.
  */
 static inline bool caerPolarityEventIsValid(caerPolarityEvent event) {
-	return ((le32toh(event->data) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -179,7 +179,7 @@ static inline bool caerPolarityEventIsValid(caerPolarityEvent event) {
  */
 static inline void caerPolarityEventValidate(caerPolarityEvent event, caerPolarityEventPacket packet) {
 	if (!caerPolarityEventIsValid(event)) {
-		event->data |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -206,7 +206,7 @@ static inline void caerPolarityEventValidate(caerPolarityEvent event, caerPolari
  */
 static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPolarityEventPacket packet) {
 	if (caerPolarityEventIsValid(event)) {
-		event->data &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -228,7 +228,7 @@ static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPola
  * @return event polarity value.
  */
 static inline bool caerPolarityEventGetPolarity(caerPolarityEvent event) {
-	return ((le32toh(event->data) >> POLARITY_SHIFT) & POLARITY_MASK);
+	return (GET_NUMBITS32(event->data, POLARITY_SHIFT, POLARITY_MASK));
 }
 
 /**
@@ -238,7 +238,8 @@ static inline bool caerPolarityEventGetPolarity(caerPolarityEvent event) {
  * @param polarity event polarity value.
  */
 static inline void caerPolarityEventSetPolarity(caerPolarityEvent event, bool polarity) {
-	event->data |= htole32((U32T(polarity) & POLARITY_MASK) << POLARITY_SHIFT);
+	CLEAR_NUMBITS32(event->data, POLARITY_SHIFT, POLARITY_MASK);
+	SET_NUMBITS32(event->data, POLARITY_SHIFT, POLARITY_MASK, polarity);
 }
 
 /**
@@ -250,7 +251,7 @@ static inline void caerPolarityEventSetPolarity(caerPolarityEvent event, bool po
  * @return the event Y address.
  */
 static inline uint16_t caerPolarityEventGetY(caerPolarityEvent event) {
-	return U16T((le32toh(event->data) >> Y_ADDR_SHIFT) & Y_ADDR_MASK);
+	return U16T(GET_NUMBITS32(event->data, Y_ADDR_SHIFT, Y_ADDR_MASK));
 }
 
 /**
@@ -261,7 +262,8 @@ static inline uint16_t caerPolarityEventGetY(caerPolarityEvent event) {
  * @param yAddress the event Y address.
  */
 static inline void caerPolarityEventSetY(caerPolarityEvent event, uint16_t yAddress) {
-	event->data |= htole32((U32T(yAddress) & Y_ADDR_MASK) << Y_ADDR_SHIFT);
+	CLEAR_NUMBITS32(event->data, Y_ADDR_SHIFT, Y_ADDR_MASK);
+	SET_NUMBITS32(event->data, Y_ADDR_SHIFT, Y_ADDR_MASK, yAddress);
 }
 
 /**
@@ -273,7 +275,7 @@ static inline void caerPolarityEventSetY(caerPolarityEvent event, uint16_t yAddr
  * @return the event X address.
  */
 static inline uint16_t caerPolarityEventGetX(caerPolarityEvent event) {
-	return U16T((le32toh(event->data) >> X_ADDR_SHIFT) & X_ADDR_MASK);
+	return U16T(GET_NUMBITS32(event->data, X_ADDR_SHIFT, X_ADDR_MASK));
 }
 
 /**
@@ -284,7 +286,8 @@ static inline uint16_t caerPolarityEventGetX(caerPolarityEvent event) {
  * @param xAddress the event X address.
  */
 static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddress) {
-	event->data |= htole32((U32T(xAddress) & X_ADDR_MASK) << X_ADDR_SHIFT);
+	CLEAR_NUMBITS32(event->data, X_ADDR_SHIFT, X_ADDR_MASK);
+	SET_NUMBITS32(event->data, X_ADDR_SHIFT, X_ADDR_MASK, xAddress);
 }
 
 /**

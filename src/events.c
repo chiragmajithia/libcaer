@@ -6,6 +6,7 @@
 #include "events/imu9.h"
 #include "events/sample.h"
 #include "events/ear.h"
+#include "events/config.h"
 
 caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
 	size_t eventPacketContainerSize = sizeof(struct caer_event_packet_container)
@@ -229,6 +230,34 @@ caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eve
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_ear_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
+	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
+
+	return (packet);
+}
+
+caerConfigurationEventPacket caerConfigurationEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
+	int32_t tsOverflow) {
+	size_t eventSize = sizeof(struct caer_configuration_event);
+	size_t eventPacketSize = sizeof(struct caer_configuration_event_packet) + ((size_t) eventCapacity * eventSize);
+
+	// Zero out event memory (all events invalid).
+	caerConfigurationEventPacket packet = calloc(1, eventPacketSize);
+	if (packet == NULL) {
+#if !defined(LIBCAER_LOG_NONE)
+		caerLog(CAER_LOG_CRITICAL, "Configuration Event",
+			"Failed to allocate %zu bytes of memory for Configuration Event Packet of capacity %"
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			errno);
+#endif
+		return (NULL);
+	}
+
+	// Fill in header fields.
+	caerEventPacketHeaderSetEventType(&packet->packetHeader, CONFIG_EVENT);
+	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
+	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_configuration_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 

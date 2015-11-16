@@ -159,7 +159,7 @@ static inline void caerSampleEventSetTimestamp(caerSampleEvent event, int32_t ti
  * @return true if valid, false if not.
  */
 static inline bool caerSampleEventIsValid(caerSampleEvent event) {
-	return ((le32toh(event->data) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -174,7 +174,7 @@ static inline bool caerSampleEventIsValid(caerSampleEvent event) {
  */
 static inline void caerSampleEventValidate(caerSampleEvent event, caerSampleEventPacket packet) {
 	if (!caerSampleEventIsValid(event)) {
-		event->data |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -201,7 +201,7 @@ static inline void caerSampleEventValidate(caerSampleEvent event, caerSampleEven
  */
 static inline void caerSampleEventInvalidate(caerSampleEvent event, caerSampleEventPacket packet) {
 	if (caerSampleEventIsValid(event)) {
-		event->data &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->data, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
@@ -225,7 +225,7 @@ static inline void caerSampleEventInvalidate(caerSampleEvent event, caerSampleEv
  * @return the ADC sample type.
  */
 static inline uint8_t caerSampleEventGetType(caerSampleEvent event) {
-	return U8T((le32toh(event->data) >> SAMPLE_TYPE_SHIFT) & SAMPLE_TYPE_MASK);
+	return U8T(GET_NUMBITS32(event->data, SAMPLE_TYPE_SHIFT, SAMPLE_TYPE_MASK));
 }
 
 /**
@@ -237,7 +237,8 @@ static inline uint8_t caerSampleEventGetType(caerSampleEvent event) {
  * @param type the ADC sample type.
  */
 static inline void caerSampleEventSetType(caerSampleEvent event, uint8_t type) {
-	event->data |= htole32((U32T(type) & SAMPLE_TYPE_MASK) << SAMPLE_TYPE_SHIFT);
+	CLEAR_NUMBITS32(event->data, SAMPLE_TYPE_SHIFT, SAMPLE_TYPE_MASK);
+	SET_NUMBITS32(event->data, SAMPLE_TYPE_SHIFT, SAMPLE_TYPE_MASK, type);
 }
 
 /**
@@ -248,7 +249,7 @@ static inline void caerSampleEventSetType(caerSampleEvent event, uint8_t type) {
  * @return the ADC sample value.
  */
 static inline uint32_t caerSampleEventGetSample(caerSampleEvent event) {
-	return U32T((le32toh(event->data) >> SAMPLE_SHIFT) & SAMPLE_MASK);
+	return U32T(GET_NUMBITS32(event->data, SAMPLE_SHIFT, SAMPLE_MASK));
 }
 
 /**
@@ -258,7 +259,8 @@ static inline uint32_t caerSampleEventGetSample(caerSampleEvent event) {
  * @param sample the ADC sample value.
  */
 static inline void caerSampleEventSetSample(caerSampleEvent event, uint32_t sample) {
-	event->data |= htole32((U32T(sample) & SAMPLE_MASK) << SAMPLE_SHIFT);
+	CLEAR_NUMBITS32(event->data, SAMPLE_SHIFT, SAMPLE_MASK);
+	SET_NUMBITS32(event->data, SAMPLE_SHIFT, SAMPLE_MASK, sample);
 }
 
 /**

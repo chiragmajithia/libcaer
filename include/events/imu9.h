@@ -169,7 +169,7 @@ static inline void caerIMU9EventSetTimestamp(caerIMU9Event event, int32_t timest
  * @return true if valid, false if not.
  */
 static inline bool caerIMU9EventIsValid(caerIMU9Event event) {
-	return ((le32toh(event->info) >> VALID_MARK_SHIFT) & VALID_MARK_MASK);
+	return (GET_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK));
 }
 
 /**
@@ -184,7 +184,7 @@ static inline bool caerIMU9EventIsValid(caerIMU9Event event) {
  */
 static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (!caerIMU9EventIsValid(event)) {
-		event->info |= htole32(U32T(1) << VALID_MARK_SHIFT);
+		SET_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK, 1);
 
 		// Also increase number of events and valid events.
 		// Only call this on (still) invalid events!
@@ -211,7 +211,7 @@ static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacke
  */
 static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPacket packet) {
 	if (caerIMU9EventIsValid(event)) {
-		event->info &= htole32(~(U32T(1) << VALID_MARK_SHIFT));
+		CLEAR_NUMBITS32(event->info, VALID_MARK_SHIFT, VALID_MARK_MASK);
 
 		// Also decrease number of valid events. Number of total events doesn't change.
 		// Only call this on valid events!
