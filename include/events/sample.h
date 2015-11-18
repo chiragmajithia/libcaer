@@ -19,7 +19,8 @@ extern "C" {
  * Shift and mask values for the sample type and the actual
  * sample value of an ADC sample.
  * Up to 128 sample types are supported, with 24 bits of
- * data per sample.
+ * data per sample. Higher values mean a higher voltage,
+ * 0 is ground.
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
 //@{
@@ -243,6 +244,7 @@ static inline void caerSampleEventSetType(caerSampleEvent event, uint8_t type) {
 
 /**
  * Get the ADC sample value. Up to 24 bits of resolution are possible.
+ * Higher values mean a higher voltage, 0 is ground.
  *
  * @param event a valid SampleEvent pointer. Cannot be NULL.
  *
@@ -254,6 +256,7 @@ static inline uint32_t caerSampleEventGetSample(caerSampleEvent event) {
 
 /**
  * Set the ADC sample value. Up to 24 bits of resolution are possible.
+ * Higher values mean a higher voltage, 0 is ground.
  *
  * @param event a valid SampleEvent pointer. Cannot be NULL.
  * @param sample the ADC sample value.

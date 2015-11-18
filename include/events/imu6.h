@@ -20,6 +20,10 @@ extern "C" {
  * IMU 6-axes event data structure definition.
  * This contains accelerometer and gyroscope headings, plus
  * temperature.
+ * The X, Y and Z axes are referred to the camera plane.
+ * X increases to the right, Y going up and Z towards where
+ * the lens is pointing. Rotation for the gyroscope is
+ * counter-clockwise along the increasing axis, for all three axes.
  * Floats are in IEEE 754-2008 binary32 format.
  * Signed integers are used for fields that are to be interpreted
  * directly, for compatibility with languages that do not have
