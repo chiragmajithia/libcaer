@@ -81,9 +81,9 @@ extern "C" {
  * Clear bits given by mask (amount) and shift (position).
  */
 //@{
-#define CLEAR_NUMBITS32(VAR, SHIFT, MASK) (VAR) &= htole32(~(U32T((MASK) << (SHIFT))))
-#define CLEAR_NUMBITS16(VAR, SHIFT, MASK) (VAR) &= htole16(~(U16T((MASK) << (SHIFT))))
-#define CLEAR_NUMBITS8(VAR, SHIFT, MASK)  (VAR) &= U8T(~(U8T((MASK) << (SHIFT))))
+#define CLEAR_NUMBITS32(VAR, SHIFT, MASK) (VAR) &= htole32(~(U32T(U32T(MASK) << (SHIFT))))
+#define CLEAR_NUMBITS16(VAR, SHIFT, MASK) (VAR) &= htole16(~(U16T(U16T(MASK) << (SHIFT))))
+#define CLEAR_NUMBITS8(VAR, SHIFT, MASK)  (VAR) &= U8T(~(U8T(U8T(MASK) << (SHIFT))))
 //@}
 /**
  * Set bits given by mask (amount) and shift (position) to a value.
