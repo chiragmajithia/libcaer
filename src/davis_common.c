@@ -480,9 +480,9 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = true, \
 	.typeNormal = false, .currentLevelNormal = true }
 
-#define CF_P_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
-	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
-	.typeNormal = false, .currentLevelNormal = true }
+//#define CF_P_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
+//	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
+//	.typeNormal = false, .currentLevelNormal = true }
 
 #define CF_N_TYPE_OFF(COARSE, FINE) (struct caer_bias_coarsefine) \
 	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = false, .sexN = true, \
