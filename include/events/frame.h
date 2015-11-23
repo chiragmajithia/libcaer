@@ -4,9 +4,11 @@
  * Frame Events format definition and handling functions.
  * This event type encodes intensity frames, like you would
  * get from a normal APS camera. It supports multiple channels
- * for color, as well as multiple Regions of Interest (ROI).
+ * for color, color filter information, as well as multiple
+ * Regions of Interest (ROI).
  * The (0, 0) pixel is in the lower left corner of the screen,
- * like in OpenGL.
+ * like in OpenGL. The pixel array is laid out row by row
+ * (increasing X axis), going from bottom to top (increasing Y axis).
  */
 
 #ifndef LIBCAER_EVENTS_FRAME_H_
@@ -19,31 +21,59 @@ extern "C" {
 #include "common.h"
 
 /**
- * Shift and mask values for the channel number and ROI
- * identifier for the 'info' field of the frame event.
- * Multiple channels (RGB for example) are possible, up to 64 channels.
+ * Shift and mask values for the color channels number, the color
+ * filter arrangement and the ROI identifier contained in the
+ * 'info' field of the frame event.
+ * Multiple channels (RGB for example) are possible, see the
+ * 'enum caer_frame_event_color_channels'. To understand the original
+ * color filter arrangement to interpolate color images, see
+ * the 'enum caer_frame_event_color_filter'.
  * Also, up to 128 different Regions of Interest (ROI) can be tracked.
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
 //@{
-#define CHANNEL_NUMBER_SHIFT 1
-#define CHANNEL_NUMBER_MASK 0x0000003F
+#define COLOR_CHANNELS_SHIFT 1
+#define COLOR_CHANNELS_MASK 0x00000007
+#define COLOR_FILTER_SHIFT 4
+#define COLOR_FILTER_MASK 0x00000007
 #define ROI_IDENTIFIER_SHIFT 7
 #define ROI_IDENTIFIER_MASK 0x0000007F
 //@}
 
 /**
+ * List of all frame event color channel identifiers.
+ * Used to interpret the frame event color channel field.
+ */
+enum caer_frame_event_color_channels {
+	GRAYSCALE = 1, //!< Grayscale, one channel only.
+	RGB = 3,       //!< Red Green Blue, 3 color channels.
+	RGBA = 4,      //!< Red Green Blue Alpha, 3 color channels plus transparency.
+};
+
+/**
+ * List of all frame event color filter identifiers.
+ * Used to interpret the frame event color filter field.
+ */
+enum caer_frame_event_color_filter {
+	MONO = 0,    //!< No color filter present, all light passes.
+	RGBG = 1,    //!< Standard Bayer color filter, 1 red 2 green 1 blue.
+	RGBW = 2,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green.
+};
+
+/**
  * Frame event data structure definition.
- * This contains the actual information on the frame (ROI, channels),
- * several timestamps to signal start and end of capture and of exposure,
- * as well as thea actual pixels, in a 16 bit normalized format.
+ * This contains the actual information on the frame (ROI, color channels,
+ * color filter), several timestamps to signal start and end of capture and
+ * of exposure, as well as the actual pixels, in a 16 bit normalized format.
  * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * The pixel array is laid out row by row (increasing X axis), going from
+ * bottom to top (increasing Y axis).
  * Signed integers are used for fields that are to be interpreted
  * directly, for compatibility with languages that do not have
  * unsigned integer types, such as Java.
  */
 struct caer_frame_event {
-	/// Event information (ROI region, channel number). First because of valid mark.
+	/// Event information (ROI region, color channels, color filter). First because of valid mark.
 	uint32_t info;
 	/// Start of Frame (SOF) timestamp.
 	int32_t ts_startframe;
@@ -62,6 +92,8 @@ struct caer_frame_event {
 	/// Y axis position (lower left offset) in pixels.
 	int32_t positionY;
 	/// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
+	/// The pixel array is laid out row by row (increasing X axis), going
+	/// from bottom to top (increasing Y axis).
 	uint16_t pixels[];
 }__attribute__((__packed__));
 
@@ -81,9 +113,9 @@ typedef struct caer_frame_event *caerFrameEvent;
 struct caer_frame_event_packet {
 	/// The common event packet header.
 	struct caer_event_packet_header packetHeader;
-	/// All events follow here. Direct access to the events
-	/// array is not possible. To calculate position, use the
-	/// 'eventSize' field in the packetHeader.
+/// All events follow here. Direct access to the events
+/// array is not possible. To calculate position, use the
+/// 'eventSize' field in the packetHeader.
 }__attribute__((__packed__));
 
 /**
@@ -138,7 +170,7 @@ static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket p
 }
 
 /**
- * Get the 32bit start of frame timestamp, in microseconds.
+ * Get the 32bit start of frame capture timestamp, in microseconds.
  * Be aware that this wraps around! You can either ignore this fact,
  * or handle the special 'TIMESTAMP_WRAP' event that is generated when
  * this happens, or use the 64bit timestamp which never wraps around.
@@ -154,7 +186,7 @@ static inline int32_t caerFrameEventGetTSStartOfFrame(caerFrameEvent event) {
 }
 
 /**
- * Get the 64bit start of frame timestamp, in microseconds.
+ * Get the 64bit start of frame capture timestamp, in microseconds.
  * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
  * for more details on the 64bit timestamp.
  *
@@ -171,7 +203,7 @@ static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, ca
 }
 
 /**
- * Set the 32bit start of frame timestamp, the value has to be in microseconds.
+ * Set the 32bit start of frame capture timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param startFrame a positive 32bit microsecond timestamp.
@@ -189,7 +221,7 @@ static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t
 }
 
 /**
- * Get the 32bit end of frame timestamp, in microseconds.
+ * Get the 32bit end of frame capture timestamp, in microseconds.
  * Be aware that this wraps around! You can either ignore this fact,
  * or handle the special 'TIMESTAMP_WRAP' event that is generated when
  * this happens, or use the 64bit timestamp which never wraps around.
@@ -205,7 +237,7 @@ static inline int32_t caerFrameEventGetTSEndOfFrame(caerFrameEvent event) {
 }
 
 /**
- * Get the 64bit end of frame timestamp, in microseconds.
+ * Get the 64bit end of frame capture timestamp, in microseconds.
  * See 'caerEventPacketHeaderGetEventTSOverflow()' documentation
  * for more details on the 64bit timestamp.
  *
@@ -222,7 +254,7 @@ static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caer
 }
 
 /**
- * Set the 32bit end of frame timestamp, the value has to be in microseconds.
+ * Set the 32bit end of frame capture timestamp, the value has to be in microseconds.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param endFrame a positive 32bit microsecond timestamp.
@@ -499,6 +531,30 @@ static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t 
 }
 
 /**
+ * Get the identifier for the color filter used by the sensor.
+ * Useful for interpolating color images.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return color filter identifier.
+ */
+static inline enum caer_frame_event_color_filter caerFrameEventGetColorFilter(caerFrameEvent event) {
+	return U8T(GET_NUMBITS32(event->info, COLOR_FILTER_SHIFT, COLOR_FILTER_MASK));
+}
+
+/**
+ * Set the identifier for the color filter used by the sensor.
+ * Useful for interpolating color images.
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ * @param colorFilter color filter identifier.
+ */
+static inline void caerFrameEventSetColorFilter(caerFrameEvent event, enum caer_frame_event_color_filter colorFilter) {
+	CLEAR_NUMBITS32(event->info, COLOR_FILTER_SHIFT, COLOR_FILTER_MASK);
+	SET_NUMBITS32(event->info, COLOR_FILTER_SHIFT, COLOR_FILTER_MASK, colorFilter);
+}
+
+/**
  * Get the actual X axis length for the current frame.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
@@ -521,31 +577,31 @@ static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
 }
 
 /**
- * Get the actual channel number for the current frame.
+ * Get the actual color channels number for the current frame.
  * This can be used to store RGB frames for example.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  *
- * @return frame channel number.
+ * @return frame color channels number.
  */
-static inline uint8_t caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return U8T(GET_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK));
+static inline enum caer_frame_event_color_channels caerFrameEventGetChannelNumber(caerFrameEvent event) {
+	return U8T(GET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK));
 }
 
 /**
- * Set the X and Y axes length and the channel number for a frame,
+ * Set the X and Y axes length and the color channels number for a frame,
  * while taking into account the maximum amount of memory available
  * for the pixel array, as allocated in 'caerFrameEventPacketAllocate()'.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param lengthX the frame's X axis length.
  * @param lengthY the frame's Y axis length.
- * @param channelNumber the number of channels for this frame.
+ * @param channelNumber the number of color channels for this frame.
  * @param packet the FrameEventPacket pointer for the packet containing this event. Cannot be NULL.
  */
 static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent event, int32_t lengthX, int32_t lengthY,
-	uint8_t channelNumber, caerFrameEventPacket packet) {
-	// Verify lengths and channel number don't exceed allocated space.
+	enum caer_frame_event_color_channels channelNumber, caerFrameEventPacket packet) {
+	// Verify lengths and color channels number don't exceed allocated space.
 	size_t neededMemory = (sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber);
 
 	if (neededMemory > caerFrameEventPacketGetPixelsSize(packet)) {
@@ -559,8 +615,8 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
 
 	event->lengthX = htole32(lengthX);
 	event->lengthY = htole32(lengthY);
-	CLEAR_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK);
-	SET_NUMBITS32(event->info, CHANNEL_NUMBER_SHIFT, CHANNEL_NUMBER_MASK, channelNumber);
+	CLEAR_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK);
+	SET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK, channelNumber);
 }
 
 /**
@@ -572,8 +628,8 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
  * @return maximum valid pixels array index.
  */
 static inline size_t caerFrameEventGetPixelsMaxIndex(caerFrameEvent event) {
-	return ((size_t) (caerFrameEventGetLengthX(event) * caerFrameEventGetLengthY(event)
-		* caerFrameEventGetChannelNumber(event)));
+	enum caer_frame_event_color_channels channels = caerFrameEventGetChannelNumber(event);
+	return ((size_t) (caerFrameEventGetLengthX(event) * caerFrameEventGetLengthY(event) * I32T(channels)));
 }
 
 /**
@@ -863,10 +919,10 @@ static inline void caerFrameEventSetPixelUnsafe(caerFrameEvent event, int32_t xA
  */
 static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel) {
+	enum caer_frame_event_color_channels channels = caerFrameEventGetChannelNumber(event);
 	// Get pixel value at specified position.
 	return (le16toh(
-		event->pixels[(((yAddress * caerFrameEventGetLengthX(event)) + xAddress) * caerFrameEventGetChannelNumber(event))
-			+ channel]));
+		event->pixels[(((yAddress * caerFrameEventGetLengthX(event)) + xAddress) * I32T(channels))+ channel]));
 }
 
 /**
@@ -883,9 +939,10 @@ static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent eve
  */
 static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, int32_t xAddress, int32_t yAddress,
 	uint8_t channel, uint16_t pixelValue) {
+	enum caer_frame_event_color_channels channels = caerFrameEventGetChannelNumber(event);
 	// Set pixel value at specified position.
-	event->pixels[(((yAddress * caerFrameEventGetLengthX(event)) + xAddress) * caerFrameEventGetChannelNumber(event))
-		+ channel] = htole16(pixelValue);
+	event->pixels[(((yAddress * caerFrameEventGetLengthX(event)) + xAddress) * I32T(channels)) + channel] = htole16(
+		pixelValue);
 }
 
 /**
@@ -894,6 +951,8 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
  * No checks at all are performed at any point, nor any
  * conversions, use this at your own risk!
  * Remember that the 16 bit pixel values are in little-endian!
+ * The pixel array is laid out row by row (increasing X axis),
+ * going from bottom to top (increasing Y axis).
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  *
