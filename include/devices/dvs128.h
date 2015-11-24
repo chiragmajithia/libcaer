@@ -131,17 +131,17 @@ extern "C" {
  */
 struct caer_dvs128_info {
 	/// Unique device identifier. Also 'source' for events.
-	uint16_t deviceID;
+	int16_t deviceID;
 	/// Device information string, for logging purposes.
 	char *deviceString;
 	/// Logic (FPGA/CPLD) version.
-	uint16_t logicVersion;
+	int16_t logicVersion;
 	/// Whether the device is a time-stamp master or slave.
 	bool deviceIsMaster;
 	/// DVS X axis resolution.
-	uint16_t dvsSizeX;
+	int16_t dvsSizeX;
 	/// DVS Y axis resolution.
-	uint16_t dvsSizeY;
+	int16_t dvsSizeY;
 };
 
 /**

@@ -147,7 +147,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 		deviceID, serialNumber, busNumber, devAddress);
 
 	// Populate info variables based on data from device.
-	handle->info.deviceID = deviceID;
+	handle->info.deviceID = I16T(deviceID);
 	handle->info.deviceString = fullLogString;
 	handle->info.logicVersion = 1; // TODO: real logic revision, once that information is exposed by new logic.
 	handle->info.deviceIsMaster = true; // TODO: master/slave support.

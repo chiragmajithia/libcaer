@@ -1498,23 +1498,23 @@ extern "C" {
  */
 struct caer_davis_info {
 	/// Unique device identifier. Also 'source' for events.
-	uint16_t deviceID;
+	int16_t deviceID;
 	/// Device information string, for logging purposes.
 	char *deviceString;
 	/// Logic (FPGA/CPLD) version.
-	uint16_t logicVersion;
+	int16_t logicVersion;
 	/// Whether the device is a time-stamp master or slave.
 	bool deviceIsMaster;
 	/// Clock in MHz for main logic (FPGA/CPLD).
-	uint16_t logicClock;
+	int16_t logicClock;
 	/// Clock in MHz for ADC/APS logic (FPGA/CPLD).
-	uint16_t adcClock;
+	int16_t adcClock;
 	/// Chip identifier/type.
-	uint16_t chipID;
+	int16_t chipID;
 	/// DVS X axis resolution.
-	uint16_t dvsSizeX;
+	int16_t dvsSizeX;
 	/// DVS Y axis resolution.
-	uint16_t dvsSizeY;
+	int16_t dvsSizeY;
 	/// Feature test: DVS pixel-level filtering.
 	bool dvsHasPixelFilter;
 	/// Feature test: DVS Background Activity filter.
@@ -1522,11 +1522,11 @@ struct caer_davis_info {
 	/// Feature test: fake event generator (testing/debug).
 	bool dvsHasTestEventGenerator;
 	/// APS X axis resolution.
-	uint16_t apsSizeX;
+	int16_t apsSizeX;
 	/// APS Y axis resolution.
-	uint16_t apsSizeY;
+	int16_t apsSizeY;
 	/// APS color filter type.
-	uint8_t apsColorFilter;
+	enum caer_frame_event_color_filter apsColorFilter;
 	/// Feature test: APS supports Global Shutter.
 	bool apsHasGlobalShutter;
 	/// Feature test: APS supports Quadruple Region-of-Interest readout.

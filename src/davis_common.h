@@ -74,12 +74,12 @@ struct davis_state {
 	int32_t dvsTimestamp;
 	uint16_t dvsLastY;
 	bool dvsGotY;
-	uint16_t dvsSizeX;
-	uint16_t dvsSizeY;
+	int16_t dvsSizeX;
+	int16_t dvsSizeY;
 	bool dvsInvertXY;
 	// APS specific fields
-	uint16_t apsSizeX;
-	uint16_t apsSizeY;
+	int16_t apsSizeX;
+	int16_t apsSizeY;
 	bool apsInvertXY;
 	bool apsFlipX;
 	bool apsFlipY;
