@@ -31,7 +31,7 @@ static inline void updateROISizes(davisState state) {
 		uint16_t endRow = state->apsROISizeY[i];
 
 		// Position is already set to startCol/Row, so we don't have to reset
-		// it here. We only have to calcualte size from start and end.
+		// it here. We only have to calculate size from start and end.
 		if (startColumn < state->apsSizeX) {
 			state->apsROISizeX[i] = U16T(endColumn + 1 - startColumn);
 			state->apsROISizeY[i] = U16T(endRow + 1 - startRow);
@@ -55,7 +55,9 @@ static inline void initFrame(davisState state) {
 	memset(state->currentFrameEvent[0], 0, sizeof(struct caer_frame_event));
 	// }
 
-	updateROISizes(state);
+	if (state->apsROIUpdate != 0) {
+		updateROISizes(state);
+	}
 
 	// Write out start of frame timestamp.
 	caerFrameEventSetTSStartOfFrame(state->currentFrameEvent[0], state->currentTimestamp);
