@@ -539,7 +539,7 @@ static inline void caerFrameEventSetROIIdentifier(caerFrameEvent event, uint8_t 
  * @return color filter identifier.
  */
 static inline enum caer_frame_event_color_filter caerFrameEventGetColorFilter(caerFrameEvent event) {
-	return U8T(GET_NUMBITS32(event->info, COLOR_FILTER_SHIFT, COLOR_FILTER_MASK));
+	return ((enum caer_frame_event_color_filter) U8T(GET_NUMBITS32(event->info, COLOR_FILTER_SHIFT, COLOR_FILTER_MASK)));
 }
 
 /**
@@ -585,7 +585,7 @@ static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
  * @return frame color channels number.
  */
 static inline enum caer_frame_event_color_channels caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return U8T(GET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK));
+	return ((enum caer_frame_event_color_channels) U8T(GET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK)));
 }
 
 /**

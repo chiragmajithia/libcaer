@@ -503,7 +503,7 @@ static inline void *caerCopyEventPacket(void *eventPacket) {
 	}
 
 	// Calculate needed memory for new event packet.
-	caerEventPacketHeader header = eventPacket;
+	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
 	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
 	int32_t eventNumber = caerEventPacketHeaderGetEventNumber(header);
 	int32_t eventCapacity = caerEventPacketHeaderGetEventCapacity(header);
@@ -511,7 +511,7 @@ static inline void *caerCopyEventPacket(void *eventPacket) {
 	size_t dataMem = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (eventSize * eventNumber);
 
 	// Allocate memory for new event packet.
-	caerEventPacketHeader eventPacketCopy = malloc(packetMem);
+	caerEventPacketHeader eventPacketCopy = (caerEventPacketHeader) malloc(packetMem);
 	if (eventPacketCopy == NULL) {
 		// Failed to allocate memory.
 		return (NULL);
@@ -539,13 +539,13 @@ static inline void *caerCopyEventPacketOnlyEvents(void *eventPacket) {
 	}
 
 	// Calculate needed memory for new event packet.
-	caerEventPacketHeader header = eventPacket;
+	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
 	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
 	int32_t eventNumber = caerEventPacketHeaderGetEventNumber(header);
 	size_t packetMem = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (eventSize * eventNumber);
 
 	// Allocate memory for new event packet.
-	caerEventPacketHeader eventPacketCopy = malloc(packetMem);
+	caerEventPacketHeader eventPacketCopy = (caerEventPacketHeader) malloc(packetMem);
 	if (eventPacketCopy == NULL) {
 		// Failed to allocate memory.
 		return (NULL);
@@ -576,13 +576,13 @@ static inline void *caerCopyEventPacketOnlyValidEvents(void *eventPacket) {
 	}
 
 	// Calculate needed memory for new event packet.
-	caerEventPacketHeader header = eventPacket;
+	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
 	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
 	int32_t eventValid = caerEventPacketHeaderGetEventValid(header);
 	size_t packetMem = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (eventSize * eventValid);
 
 	// Allocate memory for new event packet.
-	caerEventPacketHeader eventPacketCopy = malloc(packetMem);
+	caerEventPacketHeader eventPacketCopy = (caerEventPacketHeader) malloc(packetMem);
 	if (eventPacketCopy == NULL) {
 		// Failed to allocate memory.
 		return (NULL);
