@@ -1,3 +1,37 @@
+Release 1.0.2 - 08.01.2016
+IMCOMPATIBLE CHANGES
+- frame.h: rename channel number to color channels and add color
+  filter information, to better specify the information needed
+  to reconstruct color frames. The 'enum caer_frame_event_color_channels'
+  and 'enum caer_frame_event_color_filter' hold the possible values.
+  This change is backwards-compatible with older frame format!
+- davis.h, dvs128.h: changed info data structure's integers to be
+  signed for better cross-language compatibility. Also 'deviceID'
+  can now be compared directly with 'sourceID' from event packets.
+- davis.h: changed type of 'apsColorFilter' in info data structure
+  to take advantage of new 'enum caer_frame_event_color_filter'.
+
+NEW FEATURES
+- common.h: add generic functions for event packet copying, with
+  support for packet size reductions (copy only valid).
+- libcaer.h: add generic clear, get and set functions for bitfields,
+  and use them in all the event functions to avoid errors.
+- config.h: add device configuration event type, for tracking
+  of device configuration changes in the event stream.
+- log.c: add timezone information to log message time information.
+- dvs128_simple.cpp, davis_simple.cpp: add C++11 example variants.
+- Enable more Clang compiler warnings.
+
+BUG FIXES
+- davis_common.c: only update the ROI size information if ROI
+  updates actually came in from the device.
+- Fix and improve documentation, especially for the frame event.
+- Fix off-by-one in event's GetEvent() function's warning log message.
+- device.c: mark global function pointer arrays static.
+- common.h, frame.h: fix compilation of inline functions in
+  strict C++11 mode.
+
+
 Release 1.0.1 - 06.11.2015
 INCOMPATIBLE CHANGES
 - Requires firmware version 2 and logic revision 7449.
@@ -41,6 +75,7 @@ BUG FIXES
 - davis_fx2.c: keep GlobalShutter flag correctly in-sync.
 - davis_fx3.c: fixed support for new FX3 devices.
 - packetContainer.h: handle container being NULL by returning NULL.
+
 
 Release 1.0.0 - 02.10.2015
 - Initial release.
