@@ -482,9 +482,11 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = true, \
 	.typeNormal = false, .currentLevelNormal = true }
 
-//#define CF_P_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
-//	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
-//	.typeNormal = false, .currentLevelNormal = true }
+/*
+ * #define CF_P_TYPE_CAS(COARSE, FINE) (struct caer_bias_coarsefine) \
+ *	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = true, .sexN = false, \
+ *	.typeNormal = false, .currentLevelNormal = true }
+ */
 
 #define CF_N_TYPE_OFF(COARSE, FINE) (struct caer_bias_coarsefine) \
 	{ .coarseValue = COARSE, .fineValue = FINE, .enabled = false, .sexN = true, \
@@ -1011,7 +1013,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					// Exposure and Frame Delay are in µs, must be converted to native FPGA cycles
 					// by multiplying with ADC clock value.
 					return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr,
-						param * U32T(handle->info.adcClock)));
+						param * U16T(handle->info.adcClock)));
 					break;
 
 				case DAVIS_CONFIG_APS_GLOBAL_SHUTTER:
@@ -1657,7 +1659,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 						return (false);
 					}
 
-					*param = cyclesValue / U32T(handle->info.adcClock);
+					*param = cyclesValue / U16T(handle->info.adcClock);
 
 					return (true);
 					break;
