@@ -45,6 +45,15 @@ bool davisFX2SendDefaultConfig(caerDeviceHandle cdh) {
 		return (false);
 	}
 
+	// FX2 specific FPGA configuration.
+	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_DELAY_ROW, 14)) {
+		return (false);
+	}
+
+	if (!davisFX2ConfigSet(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_ACK_EXTENSION_ROW, 4)) {
+		return (false);
+	}
+
 	return (true);
 }
 
