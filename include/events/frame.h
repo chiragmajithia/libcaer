@@ -585,7 +585,8 @@ static inline int32_t caerFrameEventGetLengthY(caerFrameEvent event) {
  * @return frame color channels number.
  */
 static inline enum caer_frame_event_color_channels caerFrameEventGetChannelNumber(caerFrameEvent event) {
-	return ((enum caer_frame_event_color_channels) U8T(GET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK)));
+	return ((enum caer_frame_event_color_channels) U8T(
+		GET_NUMBITS32(event->info, COLOR_CHANNELS_SHIFT, COLOR_CHANNELS_MASK)));
 }
 
 /**
@@ -961,6 +962,44 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
 static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) {
 	// Get pixels array.
 	return (event->pixels);
+}
+
+/**
+ * Get a direct reference to a copy of the pixels array,
+ * rotated in such a way that the first pixel is not at the
+ * bottom left as usual (OpenGL format), but at the top left
+ * (Computer Graphics format).
+ * Remember that the 16 bit pixel values are in little-endian!
+ * The pixel array is laid out row by row (increasing X axis),
+ * going from top to bottom (decreasing Y axis).
+ * Please remember to free this new pixels array after usage!
+ *
+ * @param event a valid FrameEvent pointer. Cannot be NULL.
+ *
+ * @return the reformatted pixels array (16 bit integers are
+ *         little-endian) or NULL on error. Remember to free
+ *         the pixels array after usage.
+ */
+static inline uint16_t *caerFrameEventGetPixelArrayCGFormat(caerFrameEvent event) {
+	// Get image information.
+	uint8_t channelNumber = caerFrameEventGetChannelNumber(event);
+	int32_t lengthX = caerFrameEventGetLengthX(event);
+	int32_t lengthY = caerFrameEventGetLengthY(event);
+
+	// Allocate space for new, rotated image.
+	uint16_t *pixelsRot = malloc((size_t) (lengthX * lengthY) * channelNumber * sizeof(uint16_t));
+	if (pixelsRot == NULL) {
+		return (NULL);
+	}
+
+	int32_t strideX = lengthX * channelNumber;
+
+	for (int32_t y = 0; y < lengthY; y++) {
+		memcpy(&pixelsRot[y * strideX], &caerFrameEventGetPixelArrayUnsafe(event)[((lengthY - 1) - y) * strideX],
+			(size_t) strideX);
+	}
+
+	return (pixelsRot);
 }
 
 /**
