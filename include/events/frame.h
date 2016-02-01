@@ -992,11 +992,11 @@ static inline uint16_t *caerFrameEventGetPixelArrayCGFormat(caerFrameEvent event
 		return (NULL);
 	}
 
-	int32_t strideX = lengthX * channelNumber * (int32_t) sizeof(uint16_t);
+	int32_t strideX = lengthX * channelNumber;
 
 	for (int32_t y = 0; y < lengthY; y++) {
 		memcpy(&pixelsRot[y * strideX], &caerFrameEventGetPixelArrayUnsafe(event)[((lengthY - 1) - y) * strideX],
-			(size_t) strideX);
+			(size_t) strideX * sizeof(uint16_t));
 	}
 
 	return (pixelsRot);
