@@ -774,6 +774,13 @@ extern "C" {
  * especially in very bright regions.
  */
 #define DAVIS_CONFIG_APS_RAMP_SHORT_RESET       38
+/**
+ * Parameter address for module DAVIS_CONFIG_APS:
+ * put all APS pixels into reset, while keeping everything else running.
+ * This is only useful for testing and characterizing the internal
+ * ADC, to minimize noise.
+ */
+#define DAVIS_CONFIG_APS_ADC_TEST_MODE          39
 
 // Extra timing settings for DAVISRGB APS module.
 /**

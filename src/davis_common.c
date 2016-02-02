@@ -428,6 +428,7 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_SAMPLE_SETTLE, U32T(handle->info.adcClock)); // in cycles @ ADCClock
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RAMP_RESET, U32T(handle->info.adcClock / 3)); // in cycles @ ADCClock
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RAMP_SHORT_RESET, false);
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_ADC_TEST_MODE, false);
 	}
 	if (IS_DAVISRGB(handle->info.chipID)) {
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVISRGB_CONFIG_APS_TRANSFER, U32T(handle->info.adcClock * 25)); // in cycles @ ADCClock
@@ -1057,6 +1058,7 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_SAMPLE_SETTLE:
 				case DAVIS_CONFIG_APS_RAMP_RESET:
 				case DAVIS_CONFIG_APS_RAMP_SHORT_RESET:
+				case DAVIS_CONFIG_APS_ADC_TEST_MODE:
 					if (handle->info.apsHasInternalADC) {
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
@@ -1699,6 +1701,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_APS_SAMPLE_SETTLE:
 				case DAVIS_CONFIG_APS_RAMP_RESET:
 				case DAVIS_CONFIG_APS_RAMP_SHORT_RESET:
+				case DAVIS_CONFIG_APS_ADC_TEST_MODE:
 					if (handle->info.apsHasInternalADC) {
 						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
