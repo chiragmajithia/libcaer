@@ -987,7 +987,7 @@ static inline uint16_t *caerFrameEventGetPixelArrayCGFormat(caerFrameEvent event
 	int32_t lengthY = caerFrameEventGetLengthY(event);
 
 	// Allocate space for new, rotated image.
-	uint16_t *pixelsRot = malloc((size_t) (lengthX * lengthY) * channelNumber * sizeof(uint16_t));
+	uint16_t *pixelsRot = (uint16_t *) malloc((size_t) (lengthX * lengthY) * channelNumber * sizeof(uint16_t));
 	if (pixelsRot == NULL) {
 		return (NULL);
 	}
