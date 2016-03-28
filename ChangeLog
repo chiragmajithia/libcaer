@@ -1,3 +1,17 @@
+Release 1.0.3 - 28.03.2016
+INCOMPATIBLE CHANGES
+- davis_fx2.c: removed specific FX2 code, now uses same backend as FX3
+  for sending all configuration values, due to new firmware version 3
+  for FX2 DAVIS small-board cameras. A firmware update is required,
+  please follow the instructions at http://inilabs.com/support/reflashing/.
+
+NEW FEATURES
+- frame.h: add function caerFrameEventGetPixelArrayCGFormat() to
+  Frame Event, allows to get a copy of the pixels array in the
+  standard computer graphics format (pixel (0, 0) in upper left
+  corner) efficently.
+- davis.h: add DAVIS_CONFIG_APS_ADC_TEST_MODE parameter to APS module.
+
 Release 1.0.2 - 08.01.2016
 IMCOMPATIBLE CHANGES
 - frame.h: rename channel number to color channels and add color
