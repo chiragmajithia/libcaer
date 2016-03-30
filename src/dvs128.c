@@ -1046,10 +1046,11 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 			}
 			else {
-				// Invert x values (flip along the x axis).
-				uint16_t x = U16T(
-					(DVS_ARRAY_SIZE_X - 1) - U16T((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK));
-				uint16_t y = U16T((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK);
+				// Invert X values (flip along X axis). To correct for flipped camera.
+				uint16_t x = U16T((DVS_ARRAY_SIZE_X - 1) - U16T((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK));
+				// Invert Y values (flip along Y axis). To convert to CG format.
+				uint16_t y = U16T((DVS_ARRAY_SIZE_Y - 1) - U16T((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK));
+				// Invert polarity bit. Hardware is like this.
 				bool polarity = (((addressUSB >> DVS128_POLARITY_SHIFT) & DVS128_POLARITY_MASK) == 0) ? (1) : (0);
 
 				// Check range conformity.
@@ -1068,6 +1069,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 					state->currentPolarityPacketPosition++);
 				caerPolarityEventSetTimestamp(currentEvent, state->currentTimestamp);
 				caerPolarityEventSetPolarity(currentEvent, polarity);
+				caerPolarityEventSetColor(currentEvent, W);
 				caerPolarityEventSetY(currentEvent, y);
 				caerPolarityEventSetX(currentEvent, x);
 				caerPolarityEventValidate(currentEvent, state->currentPolarityPacket);

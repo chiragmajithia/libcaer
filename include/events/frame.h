@@ -6,9 +6,9 @@
  * get from a normal APS camera. It supports multiple channels
  * for color, color filter information, as well as multiple
  * Regions of Interest (ROI).
- * The (0, 0) pixel is in the lower left corner of the screen,
- * like in OpenGL. The pixel array is laid out row by row
- * (increasing X axis), going from bottom to top (increasing Y axis).
+ * The (0, 0) pixel is in the upper left corner of the screen,
+ * like in OpenCV/computer graphics. The pixel array is laid out row by row
+ * (increasing X axis), going from top to bottom (increasing Y axis).
  */
 
 #ifndef LIBCAER_EVENTS_FRAME_H_
@@ -65,9 +65,9 @@ enum caer_frame_event_color_filter {
  * This contains the actual information on the frame (ROI, color channels,
  * color filter), several timestamps to signal start and end of capture and
  * of exposure, as well as the actual pixels, in a 16 bit normalized format.
- * The (0, 0) address is in the lower left corner, like in OpenGL.
+ * The (0, 0) address is in the upper left corner, like in OpenCV/computer graphics.
  * The pixel array is laid out row by row (increasing X axis), going from
- * bottom to top (increasing Y axis).
+ * top to bottom (increasing Y axis).
  * Signed integers are used for fields that are to be interpreted
  * directly, for compatibility with languages that do not have
  * unsigned integer types, such as Java.
@@ -93,7 +93,7 @@ struct caer_frame_event {
 	int32_t positionY;
 	/// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
 	/// The pixel array is laid out row by row (increasing X axis), going
-	/// from bottom to top (increasing Y axis).
+	/// from top to bottom (increasing Y axis).
 	uint16_t pixels[];
 }__attribute__((__packed__));
 
@@ -699,7 +699,7 @@ static inline void caerFrameEventSetPositionY(caerFrameEvent event, int32_t posi
  * Get the pixel value at the specified (X, Y) address.
  * (X, Y) are checked against the actual possible values for this frame.
  * Different channels are not taken into account!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (checked).
@@ -737,7 +737,7 @@ static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAdd
  * Set the pixel value at the specified (X, Y) address.
  * (X, Y) are checked against the actual possible values for this frame.
  * Different channels are not taken into account!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (checked).
@@ -775,7 +775,7 @@ static inline void caerFrameEventSetPixel(caerFrameEvent event, int32_t xAddress
  * account the specified channel.
  * (X, Y) and the channel number are checked against the actual
  * possible values for this frame.
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (checked).
@@ -827,7 +827,7 @@ static inline uint16_t caerFrameEventGetPixelForChannel(caerFrameEvent event, in
  * account the specified channel.
  * (X, Y) and the channel number are checked against the actual
  * possible values for this frame.
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (checked).
@@ -876,7 +876,7 @@ static inline void caerFrameEventSetPixelForChannel(caerFrameEvent event, int32_
 /**
  * Get the pixel value at the specified (X, Y) address.
  * No checks on (X, Y) are performed!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (unchecked).
@@ -892,7 +892,7 @@ static inline uint16_t caerFrameEventGetPixelUnsafe(caerFrameEvent event, int32_
 /**
  * Set the pixel value at the specified (X, Y) address.
  * No checks on (X, Y) are performed!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (unchecked).
@@ -909,7 +909,7 @@ static inline void caerFrameEventSetPixelUnsafe(caerFrameEvent event, int32_t xA
  * Get the pixel value at the specified (X, Y) address, taking into
  * account the specified channel.
  * No checks on (X, Y) and the channel number are performed!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (unchecked).
@@ -930,7 +930,7 @@ static inline uint16_t caerFrameEventGetPixelForChannelUnsafe(caerFrameEvent eve
  * Set the pixel value at the specified (X, Y) address, taking into
  * account the specified channel.
  * No checks on (X, Y) and the channel number are performed!
- * The (0, 0) pixel is in the lower left corner, like in OpenGL.
+ * The (0, 0) pixel is in the upper left corner, like in OpenCV/computer graphics.
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  * @param xAddress X address value (unchecked).
@@ -953,7 +953,7 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
  * conversions, use this at your own risk!
  * Remember that the 16 bit pixel values are in little-endian!
  * The pixel array is laid out row by row (increasing X axis),
- * going from bottom to top (increasing Y axis).
+ * going from top to bottom (increasing Y axis).
  *
  * @param event a valid FrameEvent pointer. Cannot be NULL.
  *
@@ -962,44 +962,6 @@ static inline void caerFrameEventSetPixelForChannelUnsafe(caerFrameEvent event, 
 static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) {
 	// Get pixels array.
 	return (event->pixels);
-}
-
-/**
- * Get a direct reference to a copy of the pixels array,
- * rotated in such a way that the first pixel is not at the
- * bottom left as usual (OpenGL format), but at the top left
- * (Computer Graphics format).
- * Remember that the 16 bit pixel values are in little-endian!
- * The pixel array is laid out row by row (increasing X axis),
- * going from top to bottom (decreasing Y axis).
- * Please remember to free this new pixels array after usage!
- *
- * @param event a valid FrameEvent pointer. Cannot be NULL.
- *
- * @return the reformatted pixels array (16 bit integers are
- *         little-endian) or NULL on error. Remember to free
- *         the pixels array after usage.
- */
-static inline uint16_t *caerFrameEventGetPixelArrayCGFormat(caerFrameEvent event) {
-	// Get image information.
-	uint8_t channelNumber = caerFrameEventGetChannelNumber(event);
-	int32_t lengthX = caerFrameEventGetLengthX(event);
-	int32_t lengthY = caerFrameEventGetLengthY(event);
-
-	// Allocate space for new, rotated image.
-	uint16_t *pixelsRot = (uint16_t *) malloc((size_t) (lengthX * lengthY) * channelNumber * sizeof(uint16_t));
-	if (pixelsRot == NULL) {
-		return (NULL);
-	}
-
-	int32_t strideX = lengthX * channelNumber;
-
-	for (int32_t y = 0; y < lengthY; y++) {
-		memcpy(&pixelsRot[y * strideX], &caerFrameEventGetPixelArrayUnsafe(event)[((lengthY - 1) - y) * strideX],
-			(size_t) strideX * sizeof(uint16_t));
-	}
-
-	return (pixelsRot);
 }
 
 /**
