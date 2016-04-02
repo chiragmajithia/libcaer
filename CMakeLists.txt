@@ -6,8 +6,12 @@ IF (NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Possible build types: None Debug Release RelWithDebInfo MinSizeRel")
 ENDIF()
 
+IF (NOT ENABLE_OPENCV)
+	SET(ENABLE_OPENCV 0 CACHE BOOL "Enable support for frame enhancements using OpenCV")
+ENDIF()
+
 # Project name and version
-PROJECT(libcaer C)
+PROJECT(libcaer C CXX)
 SET(PROJECT_VERSION_MAJOR 2)
 SET(PROJECT_VERSION_MINOR 0)
 SET(PROJECT_VERSION_PATCH 0)
@@ -42,11 +46,6 @@ ENDIF()
 INCLUDE(TestBigEndian)
 TEST_BIG_ENDIAN(SYSTEM_BIGENDIAN)
 
-# C11 standard needed (atomics, threads)
-IF (CC_GCC OR CC_CLANG)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
-ENDIF()
-
 # Check size of various types
 INCLUDE(CheckTypeSize)
 CHECK_TYPE_SIZE("size_t" SIZEOF_SIZE_T)
@@ -67,15 +66,26 @@ IF (HAVE_PTHREADS)
 	# POSIX system (Unix, Linux, MacOS X)
 	ADD_DEFINITIONS(-D_XOPEN_SOURCE=700)
 	ADD_DEFINITIONS(-D_DEFAULT_SOURCE=1)
+
+	IF (APPLE)
+		ADD_DEFINITIONS(-D_DARWIN_C_SOURCE=1)
+	ENDIF()
 ENDIF()
 
 IF (HAVE_WIN32_THREADS)
 	ADD_DEFINITIONS(-DHAVE_WIN32_THREADS=1)
 ENDIF()
 
+# C11 standard needed (atomics, threads)
+IF (CC_GCC OR CC_CLANG)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+ENDIF()
+
 # Enable all warnings for GCC / Clang
 IF (CC_GCC OR CC_CLANG)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra")
 
 	IF (CC_GCC)
 		# Enable all useful warnings manually in GCC.
@@ -91,6 +101,7 @@ IF (CC_GCC OR CC_CLANG)
 	IF (CC_CLANG)
 		# Enable all warnings in Clang easily.
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything -Wno-packed -Wno-padded -Wno-unreachable-code-break")
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-disabled-macro-expansion")
 	ENDIF()
 ENDIF()
 
@@ -99,9 +110,18 @@ INCLUDE(FindPkgConfig)
 
 # Basic USB device support
 PKG_CHECK_MODULES(LIBUSB1 REQUIRED libusb-1.0>=1.0.17)
-SET(LIBCAER_LIBS ${LIBUSB1_LIBRARIES})
-SET(LIBCAER_LIBDIRS ${LIBUSB1_LIBRARY_DIRS})
 SET(LIBCAER_INCDIRS ${LIBUSB1_INCLUDE_DIRS})
+SET(LIBCAER_LIBDIRS ${LIBUSB1_LIBRARY_DIRS})
+SET(LIBCAER_LIBS ${LIBUSB1_LIBRARIES})
+
+IF (ENABLE_OPENCV)
+	# Require new OpenCV 3.1 at least.
+	PKG_CHECK_MODULES(OPENCV3 REQUIRED opencv>=3.1)
+
+	SET(LIBCAER_INCDIRS ${LIBCAER_INCDIRS} ${OPENCV3_INCLUDE_DIRS})
+	SET(LIBCAER_LIBDIRS ${LIBCAER_LIBDIRS} ${OPENCV3_LIBRARY_DIRS})
+	SET(LIBCAER_LIBS ${LIBCAER_LIBS} ${OPENCV3_LIBRARIES})
+ENDIF()
 
 # Threads support
 SET(LIBCAER_LIBS ${LIBCAER_LIBS} ${CMAKE_THREAD_LIBS_INIT})
@@ -128,7 +148,12 @@ FOREACH (LIB ${CMAKE_THREAD_LIBS_INIT})
 	SET(PRIVATE_LIBS "${LIB} ${PRIVATE_LIBS}")
 ENDFOREACH()
 
-CONFIGURE_FILE(libcaer.pc.in libcaer.pc @ONLY)
+IF (ENABLE_OPENCV)
+	# Use different pkg-config file to specify OpenCV support
+	CONFIGURE_FILE(libcaer_opencv.pc.in libcaer.pc @ONLY)
+ELSE()
+	CONFIGURE_FILE(libcaer.pc.in libcaer.pc @ONLY)
+ENDIF()
 
 INSTALL(FILES ${CMAKE_BINARY_DIR}/libcaer.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
