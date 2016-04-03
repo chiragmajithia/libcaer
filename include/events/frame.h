@@ -56,8 +56,14 @@ enum caer_frame_event_color_channels {
  */
 enum caer_frame_event_color_filter {
 	MONO = 0,    //!< No color filter present, all light passes.
-	RGBG = 1,    //!< Standard Bayer color filter, 1 red 2 green 1 blue.
-	RGBW = 2,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green.
+	RGBG = 1,    //!< Standard Bayer color filter, 1 red 2 green 1 blue. Variation 1.
+	GRGB = 2,    //!< Standard Bayer color filter, 1 red 2 green 1 blue. Variation 2.
+	GBGR = 3,    //!< Standard Bayer color filter, 1 red 2 green 1 blue. Variation 3.
+	BGRG = 4,    //!< Standard Bayer color filter, 1 red 2 green 1 blue. Variation 4.
+	RGBW = 5,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green. Variation 1.
+	GRWB = 6,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green. Variation 2.
+	WBGR = 7,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green. Variation 3.
+	BWRG = 8,    //!< Modified Bayer color filter, with white (pass all light) instead of extra green. Variation 4.
 };
 
 /**

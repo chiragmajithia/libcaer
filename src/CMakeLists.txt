@@ -1,5 +1,10 @@
 file(GLOB_RECURSE LIBCAER_SRC_FILES *.c)
 
+IF (ENABLE_OPENCV)
+	# Add C++ OpenCV file and its C wrapper.
+	SET(LIBCAER_SRC_FILES ${LIBCAER_SRC_FILES} frame_utils_opencv.cpp)
+ENDIF()
+
 IF (UNIX AND NOT APPLE)
 	# Add --as-needed to linker flags for library.
 	SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
