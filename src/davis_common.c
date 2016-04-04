@@ -2705,7 +2705,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							break;
 						}
 
-						case 7: // IMU End
+						case 7: { // IMU End
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "IMU End event received.");
 							if (state->imuIgnoreEvents) {
 								break;
@@ -2725,6 +2725,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									state->imuCount);
 							}
 							break;
+						}
 
 						case 8: { // APS Global Shutter Frame Start
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "APS GS Frame Start event received.");
@@ -2952,37 +2953,129 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							break;
 						}
 
-						case 32:
+						case 32: {
 							// Next Misc8 APS ROI Size events will refer to ROI region 0.
 							// 0/1 used to distinguish between X and Y sizes.
 							state->apsROIUpdate = (0 << 2);
 							state->apsROISizeX[0] = state->apsROISizeY[0] = 0;
 							state->apsROIPositionX[0] = state->apsROIPositionY[0] = 0;
 							break;
+						}
 
-						case 33:
+						case 33: {
 							// Next Misc8 APS ROI Size events will refer to ROI region 1.
 							// 2/3 used to distinguish between X and Y sizes.
 							state->apsROIUpdate = (1 << 2);
 							state->apsROISizeX[1] = state->apsROISizeY[1] = 0;
 							state->apsROIPositionX[1] = state->apsROIPositionY[1] = 0;
 							break;
+						}
 
-						case 34:
+						case 34: {
 							// Next Misc8 APS ROI Size events will refer to ROI region 2.
 							// 4/5 used to distinguish between X and Y sizes.
 							state->apsROIUpdate = (2 << 2);
 							state->apsROISizeX[2] = state->apsROISizeY[2] = 0;
 							state->apsROIPositionX[2] = state->apsROIPositionY[2] = 0;
 							break;
+						}
 
-						case 35:
+						case 35: {
 							// Next Misc8 APS ROI Size events will refer to ROI region 3.
 							// 6/7 used to distinguish between X and Y sizes.
 							state->apsROIUpdate = (3 << 2);
 							state->apsROISizeX[3] = state->apsROISizeY[3] = 0;
 							state->apsROIPositionX[3] = state->apsROIPositionY[3] = 0;
 							break;
+						}
+
+						case 36: { // External input 1 (falling edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 1 (falling edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_FALLING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 37: { // External input 1 (rising edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 1 (rising edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_RISING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 38: { // External input 1 (pulse)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 1 (pulse) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_PULSE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 39: { // External input 2 (falling edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 2 (falling edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_FALLING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 40: { // External input 2 (rising edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 2 (rising edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_RISING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 41: { // External input 2 (pulse)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External input 2 (pulse) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_PULSE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 42: { // External generator (falling edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External generator (falling edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_GENERATOR_FALLING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
+
+						case 43: { // External generator (rising edge)
+							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
+								"External generator (rising edge) event received.");
+
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_GENERATOR_RISING_EDGE);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+							break;
+						}
 
 						default:
 							caerLog(CAER_LOG_ERROR, handle->info.deviceString,

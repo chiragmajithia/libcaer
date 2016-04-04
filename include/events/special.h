@@ -33,12 +33,20 @@ extern "C" {
  * Used to interpret the special event type field.
  */
 enum caer_special_event_types {
-	TIMESTAMP_WRAP = 0,              //!< A 32 bit timestamp wrap occurred.
-	TIMESTAMP_RESET = 1,             //!< A timestamp reset occurred.
-	EXTERNAL_INPUT_RISING_EDGE = 2,  //!< A rising edge was detected (External Input module on device).
-	EXTERNAL_INPUT_FALLING_EDGE = 3, //!< A falling edge was detected (External Input module on device).
-	EXTERNAL_INPUT_PULSE = 4,        //!< A pulse was detected (External Input module on device).
-	DVS_ROW_ONLY = 5,    //!< A DVS row-only event was detected (a row address without any following column addresses).
+	TIMESTAMP_WRAP = 0,                //!< A 32 bit timestamp wrap occurred.
+	TIMESTAMP_RESET = 1,               //!< A timestamp reset occurred.
+	EXTERNAL_INPUT_RISING_EDGE = 2,    //!< A rising edge was detected (External Input module on device).
+	EXTERNAL_INPUT_FALLING_EDGE = 3,   //!< A falling edge was detected (External Input module on device).
+	EXTERNAL_INPUT_PULSE = 4,          //!< A pulse was detected (External Input module on device).
+	DVS_ROW_ONLY = 5,                  //!< A DVS row-only event was detected (a row address without any following column addresses).
+	EXTERNAL_INPUT1_RISING_EDGE = 6,   //!< A rising edge was detected (External Input 1 module on device).
+	EXTERNAL_INPUT1_FALLING_EDGE = 7,  //!< A falling edge was detected (External Input 1 module on device).
+	EXTERNAL_INPUT1_PULSE = 8,         //!< A pulse was detected (External Input 1 module on device).
+	EXTERNAL_INPUT2_RISING_EDGE = 9,   //!< A rising edge was detected (External Input 2 module on device).
+	EXTERNAL_INPUT2_FALLING_EDGE = 10, //!< A falling edge was detected (External Input 2 module on device).
+	EXTERNAL_INPUT2_PULSE = 11,        //!< A pulse was detected (External Input 2 module on device).
+	EXTERNAL_GENERATOR_RISING_EDGE = 12,  //!< A rising edge was generated (External Input Generator module on device).
+	EXTERNAL_GENERATOR_FALLING_EDGE = 13, //!< A falling edge was generated (External Input Generator module on device).
 };
 
 /**
