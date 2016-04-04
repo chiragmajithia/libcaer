@@ -14,7 +14,12 @@ extern "C" {
 
 #include "events/frame.h"
 
-caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePacket);
+enum caer_frame_utils_opencv_demosaic {
+	NORMAL, VARIABLE_NUMBER_OF_GRADIENTS, EDGE_AWARE
+};
+
+caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePacket,
+	enum caer_frame_utils_opencv_demosaic demosaicType);
 void caerFrameUtilsOpenCVAutoContrastBrigthness(caerFrameEventPacket framePacket);
 
 #ifdef __cplusplus
