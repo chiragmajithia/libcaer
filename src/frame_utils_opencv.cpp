@@ -11,6 +11,10 @@ extern "C" {
 
 static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEvent monoFrame);
 
+static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEvent monoFrame) {
+
+}
+
 caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePacket) {
 	int32_t countValid = 0;
 	int32_t maxLengthX = 0;
@@ -18,9 +22,8 @@ caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePack
 
 	// This only works on valid frames coming from a camera: only one color channel,
 	// but with color filter information defined.
-	CAER_FRAME_ITERATOR_ALL_START(framePacket)
-		if (caerFrameEventIsValid(caerFrameIteratorElement)
-			&& caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
+	CAER_FRAME_ITERATOR_VALID_START(framePacket)
+		if (caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
 			&& caerFrameEventGetColorFilter(caerFrameIteratorElement) != MONO) {
 			countValid++;
 
@@ -32,7 +35,7 @@ caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePack
 				maxLengthY = caerFrameEventGetLengthY(caerFrameIteratorElement);
 			}
 		}
-	CAER_FRAME_ITERATOR_ALL_END
+	CAER_FRAME_ITERATOR_VALID_END
 
 	// Allocate new frame with RGB channels to hold resulting color image.
 	caerFrameEventPacket colorFramePacket = caerFrameEventPacketAllocate(countValid,
@@ -42,9 +45,8 @@ caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePack
 	int32_t colorIndex = 0;
 
 	// Now that we have a valid new color frame packet, we can convert the frames one by one.
-	CAER_FRAME_ITERATOR_ALL_START(framePacket)
-		if (caerFrameEventIsValid(caerFrameIteratorElement)
-			&& caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
+	CAER_FRAME_ITERATOR_VALID_START(framePacket)
+		if (caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
 			&& caerFrameEventGetColorFilter(caerFrameIteratorElement) != MONO) {
 			// If all conditions are met, copy from framePacket's mono frame to colorFramePacket's RGB frame.
 			caerFrameEvent colorFrame = caerFrameEventPacketGetEvent(colorFramePacket, colorIndex++);
@@ -68,13 +70,9 @@ caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePack
 			// Finally validate the new frame.
 			caerFrameEventValidate(colorFrame, colorFramePacket);
 		}
-	CAER_FRAME_ITERATOR_ALL_END
+	CAER_FRAME_ITERATOR_VALID_END
 
 	return (colorFramePacket);
-}
-
-static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEvent monoFrame) {
-
 }
 
 void caerFrameUtilsOpenCVAutoContrastBrigthness(caerFrameEventPacket framePacket) {
