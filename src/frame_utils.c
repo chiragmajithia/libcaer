@@ -534,9 +534,8 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 
 	// This only works on valid frames coming from a camera: only one color channel,
 	// but with color filter information defined.
-	CAER_FRAME_ITERATOR_ALL_START(framePacket)
-		if (caerFrameEventIsValid(caerFrameIteratorElement)
-			&& caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
+	CAER_FRAME_ITERATOR_VALID_START(framePacket)
+		if (caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
 			&& caerFrameEventGetColorFilter(caerFrameIteratorElement) != MONO) {
 			countValid++;
 
@@ -548,7 +547,7 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 				maxLengthY = caerFrameEventGetLengthY(caerFrameIteratorElement);
 			}
 		}
-	CAER_FRAME_ITERATOR_ALL_END
+	CAER_FRAME_ITERATOR_VALID_END
 
 	// Allocate new frame with RGB channels to hold resulting color image.
 	caerFrameEventPacket colorFramePacket = caerFrameEventPacketAllocate(countValid,
@@ -558,9 +557,8 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 	int32_t colorIndex = 0;
 
 	// Now that we have a valid new color frame packet, we can convert the frames one by one.
-	CAER_FRAME_ITERATOR_ALL_START(framePacket)
-		if (caerFrameEventIsValid(caerFrameIteratorElement)
-			&& caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
+	CAER_FRAME_ITERATOR_VALID_START(framePacket)
+		if (caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE
 			&& caerFrameEventGetColorFilter(caerFrameIteratorElement) != MONO) {
 			// If all conditions are met, copy from framePacket's mono frame to colorFramePacket's RGB frame.
 			caerFrameEvent colorFrame = caerFrameEventPacketGetEvent(colorFramePacket, colorIndex++);
@@ -584,7 +582,7 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 			// Finally validate the new frame.
 			caerFrameEventValidate(colorFrame, colorFramePacket);
 		}
-	CAER_FRAME_ITERATOR_ALL_END
+	CAER_FRAME_ITERATOR_VALID_END
 
 	return (colorFramePacket);
 }
@@ -592,5 +590,42 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket) {
 	// O(x, y) = alpha * I(x, y) + beta, where alpha maximizes the range
 	// (contrast) and beta shifts it so lowest is zero (brightness).
+	// Only works with grayscale images currently. Doing so for color (RGB/RGBA) images would require
+	// conversion into another color space that has an intensity channel separate from the color
+	// channels, such as Lab or YCrCb. The same algorithm would then be applied on the intensity only.
+	CAER_FRAME_ITERATOR_VALID_START(framePacket)
+		if (caerFrameEventGetChannelNumber(caerFrameIteratorElement) == GRAYSCALE) {
+			uint16_t *pixels = caerFrameEventGetPixelArrayUnsafe(caerFrameIteratorElement);
+			int32_t lengthY = caerFrameEventGetLengthY(caerFrameIteratorElement);
+			int32_t lengthX = caerFrameEventGetLengthX(caerFrameIteratorElement);
 
+			// On first pass, determine minimum and maximum values.
+			int32_t minValue = INT32_MAX;
+			int32_t maxValue = INT32_MIN;
+
+			for (int32_t idx = 0; idx < (lengthY * lengthX); idx++) {
+				if (pixels[idx] < minValue) {
+					minValue = pixels[idx];
+				}
+
+				if (pixels[idx] > maxValue) {
+					maxValue = pixels[idx];
+				}
+			}
+
+			// Use min/max to calculate input range.
+			int32_t range = maxValue - minValue;
+
+			// Calculate alpha (contrast).
+			float alpha = ((float) UINT16_MAX) / ((float) range);
+
+			// Calculate beta (brightness).
+			float beta = ((float) -minValue) * alpha;
+
+			// Apply alpha and beta to pixels array.
+			for (int32_t idx = 0; idx < (lengthY * lengthX); idx++) {
+				pixels[idx] = U16T(alpha * ((float ) pixels[idx]) + beta);
+			}
+		}
+	CAER_FRAME_ITERATOR_VALID_END
 }
