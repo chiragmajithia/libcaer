@@ -553,6 +553,9 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 	caerFrameEventPacket colorFramePacket = caerFrameEventPacketAllocate(countValid,
 		caerEventPacketHeaderGetEventSource(&framePacket->packetHeader),
 		caerEventPacketHeaderGetEventTSOverflow(&framePacket->packetHeader), maxLengthX, maxLengthY, RGB);
+	if (colorFramePacket == NULL) {
+		return (NULL);
+	}
 
 	int32_t colorIndex = 0;
 
@@ -626,6 +629,10 @@ void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket) {
 			for (int32_t idx = 0; idx < (lengthY * lengthX); idx++) {
 				pixels[idx] = U16T(alpha * ((float ) pixels[idx]) + beta);
 			}
+		}
+		else {
+			caerLog(CAER_LOG_WARNING, "caerFrameUtilsAutoContrastBrigthness()",
+				"Normal Auto-Contrast/Brigthness only works with grayscale images. For color image support, please use caerFrameUtilsOpenCVAutoContrastBrigthness().");
 		}
 	CAER_FRAME_ITERATOR_VALID_END
 }
