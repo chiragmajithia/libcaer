@@ -33,86 +33,95 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 		return;
 	}
 
-	// Only log messages above the specified level.
-	if (logLevel <= atomic_load_explicit(&caerLogLevel, memory_order_relaxed)) {
-		// First prepend the time.
-		time_t currentTimeEpoch = time(NULL);
+	// Only log messages if there is a destination (file-descriptor) to write them to.
+	int logFileDescriptor1 = atomic_load_explicit(&caerLogFileDescriptor1, memory_order_relaxed);
+	int logFileDescriptor2 = atomic_load_explicit(&caerLogFileDescriptor2, memory_order_relaxed);
 
-		// From localtime_r() man-page: "According to POSIX.1-2004, localtime()
-		// is required to behave as though tzset(3) was called, while
-		// localtime_r() does not have this requirement."
-		// So we make sure to call it here, to be portable.
-		tzset();
+	if (logFileDescriptor1 < 0 && logFileDescriptor2 < 0) {
+		// Logging is disabled.
+		return;
+	}
 
-		struct tm currentTime;
-		localtime_r(&currentTimeEpoch, &currentTime);
+	// Only log messages above the specified severity level.
+	if (logLevel > atomic_load_explicit(&caerLogLevel, memory_order_relaxed)) {
+		return;
+	}
 
-		// Following time format uses exactly 29 characters (8 separators/punctuation,
-		// 4 year, 2 month, 2 day, 2 hours, 2 minutes, 2 seconds, 2 'TZ', 5 timezone).
-		size_t currentTimeStringLength = 29;
-		char currentTimeString[currentTimeStringLength + 1]; // + 1 for terminating NUL byte.
-		strftime(currentTimeString, currentTimeStringLength + 1, "%Y-%m-%d %H:%M:%S (TZ%z)", &currentTime);
+	// First prepend the time.
+	time_t currentTimeEpoch = time(NULL);
 
-		// Prepend debug level as a string to format.
-		const char *logLevelString;
-		switch (logLevel) {
-			case CAER_LOG_EMERGENCY:
-				logLevelString = "EMERGENCY";
-				break;
+	// From localtime_r() man-page: "According to POSIX.1-2004, localtime()
+	// is required to behave as though tzset(3) was called, while
+	// localtime_r() does not have this requirement."
+	// So we make sure to call it here, to be portable.
+	tzset();
 
-			case CAER_LOG_ALERT:
-				logLevelString = "ALERT";
-				break;
+	struct tm currentTime;
+	localtime_r(&currentTimeEpoch, &currentTime);
 
-			case CAER_LOG_CRITICAL:
-				logLevelString = "CRITICAL";
-				break;
+	// Following time format uses exactly 29 characters (8 separators/punctuation,
+	// 4 year, 2 month, 2 day, 2 hours, 2 minutes, 2 seconds, 2 'TZ', 5 timezone).
+	size_t currentTimeStringLength = 29;
+	char currentTimeString[currentTimeStringLength + 1]; // + 1 for terminating NUL byte.
+	strftime(currentTimeString, currentTimeStringLength + 1, "%Y-%m-%d %H:%M:%S (TZ%z)", &currentTime);
 
-			case CAER_LOG_ERROR:
-				logLevelString = "ERROR";
-				break;
+	// Prepend debug level as a string to format.
+	const char *logLevelString;
+	switch (logLevel) {
+		case CAER_LOG_EMERGENCY:
+			logLevelString = "EMERGENCY";
+			break;
 
-			case CAER_LOG_WARNING:
-				logLevelString = "WARNING";
-				break;
+		case CAER_LOG_ALERT:
+			logLevelString = "ALERT";
+			break;
 
-			case CAER_LOG_NOTICE:
-				logLevelString = "NOTICE";
-				break;
+		case CAER_LOG_CRITICAL:
+			logLevelString = "CRITICAL";
+			break;
 
-			case CAER_LOG_INFO:
-				logLevelString = "INFO";
-				break;
+		case CAER_LOG_ERROR:
+			logLevelString = "ERROR";
+			break;
 
-			case CAER_LOG_DEBUG:
-				logLevelString = "DEBUG";
-				break;
+		case CAER_LOG_WARNING:
+			logLevelString = "WARNING";
+			break;
 
-			default:
-				logLevelString = "UNKNOWN";
-				break;
-		}
+		case CAER_LOG_NOTICE:
+			logLevelString = "NOTICE";
+			break;
 
-		// Copy all strings into one and ensure NUL termination.
-		size_t logLength = (size_t) snprintf(NULL, 0, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem,
-			format);
-		char logString[logLength + 1];
-		snprintf(logString, logLength + 1, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem, format);
+		case CAER_LOG_INFO:
+			logLevelString = "INFO";
+			break;
 
-		va_list argptr;
+		case CAER_LOG_DEBUG:
+			logLevelString = "DEBUG";
+			break;
 
-		int logFileDescriptor1 = atomic_load_explicit(&caerLogFileDescriptor1, memory_order_relaxed);
-		if (logFileDescriptor1 >= 0) {
-			va_start(argptr, format);
-			vdprintf(logFileDescriptor1, logString, argptr);
-			va_end(argptr);
-		}
+		default:
+			logLevelString = "UNKNOWN";
+			break;
+	}
 
-		int logFileDescriptor2 = atomic_load_explicit(&caerLogFileDescriptor2, memory_order_relaxed);
-		if (logFileDescriptor2 >= 0) {
-			va_start(argptr, format);
-			vdprintf(logFileDescriptor2, logString, argptr);
-			va_end(argptr);
-		}
+	// Copy all strings into one and ensure NUL termination.
+	size_t logLength = (size_t) snprintf(NULL, 0, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem,
+		format);
+	char logString[logLength + 1];
+	snprintf(logString, logLength + 1, "%s: %s: %s: %s\n", currentTimeString, logLevelString, subSystem, format);
+
+	va_list argptr;
+
+	if (logFileDescriptor1 >= 0) {
+		va_start(argptr, format);
+		vdprintf(logFileDescriptor1, logString, argptr);
+		va_end(argptr);
+	}
+
+	if (logFileDescriptor2 >= 0) {
+		va_start(argptr, format);
+		vdprintf(logFileDescriptor2, logString, argptr);
+		va_end(argptr);
 	}
 }
