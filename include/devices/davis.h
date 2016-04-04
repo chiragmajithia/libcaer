@@ -1018,6 +1018,127 @@ extern "C" {
  * have to be exactly half of DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL.
  */
 #define DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH      11
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enables event injection when a rising edge occurs in the
+ * generated signal; a special event EXTERNAL_GENERATOR_RISING_EDGE
+ * is emitted into the event stream.
+ */
+#define DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_RISING_EDGE  12
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enables event injection when a falling edge occurs in the
+ * generated signal; a special event EXTERNAL_GENERATOR_FALLING_EDGE
+ * is emitted into the event stream.
+ */
+#define DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_FALLING_EDGE 13
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * read-only parameter, information about the presence of the
+ * extra detectors feature.
+ * This is reserved for internal use and should not be used by
+ * anything other than libcaer. Please see the 'struct caer_davis_info'
+ * documentation to get this information.
+ */
+#define DAVIS_CONFIG_EXTINPUT_HAS_EXTRA_DETECTORS        14
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enable the signal detector module. It generates events
+ * when it sees certain types of signals, such as edges or
+ * pulses of a defined length, on the B1P20 input pin.
+ * This can be useful to inject events into the event
+ * stream in response to external stimuli or controls,
+ * such as turning on a LED lamp.
+ */
+#define DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR1              15
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT1_RISING_EDGE event when a
+ * rising edge is detected (transition from low voltage to high).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES1       16
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT1_FALLING_EDGE event when a
+ * falling edge is detected (transition from high voltage to low).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES1      17
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT1_PULSE event when a pulse, of
+ * a specified, configurable polarity and length, is detected.
+ * See DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY1 and
+ * DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH1 for more details.
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSES1             18
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the polarity the pulse must exhibit to be detected as such.
+ * '1' means active high; a pulse will start when the signal
+ * goes from low to high and will continue to be seen as the
+ * same pulse as long as it stays high.
+ * '0' means active low; a pulse will start when the signal
+ * goes from high to low and will continue to be seen as the
+ * same pulse as long as it stays low.
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY1     19
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the minimal length that a pulse must have to trigger the
+ * sending of a special event. This is measured in cycles
+ * at LogicClock frequency (see 'struct caer_davis_info' for
+ * details on how to get the frequency).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH1       20
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * enable the signal detector module. It generates events
+ * when it sees certain types of signals, such as edges or
+ * pulses of a defined length, on the B1P21 input pin.
+ * This can be useful to inject events into the event
+ * stream in response to external stimuli or controls,
+ * such as turning on a LED lamp.
+ */
+#define DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR2              21
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT2_RISING_EDGE event when a
+ * rising edge is detected (transition from low voltage to high).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES2       22
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT2_FALLING_EDGE event when a
+ * falling edge is detected (transition from high voltage to low).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES2      23
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * send a special EXTERNAL_INPUT2_PULSE event when a pulse, of
+ * a specified, configurable polarity and length, is detected.
+ * See DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY2 and
+ * DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH2 for more details.
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSES2             24
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the polarity the pulse must exhibit to be detected as such.
+ * '1' means active high; a pulse will start when the signal
+ * goes from low to high and will continue to be seen as the
+ * same pulse as long as it stays high.
+ * '0' means active low; a pulse will start when the signal
+ * goes from high to low and will continue to be seen as the
+ * same pulse as long as it stays low.
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY2     25
+/**
+ * Parameter address for module DAVIS_CONFIG_EXTINPUT:
+ * the minimal length that a pulse must have to trigger the
+ * sending of a special event. This is measured in cycles
+ * at LogicClock frequency (see 'struct caer_davis_info' for
+ * details on how to get the frequency).
+ */
+#define DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH2       26
 
 /**
  * Parameter address for module DAVIS_CONFIG_SYSINFO:
@@ -1544,6 +1665,8 @@ struct caer_davis_info {
 	bool apsHasInternalADC;
 	/// Feature test: External Input module supports Signal-Generation.
 	bool extInputHasGenerator;
+	/// Feature test: External Input module supports extra detectors (1 & 2).
+	bool extInputHasExtraDetectors;
 };
 
 /**

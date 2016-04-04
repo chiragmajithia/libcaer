@@ -269,6 +269,8 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_HAS_GENERATOR, &param32);
 	handle->info.extInputHasGenerator = param32;
+	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_HAS_EXTRA_DETECTORS, &param32);
+	handle->info.extInputHasExtraDetectors = param32;
 
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_SIZE_COLUMNS, &param32);
 	state->dvsSizeX = I16T(param32);
@@ -464,6 +466,27 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 			U32T(handle->info.logicClock)); // in cycles @ LogicClock
 		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH,
 			U32T(handle->info.logicClock / 2)); // in cycles @ LogicClock
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_RISING_EDGE, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_FALLING_EDGE, false);
+	}
+
+	if (handle->info.extInputHasExtraDetectors) {
+		// Disable extra detectors by default. Have to be enabled manually after sendDefaultConfig() by user!
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR1, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES1, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES1, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSES1, true);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY1, true);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH1,
+			U32T(handle->info.logicClock)); // in cycles @ LogicClock
+
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR2, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES2, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES2, false);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSES2, true);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY2, true);
+		(*configSet)(cdh, DAVIS_CONFIG_EXTINPUT, DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH2,
+			U32T(handle->info.logicClock)); // in cycles @ LogicClock
 	}
 
 	(*configSet)(cdh, DAVIS_CONFIG_USB, DAVIS_CONFIG_USB_EARLY_PACKET_DELAY, 8); // in 125µs time-slices (defaults to 1ms)
@@ -1153,7 +1176,29 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_POLARITY:
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL:
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_RISING_EDGE:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_FALLING_EDGE:
 					if (handle->info.extInputHasGenerator) {
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH1:
+				case DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH2:
+					if (handle->info.extInputHasExtraDetectors) {
 						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
 					}
 					else {
@@ -1766,6 +1811,7 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY:
 				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH:
 				case DAVIS_CONFIG_EXTINPUT_HAS_GENERATOR:
+				case DAVIS_CONFIG_EXTINPUT_HAS_EXTRA_DETECTORS:
 					return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
 					break;
 
@@ -1774,7 +1820,29 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_POLARITY:
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_INTERVAL:
 				case DAVIS_CONFIG_EXTINPUT_GENERATE_PULSE_LENGTH:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_RISING_EDGE:
+				case DAVIS_CONFIG_EXTINPUT_GENERATE_INJECT_ON_FALLING_EDGE:
 					if (handle->info.extInputHasGenerator) {
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSES1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY1:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH1:
+				case DAVIS_CONFIG_EXTINPUT_RUN_DETECTOR2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_RISING_EDGES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_FALLING_EDGES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSES2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_POLARITY2:
+				case DAVIS_CONFIG_EXTINPUT_DETECT_PULSE_LENGTH2:
+					if (handle->info.extInputHasExtraDetectors) {
 						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_EXTINPUT, paramAddr, param));
 					}
 					else {
