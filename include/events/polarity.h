@@ -109,11 +109,9 @@ caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, i
 static inline caerPolarityEvent caerPolarityEventPacketGetEvent(caerPolarityEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Polarity Event",
 			"Called caerPolarityEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
-#endif
 		return (NULL);
 	}
 
@@ -161,9 +159,7 @@ static inline int64_t caerPolarityEventGetTimestamp64(caerPolarityEvent event, c
 static inline void caerPolarityEventSetTimestamp(caerPolarityEvent event, int32_t timestamp) {
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventSetTimestamp() with negative value!");
-#endif
 		return;
 	}
 
@@ -203,9 +199,7 @@ static inline void caerPolarityEventValidate(caerPolarityEvent event, caerPolari
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) + 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventValidate() on already valid event.");
-#endif
 	}
 }
 
@@ -228,9 +222,7 @@ static inline void caerPolarityEventInvalidate(caerPolarityEvent event, caerPola
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) - 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Polarity Event", "Called caerPolarityEventInvalidate() on already invalid event.");
-#endif
 	}
 }
 

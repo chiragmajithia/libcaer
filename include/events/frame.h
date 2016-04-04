@@ -162,11 +162,9 @@ caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t
 static inline caerFrameEvent caerFrameEventPacketGetEvent(caerFrameEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
-#endif
 		return (NULL);
 	}
 
@@ -217,9 +215,7 @@ static inline int64_t caerFrameEventGetTSStartOfFrame64(caerFrameEvent event, ca
 static inline void caerFrameEventSetTSStartOfFrame(caerFrameEvent event, int32_t startFrame) {
 	if (startFrame < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSStartOfFrame() with negative value!");
-#endif
 		return;
 	}
 
@@ -268,9 +264,7 @@ static inline int64_t caerFrameEventGetTSEndOfFrame64(caerFrameEvent event, caer
 static inline void caerFrameEventSetTSEndOfFrame(caerFrameEvent event, int32_t endFrame) {
 	if (endFrame < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSEndOfFrame() with negative value!");
-#endif
 		return;
 	}
 
@@ -319,9 +313,7 @@ static inline int64_t caerFrameEventGetTSStartOfExposure64(caerFrameEvent event,
 static inline void caerFrameEventSetTSStartOfExposure(caerFrameEvent event, int32_t startExposure) {
 	if (startExposure < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSStartOfExposure() with negative value!");
-#endif
 		return;
 	}
 
@@ -370,9 +362,7 @@ static inline int64_t caerFrameEventGetTSEndOfExposure64(caerFrameEvent event, c
 static inline void caerFrameEventSetTSEndOfExposure(caerFrameEvent event, int32_t endExposure) {
 	if (endExposure < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventSetTSEndOfExposure() with negative value!");
-#endif
 		return;
 	}
 
@@ -457,9 +447,7 @@ static inline void caerFrameEventValidate(caerFrameEvent event, caerFrameEventPa
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) + 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventValidate() on already valid event.");
-#endif
 	}
 }
 
@@ -482,9 +470,7 @@ static inline void caerFrameEventInvalidate(caerFrameEvent event, caerFrameEvent
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) - 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event", "Called caerFrameEventInvalidate() on already invalid event.");
-#endif
 	}
 }
 
@@ -612,11 +598,9 @@ static inline void caerFrameEventSetLengthXLengthYChannelNumber(caerFrameEvent e
 	size_t neededMemory = (sizeof(uint16_t) * (size_t) lengthX * (size_t) lengthY * channelNumber);
 
 	if (neededMemory > caerFrameEventPacketGetPixelsSize(packet)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetLengthXLengthYChannelNumber() with values that result in requiring %zu bytes, which exceeds the maximum allocated event size of %zu bytes.",
 			neededMemory, (size_t) caerEventPacketHeaderGetEventSize(&packet->packetHeader));
-#endif
 		return;
 	}
 
@@ -716,22 +700,18 @@ static inline void caerFrameEventSetPositionY(caerFrameEvent event, int32_t posi
 static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixel() with invalid Y address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			yAddress, caerFrameEventGetLengthY(event) - 1);
-#endif
 		return (0);
 	}
 
 	int32_t xLength = caerFrameEventGetLengthX(event);
 
 	if (xAddress < 0 || xAddress >= xLength) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixel() with invalid X address of %" PRIi32 ", should be between 0 and %" PRIi32".",
 			xAddress, xLength - 1);
-#endif
 		return (0);
 	}
 
@@ -753,22 +733,18 @@ static inline uint16_t caerFrameEventGetPixel(caerFrameEvent event, int32_t xAdd
 static inline void caerFrameEventSetPixel(caerFrameEvent event, int32_t xAddress, int32_t yAddress, uint16_t pixelValue) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixel() with invalid Y address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			yAddress, caerFrameEventGetLengthY(event) - 1);
-#endif
 		return;
 	}
 
 	int32_t xLength = caerFrameEventGetLengthX(event);
 
 	if (xAddress < 0 || xAddress >= xLength) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixel() with invalid X address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			xAddress, xLength - 1);
-#endif
 		return;
 	}
 
@@ -794,33 +770,27 @@ static inline uint16_t caerFrameEventGetPixelForChannel(caerFrameEvent event, in
 	uint8_t channel) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixelForChannel() with invalid Y address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			yAddress, caerFrameEventGetLengthY(event) - 1);
-#endif
 		return (0);
 	}
 
 	int32_t xLength = caerFrameEventGetLengthX(event);
 
 	if (xAddress < 0 || xAddress >= xLength) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixelForChannel() with invalid X address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			xAddress, xLength - 1);
-#endif
 		return (0);
 	}
 
 	uint8_t channelNumber = caerFrameEventGetChannelNumber(event);
 
 	if (channel >= channelNumber) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventGetPixelForChannel() with invalid channel number of %" PRIu8 ", should be between 0 and %" PRIu8 ".",
 			channel, (uint8_t) (channelNumber - 1));
-#endif
 		return (0);
 	}
 
@@ -845,33 +815,27 @@ static inline void caerFrameEventSetPixelForChannel(caerFrameEvent event, int32_
 	uint8_t channel, uint16_t pixelValue) {
 	// Check frame bounds first.
 	if (yAddress < 0 || yAddress >= caerFrameEventGetLengthY(event)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixelForChannel() with invalid Y address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			yAddress, caerFrameEventGetLengthY(event) - 1);
-#endif
 		return;
 	}
 
 	int32_t xLength = caerFrameEventGetLengthX(event);
 
 	if (xAddress < 0 || xAddress >= xLength) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixelForChannel() with invalid X address of %" PRIi32 ", should be between 0 and %" PRIi32 ".",
 			xAddress, xLength - 1);
-#endif
 		return;
 	}
 
 	uint8_t channelNumber = caerFrameEventGetChannelNumber(event);
 
 	if (channel >= channelNumber) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Called caerFrameEventSetPixelForChannel() with invalid channel number of %" PRIu8 ", should be between 0 and %" PRIu8 ".",
 			channel, (uint8_t) (channelNumber - 1));
-#endif
 		return;
 	}
 

@@ -104,11 +104,9 @@ caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t e
 static inline caerIMU9Event caerIMU9EventPacketGetEvent(caerIMU9EventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU9 Event",
 			"Called caerIMU9EventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
-#endif
 		return (NULL);
 	}
 
@@ -156,9 +154,7 @@ static inline int64_t caerIMU9EventGetTimestamp64(caerIMU9Event event, caerIMU9E
 static inline void caerIMU9EventSetTimestamp(caerIMU9Event event, int32_t timestamp) {
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU9 Event", "Called caerIMU9EventSetTimestamp() with negative value!");
-#endif
 		return;
 	}
 
@@ -198,9 +194,7 @@ static inline void caerIMU9EventValidate(caerIMU9Event event, caerIMU9EventPacke
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) + 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU9 Event", "Called caerIMU9EventValidate() on already valid event.");
-#endif
 	}
 }
 
@@ -223,9 +217,7 @@ static inline void caerIMU9EventInvalidate(caerIMU9Event event, caerIMU9EventPac
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) - 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU9 Event", "Called caerIMU9EventInvalidate() on already invalid event.");
-#endif
 	}
 }
 

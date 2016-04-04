@@ -9,16 +9,18 @@
 #include "events/config.h"
 
 caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
+	if (eventPacketsNumber == 0) {
+		return (NULL);
+	}
+
 	size_t eventPacketContainerSize = sizeof(struct caer_event_packet_container)
 		+ ((size_t) eventPacketsNumber * sizeof(caerEventPacketHeader));
 
 	caerEventPacketContainer packetContainer = calloc(1, eventPacketContainerSize);
 	if (packetContainer == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Failed to allocate %zu bytes of memory for Event Packet Container, containing %"
 			PRIi32 " packets. Error: %d.", eventPacketContainerSize, eventPacketsNumber, errno);
-#endif
 		return (NULL);
 	}
 
@@ -46,18 +48,20 @@ void caerEventPacketContainerFree(caerEventPacketContainer container) {
 }
 
 caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_special_event);
 	size_t eventPacketSize = sizeof(struct caer_special_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerSpecialEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event",
 			"Failed to allocate %zu bytes of memory for Special Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -73,18 +77,20 @@ caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int
 }
 
 caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_polarity_event);
 	size_t eventPacketSize = sizeof(struct caer_polarity_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerPolarityEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Polarity Event",
 			"Failed to allocate %zu bytes of memory for Polarity Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -101,6 +107,10 @@ caerPolarityEventPacket caerPolarityEventPacketAllocate(int32_t eventCapacity, i
 
 caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow,
 	int32_t maxLengthX, int32_t maxLengthY, int16_t maxChannelNumber) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t pixelSize = sizeof(uint16_t) * (size_t) maxLengthX * (size_t) maxLengthY * (size_t) maxChannelNumber;
 	size_t eventSize = sizeof(struct caer_frame_event) + pixelSize;
 	size_t eventPacketSize = sizeof(struct caer_frame_event_packet) + ((size_t) eventCapacity * eventSize);
@@ -108,12 +118,10 @@ caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t
 	// Zero out event memory (all events invalid).
 	caerFrameEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Frame Event",
 			"Failed to allocate %zu bytes of memory for Frame Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -129,18 +137,20 @@ caerFrameEventPacket caerFrameEventPacketAllocate(int32_t eventCapacity, int16_t
 }
 
 caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_imu6_event);
 	size_t eventPacketSize = sizeof(struct caer_imu6_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerIMU6EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU6 Event",
 			"Failed to allocate %zu bytes of memory for IMU6 Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -156,18 +166,20 @@ caerIMU6EventPacket caerIMU6EventPacketAllocate(int32_t eventCapacity, int16_t e
 }
 
 caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_imu9_event);
 	size_t eventPacketSize = sizeof(struct caer_imu9_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerIMU9EventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "IMU9 Event",
 			"Failed to allocate %zu bytes of memory for IMU9 Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -183,18 +195,20 @@ caerIMU9EventPacket caerIMU9EventPacketAllocate(int32_t eventCapacity, int16_t e
 }
 
 caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_sample_event);
 	size_t eventPacketSize = sizeof(struct caer_sample_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerSampleEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Sample Event",
 			"Failed to allocate %zu bytes of memory for Sample Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -210,18 +224,20 @@ caerSampleEventPacket caerSampleEventPacketAllocate(int32_t eventCapacity, int16
 }
 
 caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_ear_event);
 	size_t eventPacketSize = sizeof(struct caer_ear_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerEarEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Ear Event",
 			"Failed to allocate %zu bytes of memory for Ear Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 
@@ -238,18 +254,20 @@ caerEarEventPacket caerEarEventPacketAllocate(int32_t eventCapacity, int16_t eve
 
 caerConfigurationEventPacket caerConfigurationEventPacketAllocate(int32_t eventCapacity, int16_t eventSource,
 	int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
 	size_t eventSize = sizeof(struct caer_configuration_event);
 	size_t eventPacketSize = sizeof(struct caer_configuration_event_packet) + ((size_t) eventCapacity * eventSize);
 
 	// Zero out event memory (all events invalid).
 	caerConfigurationEventPacket packet = calloc(1, eventPacketSize);
 	if (packet == NULL) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Configuration Event",
 			"Failed to allocate %zu bytes of memory for Configuration Event Packet of capacity %"
 			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
 			errno);
-#endif
 		return (NULL);
 	}
 

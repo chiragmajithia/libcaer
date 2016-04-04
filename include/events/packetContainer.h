@@ -90,10 +90,8 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 
 	if (eventPacketsNumber < 0) {
 		// Negative numbers (bit 31 set) are not allowed!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerSetEventPacketsNumber() with negative value!");
-#endif
 		return;
 	}
 
@@ -118,11 +116,9 @@ static inline caerEventPacketHeader caerEventPacketContainerGetEventPacket(caerE
 
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerGetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketContainerGetEventPacketsNumber(container) - 1);
-#endif
 		return (NULL);
 	}
 
@@ -147,11 +143,9 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketContainerGetEventPacketsNumber(container)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "EventPacket Container",
 			"Called caerEventPacketContainerSetEventPacket() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ". Negative values are not allowed!",
 			n, caerEventPacketContainerGetEventPacketsNumber(container) - 1);
-#endif
 		return;
 	}
 

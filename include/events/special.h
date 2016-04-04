@@ -101,11 +101,9 @@ caerSpecialEventPacket caerSpecialEventPacketAllocate(int32_t eventCapacity, int
 static inline caerSpecialEvent caerSpecialEventPacketGetEvent(caerSpecialEventPacket packet, int32_t n) {
 	// Check that we're not out of bounds.
 	if (n < 0 || n >= caerEventPacketHeaderGetEventCapacity(&packet->packetHeader)) {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event",
 			"Called caerSpecialEventPacketGetEvent() with invalid event offset %" PRIi32 ", while maximum allowed value is %" PRIi32 ".",
 			n, caerEventPacketHeaderGetEventCapacity(&packet->packetHeader) - 1);
-#endif
 		return (NULL);
 	}
 
@@ -153,9 +151,7 @@ static inline int64_t caerSpecialEventGetTimestamp64(caerSpecialEvent event, cae
 static inline void caerSpecialEventSetTimestamp(caerSpecialEvent event, int32_t timestamp) {
 	if (timestamp < 0) {
 		// Negative means using the 31st bit!
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventSetTimestamp() with negative value!");
-#endif
 		return;
 	}
 
@@ -195,9 +191,7 @@ static inline void caerSpecialEventValidate(caerSpecialEvent event, caerSpecialE
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) + 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventValidate() on already valid event.");
-#endif
 	}
 }
 
@@ -220,9 +214,7 @@ static inline void caerSpecialEventInvalidate(caerSpecialEvent event, caerSpecia
 			caerEventPacketHeaderGetEventValid(&packet->packetHeader) - 1);
 	}
 	else {
-#if !defined(LIBCAER_LOG_NONE)
 		caerLog(CAER_LOG_CRITICAL, "Special Event", "Called caerSpecialEventInvalidate() on already invalid event.");
-#endif
 	}
 }
 
