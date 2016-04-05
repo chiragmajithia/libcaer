@@ -102,6 +102,10 @@ static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEv
 
 caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePacket,
 	enum caer_frame_utils_opencv_demosaic demosaicType) {
+	if (framePacket == NULL) {
+		return (NULL);
+	}
+
 	int32_t countValid = 0;
 	int32_t maxLengthX = 0;
 	int32_t maxLengthY = 0;

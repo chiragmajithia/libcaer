@@ -528,6 +528,10 @@ static void frameUtilsDemosaicFrame(caerFrameEvent colorFrame, caerFrameEvent mo
 }
 
 caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
+	if (framePacket == NULL) {
+		return (NULL);
+	}
+
 	int32_t countValid = 0;
 	int32_t maxLengthX = 0;
 	int32_t maxLengthY = 0;
@@ -591,6 +595,10 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 }
 
 void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket) {
+	if (framePacket == NULL) {
+		return;
+	}
+
 	// O(x, y) = alpha * I(x, y) + beta, where alpha maximizes the range
 	// (contrast) and beta shifts it so lowest is zero (brightness).
 	// Only works with grayscale images currently. Doing so for color (RGB/RGBA) images would require
