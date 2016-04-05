@@ -178,7 +178,12 @@ caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePack
 	return (colorFramePacket);
 }
 
-void caerFrameUtilsOpenCVAutoContrastBrigthness(caerFrameEventPacket framePacket) {
+void caerFrameUtilsOpenCVAutoContrastBrigthness(caerFrameEventPacket framePacket,
+	enum caer_frame_utils_opencv_auto_contrast autoContrastType) {
 
 }
 
+void caerFrameUtilsOpenCVWhiteBalance(caerFrameEventPacket framePacket,
+	enum caer_frame_utils_opencv_white_balance balanceType) {
+
+}
