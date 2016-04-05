@@ -44,7 +44,9 @@ static inline void updateROISizes(davisState state) {
 	}
 }
 
-static inline void initFrame(davisState state) {
+static inline void initFrame(davisHandle handle) {
+	davisState state = &handle->state;
+
 	state->apsCurrentReadoutType = APS_READOUT_RESET;
 	for (size_t i = 0; i < APS_READOUT_TYPES_NUM; i++) {
 		state->apsCountX[i] = 0;
@@ -66,6 +68,7 @@ static inline void initFrame(davisState state) {
 	caerFrameEventSetLengthXLengthYChannelNumber(state->currentFrameEvent[0], state->apsROISizeX[0],
 		state->apsROISizeY[0], APS_ADC_CHANNELS, state->currentFramePacket);
 	caerFrameEventSetROIIdentifier(state->currentFrameEvent[0], 0);
+	caerFrameEventSetColorFilter(state->currentFrameEvent[0], handle->info.apsColorFilter);
 	caerFrameEventSetPositionX(state->currentFrameEvent[0], state->apsROIPositionX[0]);
 	caerFrameEventSetPositionY(state->currentFrameEvent[0], state->apsROIPositionY[0]);
 }
@@ -2801,7 +2804,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->apsGlobalShutter = true;
 							state->apsResetRead = true;
 
-							initFrame(state);
+							initFrame(handle);
 
 							break;
 						}
@@ -2812,7 +2815,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->apsGlobalShutter = false;
 							state->apsResetRead = true;
 
-							initFrame(state);
+							initFrame(handle);
 
 							break;
 						}
@@ -2955,7 +2958,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->apsGlobalShutter = true;
 							state->apsResetRead = false;
 
-							initFrame(state);
+							initFrame(handle);
 
 							// If reset reads are disabled, the start of exposure is closest to
 							// the start of frame.
@@ -2971,7 +2974,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->apsGlobalShutter = false;
 							state->apsResetRead = false;
 
-							initFrame(state);
+							initFrame(handle);
 
 							// If reset reads are disabled, the start of exposure is closest to
 							// the start of frame.
