@@ -47,7 +47,7 @@ static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEv
 			}
 			break;
 
-		case VARIABLE_NUMBER_OF_GRADIENTS:
+		/*case VARIABLE_NUMBER_OF_GRADIENTS:
 			switch (caerFrameEventGetColorFilter(monoFrame)) {
 				case RGBG:
 					code = COLOR_BayerBG2RGB_VNG;
@@ -69,7 +69,7 @@ static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEv
 					// Impossible, other color filters get filtered out above.
 					break;
 			}
-			break;
+			break;*/
 
 		case EDGE_AWARE:
 			switch (caerFrameEventGetColorFilter(monoFrame)) {

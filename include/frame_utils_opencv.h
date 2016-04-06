@@ -15,7 +15,7 @@ extern "C" {
 #include "events/frame.h"
 
 enum caer_frame_utils_opencv_demosaic {
-	NORMAL, VARIABLE_NUMBER_OF_GRADIENTS, EDGE_AWARE,
+	NORMAL, EDGE_AWARE, // VARIABLE_NUMBER_OF_GRADIENTS not supported on 16bit images currently.
 };
 
 enum caer_frame_utils_opencv_auto_contrast {
