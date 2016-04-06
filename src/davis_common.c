@@ -3156,9 +3156,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					break;
 
 				case 1: // Y address
-					// Flip Y address to conform to CG format.
-					data = U16T((state->dvsSizeY - 1) - data);
-
 					// Check range conformity.
 					if (data >= state->dvsSizeY) {
 						caerLog(CAER_LOG_ALERT, handle->info.deviceString,
@@ -3201,11 +3198,13 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					caerPolarityEventSetPolarity(currentPolarityEvent, (polarity & 0x01));
 					caerPolarityEventSetColor(currentPolarityEvent, W);
 					if (state->dvsInvertXY) {
-						caerPolarityEventSetY(currentPolarityEvent, data);
+						// Flip Y address to conform to CG format.
+						caerPolarityEventSetY(currentPolarityEvent, U16T((state->dvsSizeX - 1) - data));
 						caerPolarityEventSetX(currentPolarityEvent, state->dvsLastY);
 					}
 					else {
-						caerPolarityEventSetY(currentPolarityEvent, state->dvsLastY);
+						// Flip Y address to conform to CG format.
+						caerPolarityEventSetY(currentPolarityEvent, U16T((state->dvsSizeY - 1) - state->dvsLastY));
 						caerPolarityEventSetX(currentPolarityEvent, data);
 					}
 					caerPolarityEventValidate(currentPolarityEvent, state->currentPolarityPacket);
@@ -3252,13 +3251,12 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 								caerFrameEventGetLengthX(state->currentFrameEvent[0]) - 1
 									- state->apsCountX[state->apsCurrentReadoutType])) :
 							(U16T(state->apsCountX[state->apsCurrentReadoutType]));
-					// FlipY is interpreted inverted, so that the resulting frame follows CG format.
 					uint16_t yPos =
 						(state->apsFlipY) ?
-							(U16T(state->apsCountY[state->apsCurrentReadoutType])) :
 							(U16T(
 								caerFrameEventGetLengthY(state->currentFrameEvent[0]) - 1
-									- state->apsCountY[state->apsCurrentReadoutType]));
+									- state->apsCountY[state->apsCurrentReadoutType])) :
+							(U16T(state->apsCountY[state->apsCurrentReadoutType]));
 
 					if (IS_DAVISRGB(handle->info.chipID)) {
 						yPos = U16T(yPos + state->apsRGBPixelOffset);
@@ -3268,10 +3266,17 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 					if (state->apsInvertXY) {
 						SWAP_VAR(uint16_t, xPos, yPos);
+
 						stride = caerFrameEventGetLengthY(state->currentFrameEvent[0]);
+
+						// Flip Y address to conform to CG format.
+						yPos = U16T((state->apsSizeX - 1) - yPos);
 					}
 					else {
 						stride = caerFrameEventGetLengthX(state->currentFrameEvent[0]);
+
+						// Flip Y address to conform to CG format.
+						yPos = U16T((state->apsSizeY - 1) - yPos);
 					}
 
 					size_t pixelPosition = (size_t) (yPos * stride) + xPos;
