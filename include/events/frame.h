@@ -93,9 +93,9 @@ struct caer_frame_event {
 	int32_t lengthX;
 	/// Y axis length in pixels.
 	int32_t lengthY;
-	/// X axis position (lower left offset) in pixels.
+	/// X axis position (upper left offset) in pixels.
 	int32_t positionX;
-	/// Y axis position (lower left offset) in pixels.
+	/// Y axis position (upper left offset) in pixels.
 	int32_t positionY;
 	/// Pixel array, 16 bit unsigned integers, normalized to 16 bit depth.
 	/// The pixel array is laid out row by row (increasing X axis), going
