@@ -16,7 +16,8 @@ extern "C" {
 #include "events/frame.h"
 
 caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket);
-void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket);
+void caerFrameUtilsContrast(caerFrameEventPacket framePacket);
+void caerFrameUtilsWhiteBalance(caerFrameEventPacket framePacket);
 
 #ifdef __cplusplus
 }

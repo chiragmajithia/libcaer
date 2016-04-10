@@ -15,23 +15,22 @@ extern "C" {
 #include "events/frame.h"
 
 enum caer_frame_utils_opencv_demosaic {
-	NORMAL, EDGE_AWARE, // VARIABLE_NUMBER_OF_GRADIENTS not supported on 16bit images currently.
+	DEMOSAIC_NORMAL, DEMOSAIC_EDGE_AWARE, // DEMOSAIC_VARIABLE_NUMBER_OF_GRADIENTS not supported on 16bit images currently.
 };
 
-enum caer_frame_utils_opencv_auto_contrast {
-	NORMALIZE, HISTOGRAM_EQUALIZATION, CLAHE,
+enum caer_frame_utils_opencv_contrast {
+	CONTRAST_NORMALIZATION, CONTRAST_HISTOGRAM_EQUALIZATION, CONTRAST_CLAHE,
 };
 
 enum caer_frame_utils_opencv_white_balance {
-	SIMPLE, GRAYWORLD,
+	WHITEBALANCE_SIMPLE, WHITEBALANCE_GRAYWORLD,
 };
 
 caerFrameEventPacket caerFrameUtilsOpenCVDemosaic(caerFrameEventPacket framePacket,
 	enum caer_frame_utils_opencv_demosaic demosaicType);
-void caerFrameUtilsOpenCVAutoContrastBrigthness(caerFrameEventPacket framePacket,
-	enum caer_frame_utils_opencv_auto_contrast autoContrastType);
+void caerFrameUtilsOpenCVContrast(caerFrameEventPacket framePacket, enum caer_frame_utils_opencv_contrast contrastType);
 void caerFrameUtilsOpenCVWhiteBalance(caerFrameEventPacket framePacket,
-	enum caer_frame_utils_opencv_white_balance balanceType);
+	enum caer_frame_utils_opencv_white_balance whiteBalanceType);
 
 #ifdef __cplusplus
 }

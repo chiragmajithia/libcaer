@@ -594,7 +594,7 @@ caerFrameEventPacket caerFrameUtilsDemosaic(caerFrameEventPacket framePacket) {
 	return (colorFramePacket);
 }
 
-void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket) {
+void caerFrameUtilsContrast(caerFrameEventPacket framePacket) {
 	if (framePacket == NULL) {
 		return;
 	}
@@ -639,8 +639,12 @@ void caerFrameUtilsAutoContrastBrigthness(caerFrameEventPacket framePacket) {
 			}
 		}
 		else {
-			caerLog(CAER_LOG_WARNING, "caerFrameUtilsAutoContrastBrigthness()",
-				"Normal Auto-Contrast/Brigthness only works with grayscale images. For color image support, please use caerFrameUtilsOpenCVAutoContrastBrigthness().");
+			caerLog(CAER_LOG_WARNING, "caerFrameUtilsContrast()",
+				"Standard contrast enhancement only works with grayscale images. For color image support, please use caerFrameUtilsOpenCVContrast().");
 		}
 	CAER_FRAME_ITERATOR_VALID_END
+}
+
+void caerFrameUtilsWhiteBalance(caerFrameEventPacket framePacket) {
+
 }
