@@ -60,6 +60,9 @@ enum caer_default_event_types {
 	SAMPLE_EVENT = 5,   //!< ADC sample events.
 	EAR_EVENT = 6,      //!< Ear (cochlea) events.
 	CONFIG_EVENT = 7,   //!< Device configuration events.
+	POINT1D_EVENT = 8,  //!< 1D measurement events.
+	POINT2D_EVENT = 9,  //!< 2D measurement events.
+	POINT3D_EVENT = 10, //!< 3D measurement events.
 };
 
 /**

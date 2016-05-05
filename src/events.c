@@ -7,6 +7,9 @@
 #include "events/sample.h"
 #include "events/ear.h"
 #include "events/config.h"
+#include "events/point1d.h"
+#include "events/point2d.h"
+#include "events/point3d.h"
 
 caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
 	if (eventPacketsNumber == 0) {
@@ -276,6 +279,93 @@ caerConfigurationEventPacket caerConfigurationEventPacketAllocate(int32_t eventC
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_configuration_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
+	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
+
+	return (packet);
+}
+
+caerPoint1DEventPacket caerPoint1DEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
+	size_t eventSize = sizeof(struct caer_point1d_event);
+	size_t eventPacketSize = sizeof(struct caer_point1d_event_packet) + ((size_t) eventCapacity * eventSize);
+
+	// Zero out event memory (all events invalid).
+	caerPoint1DEventPacket packet = calloc(1, eventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Point1D Event",
+			"Failed to allocate %zu bytes of memory for Point1D Event Packet of capacity %"
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			errno);
+		return (NULL);
+	}
+
+	// Fill in header fields.
+	caerEventPacketHeaderSetEventType(&packet->packetHeader, POINT1D_EVENT);
+	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
+	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_point1d_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
+	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
+
+	return (packet);
+}
+
+caerPoint2DEventPacket caerPoint2DEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
+	size_t eventSize = sizeof(struct caer_point2d_event);
+	size_t eventPacketSize = sizeof(struct caer_point2d_event_packet) + ((size_t) eventCapacity * eventSize);
+
+	// Zero out event memory (all events invalid).
+	caerPoint2DEventPacket packet = calloc(1, eventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Point2D Event",
+			"Failed to allocate %zu bytes of memory for Point2D Event Packet of capacity %"
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			errno);
+		return (NULL);
+	}
+
+	// Fill in header fields.
+	caerEventPacketHeaderSetEventType(&packet->packetHeader, POINT2D_EVENT);
+	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
+	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_point2d_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
+	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
+
+	return (packet);
+}
+
+caerPoint3DEventPacket caerPoint3DEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
+	size_t eventSize = sizeof(struct caer_point3d_event);
+	size_t eventPacketSize = sizeof(struct caer_point3d_event_packet) + ((size_t) eventCapacity * eventSize);
+
+	// Zero out event memory (all events invalid).
+	caerPoint3DEventPacket packet = calloc(1, eventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Point3D Event",
+			"Failed to allocate %zu bytes of memory for Point3D Event Packet of capacity %"
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			errno);
+		return (NULL);
+	}
+
+	// Fill in header fields.
+	caerEventPacketHeaderSetEventType(&packet->packetHeader, POINT3D_EVENT);
+	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
+	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_point3d_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 
