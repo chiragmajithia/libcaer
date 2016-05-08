@@ -241,6 +241,9 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	uint32_t param32 = 0;
 
 	handle->info.deviceID = I16T(deviceID);
+	strncpy(handle->info.deviceSerialNumber, serialNumber, 8 + 1);
+	handle->info.deviceUSBBusNumber = busNumber;
+	handle->info.deviceUSBDeviceAddress = devAddress;
 	handle->info.deviceString = fullLogString;
 	spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_SYSINFO, DAVIS_CONFIG_SYSINFO_LOGIC_VERSION, &param32);
 	handle->info.logicVersion = I16T(param32);

@@ -132,6 +132,12 @@ extern "C" {
 struct caer_dvs128_info {
 	/// Unique device identifier. Also 'source' for events.
 	int16_t deviceID;
+	/// Device serial number.
+	char deviceSerialNumber[8 + 1];
+	/// Device USB bus number.
+	uint8_t deviceUSBBusNumber;
+	/// Device USB device address.
+	uint8_t deviceUSBDeviceAddress;
 	/// Device information string, for logging purposes.
 	char *deviceString;
 	/// Logic (FPGA/CPLD) version.
