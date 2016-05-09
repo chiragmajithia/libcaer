@@ -2173,10 +2173,10 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 
 	state->apsCurrentResetFrame = calloc((size_t) (state->apsSizeX * state->apsSizeY * APS_ADC_CHANNELS),
 		sizeof(uint16_t));
-	if (state->currentIMU6Packet == NULL) {
+	if (state->apsCurrentResetFrame == NULL) {
 		freeAllDataMemory(state);
 
-		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate IMU6 event packet.");
+		caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate APS reset frame memory.");
 		return (false);
 	}
 
