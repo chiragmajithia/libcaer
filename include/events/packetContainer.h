@@ -5,7 +5,15 @@
  * An EventPacketContainer is a logical construct that contains packets
  * of events (EventPackets) of different event types, with the aim of
  * keeping related events of differing types, such as DVS and IMU data,
- * together. Such a relation is usually based on time intervals.
+ * together. Such a relation is usually based on time intervals, trying
+ * to keep groups of event happening in a certain time-slice together.
+ * All original input modules keep to this rule wherever possible, but
+ * for example IMU6 and Frame packets cannot guarantee this; it is
+ * possible that *one* such event is moved to the next packet container,
+ * since these are composite events and take some time to be realized,
+ * and in that time any of the packet container commit triggers may
+ * happen, and thus the event may be incomplete at that time and has to
+ * be deferred to the next packet container.
  */
 
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_

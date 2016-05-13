@@ -2788,6 +2788,16 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							if (state->imuCount == IMU6_COUNT) {
 								caerIMU6EventValidate(&state->currentIMU6Event, state->currentIMU6Packet);
 
+								// IMU6 and APS operate on an internal event and copy that to the actual output
+								// packet here, in the END state, for a reason: if a packetContainer, with all its
+								// packets, is committed due to hitting any of the triggers that are not TS reset
+								// or TS wrap-around related, like number of polarity events, the event in the packet
+								// would be left incomplete, and the event in the new packet would be corrupted.
+								// We could avoid this like for the TS reset/TS wrap-around case (see forceCommit) by
+								// just deleting that event, but these kinds of commits happen much more often and the
+								// possible data loss would be too significant. So instead we keep a private event,
+								// fill it, and then only copy it into the packet here in the END state, at which point
+								// the whole event is ready and cannot be broken/corrupted in any way anymore.
 								caerIMU6Event currentIMU6Event = caerIMU6EventPacketGetEvent(state->currentIMU6Packet,
 									state->currentIMU6PacketPosition);
 								memcpy(currentIMU6Event, &state->currentIMU6Event, sizeof(struct caer_imu6_event));
@@ -2865,6 +2875,16 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 										state->currentFrameEvent[0]->positionY);
 								}
 
+								// IMU6 and APS operate on an internal event and copy that to the actual output
+								// packet here, in the END state, for a reason: if a packetContainer, with all its
+								// packets, is committed due to hitting any of the triggers that are not TS reset
+								// or TS wrap-around related, like number of polarity events, the event in the packet
+								// would be left incomplete, and the event in the new packet would be corrupted.
+								// We could avoid this like for the TS reset/TS wrap-around case (see forceCommit) by
+								// just deleting that event, but these kinds of commits happen much more often and the
+								// possible data loss would be too significant. So instead we keep a private event,
+								// fill it, and then only copy it into the packet here in the END state, at which point
+								// the whole event is ready and cannot be broken/corrupted in any way anymore.
 								caerFrameEvent currentFrameEvent = caerFrameEventPacketGetEvent(
 									state->currentFramePacket, state->currentFramePacketPosition);
 								memcpy(currentFrameEvent, state->currentFrameEvent[0],
@@ -3656,6 +3676,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				// or a TS big wrap, impose. Continuing to parse events would result
 				// in a corrupted state of the first event in the new packet, as it would
 				// be incomplete, incorrect and miss vital initialization data.
+				// See APS and IMU6 END states for more details on a related issue.
 				state->apsIgnoreEvents = true;
 				state->imuIgnoreEvents = true;
 			}
