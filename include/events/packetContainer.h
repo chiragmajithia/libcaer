@@ -7,13 +7,14 @@
  * keeping related events of differing types, such as DVS and IMU data,
  * together. Such a relation is usually based on time intervals, trying
  * to keep groups of event happening in a certain time-slice together.
- * All original input modules keep to this rule wherever possible, but
- * for example IMU6 and Frame packets cannot guarantee this; it is
- * possible that *one* such event is moved to the next packet container,
- * since these are composite events and take some time to be realized,
- * and in that time any of the packet container commit triggers may
- * happen, and thus the event may be incomplete at that time and has to
- * be deferred to the next packet container.
+ * All conforming input modules keep to this rule, with *one* possible
+ * exception: for example IMU6 and Frame packets cannot guarantee this
+ * always; it is possible that *one* such event is moved to the successive
+ * packet container, since these are composite events and can take a long
+ * time to be completed/created, and in that time any of the other packet
+ * container commit triggers may happen, and waiting is not an option to
+ * maintain those contracts, and thus the event may be incomplete at that
+ * time and has to be deferred to the next packet container.
  */
 
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_
