@@ -527,6 +527,12 @@ static inline void *caerCopyEventPacketOnlyEvents(void *eventPacket) {
 	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
 	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
 	int32_t eventNumber = caerEventPacketHeaderGetEventNumber(header);
+
+	if (eventNumber == 0) {
+		// No copy possible if result is empty (capacity=0).
+		return (NULL);
+	}
+
 	size_t packetMem = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (eventSize * eventNumber);
 
 	// Allocate memory for new event packet.
@@ -564,6 +570,12 @@ static inline void *caerCopyEventPacketOnlyValidEvents(void *eventPacket) {
 	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
 	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
 	int32_t eventValid = caerEventPacketHeaderGetEventValid(header);
+
+	if (eventValid == 0) {
+		// No copy possible if result is empty (capacity=0).
+		return (NULL);
+	}
+
 	size_t packetMem = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (eventSize * eventValid);
 
 	// Allocate memory for new event packet.
