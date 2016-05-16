@@ -505,6 +505,9 @@ static inline void *caerCopyEventPacket(void *eventPacket) {
 	// Copy the data over.
 	memcpy(eventPacketCopy, eventPacket, dataMem);
 
+	// Zero out the rest of the packet.
+	memset(((uint8_t *) eventPacketCopy) + dataMem, 0, packetMem - dataMem);
+
 	return (eventPacketCopy);
 }
 
@@ -585,10 +588,14 @@ static inline void *caerCopyEventPacketOnlyValidEvents(void *eventPacket) {
 		return (NULL);
 	}
 
+	// First copy over the header.
+	memcpy(eventPacketCopy, eventPacket, CAER_EVENT_PACKET_HEADER_SIZE);
+
 	// Copy the data over. Must check every event for validity!
-	size_t offset = 0;
+	size_t offset = CAER_EVENT_PACKET_HEADER_SIZE;
+
 	CAER_ITERATOR_VALID_START(header, void *)
-		memcpy(eventPacketCopy + offset, caerIteratorElement, (size_t) eventSize);
+		memcpy(((uint8_t *) eventPacketCopy) + offset, caerIteratorElement, (size_t) eventSize);
 		offset += (size_t) eventSize;
 	CAER_ITERATOR_VALID_END
 
