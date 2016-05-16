@@ -211,7 +211,7 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 
 	char serialNumber[8 + 1] = { 0 };
 	int getStringDescResult = libusb_get_string_descriptor_ascii(state->deviceHandle, 3, (unsigned char *) serialNumber,
-		8);
+		8 + 1);
 
 	// Check serial number success and length.
 	if (getStringDescResult < 0 || getStringDescResult > 8) {
