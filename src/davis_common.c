@@ -2714,7 +2714,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->wrapAdd = 0;
 							state->lastTimestamp = 0;
 							state->currentTimestamp = 0;
-							state->dvsTimestamp = 0;
 
 							caerLog(CAER_LOG_INFO, handle->info.deviceString, "Timestamp reset event received.");
 
@@ -3189,8 +3188,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					}
 
 					if (state->dvsGotY) {
-						// Use the previous timestamp here, since this refers to the previous Y.
-						caerSpecialEventSetTimestamp(currentSpecialEvent, state->dvsTimestamp);
+						// Timestamp at event-stream insertion point.
+						caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 						caerSpecialEventSetType(currentSpecialEvent, DVS_ROW_ONLY);
 						caerSpecialEventSetData(currentSpecialEvent, state->dvsLastY);
 						caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3202,7 +3201,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 					state->dvsLastY = data;
 					state->dvsGotY = true;
-					state->dvsTimestamp = state->currentTimestamp;
 
 					break;
 
@@ -3219,7 +3217,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					// negative gain from pre-amplifier.
 					uint8_t polarity = ((IS_DAVIS208(handle->info.chipID)) && (data < 192)) ? U8T(~code) : (code);
 
-					caerPolarityEventSetTimestamp(currentPolarityEvent, state->dvsTimestamp);
+					// Timestamp at event-stream insertion point.
+					caerPolarityEventSetTimestamp(currentPolarityEvent, state->currentTimestamp);
 					caerPolarityEventSetPolarity(currentPolarityEvent, (polarity & 0x01));
 					caerPolarityEventSetColor(currentPolarityEvent, W);
 					if (state->dvsInvertXY) {
@@ -3533,7 +3532,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 						state->lastTimestamp = 0;
 						state->currentTimestamp = state->wrapAdd;
-						state->dvsTimestamp = 0; // Closest to previous value for column addresses.
 
 						// Increment TSOverflow counter.
 						state->wrapOverflow++;

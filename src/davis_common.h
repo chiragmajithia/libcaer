@@ -71,7 +71,6 @@ struct davis_state {
 	int32_t lastTimestamp;
 	int32_t currentTimestamp;
 	// DVS specific fields
-	int32_t dvsTimestamp;
 	uint16_t dvsLastY;
 	bool dvsGotY;
 	int16_t dvsSizeX;
