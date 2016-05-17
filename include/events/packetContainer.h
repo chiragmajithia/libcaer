@@ -7,14 +7,11 @@
  * keeping related events of differing types, such as DVS and IMU data,
  * together. Such a relation is usually based on time intervals, trying
  * to keep groups of event happening in a certain time-slice together.
- * All conforming input modules keep to this rule, with *one* possible
- * exception: for example IMU6 and Frame packets cannot guarantee this
- * always; it is possible that *one* such event is moved to the successive
- * packet container, since these are composite events and can take a long
- * time to be completed/created, and in that time any of the other packet
- * container commit triggers may happen, and waiting is not an option to
- * maintain those contracts, and thus the event may be incomplete at that
- * time and has to be deferred to the next packet container.
+ * This time-order is based on the *main* time-stamp of an event, the one
+ * whose offset is referenced in the event packet header and that is
+ * used by the caerGenericEvent*() functions. It's guaranteed that all
+ * conforming input modules keep to this rule, generating containers
+ * that include all events from all types within the given time-slice.
  */
 
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_
