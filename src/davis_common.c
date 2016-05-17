@@ -2775,7 +2775,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 							memset(&state->currentIMU6Event, 0, sizeof(struct caer_imu6_event));
 
-							caerIMU6EventSetTimestamp(&state->currentIMU6Event, state->currentTimestamp);
 							break;
 						}
 
@@ -2786,6 +2785,9 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							}
 
 							if (state->imuCount == IMU6_COUNT) {
+								// Timestamp at event-stream insertion point.
+								caerIMU6EventSetTimestamp(&state->currentIMU6Event, state->currentTimestamp);
+
 								caerIMU6EventValidate(&state->currentIMU6Event, state->currentIMU6Packet);
 
 								// IMU6 and APS operate on an internal event and copy that to the actual output
