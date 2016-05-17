@@ -47,6 +47,10 @@ enum caer_special_event_types {
 	EXTERNAL_INPUT2_PULSE = 11,        //!< A pulse was detected (External Input 2 module on device).
 	EXTERNAL_GENERATOR_RISING_EDGE = 12,  //!< A rising edge was generated (External Input Generator module on device).
 	EXTERNAL_GENERATOR_FALLING_EDGE = 13, //!< A falling edge was generated (External Input Generator module on device).
+	APS_FRAME_START = 14,              //!< An APS frame capture has started (Frame Event will follow).
+	APS_FRAME_END = 15,                //!< An APS frame capture has completed (Frame Event is alongside).
+	APS_EXPOSURE_START = 16,           //!< An APS frame exposure has started (Frame Event will follow).
+	APS_EXPOSURE_END = 17,             //!< An APS frame exposure has completed (Frame Event will follow).
 };
 
 /**

@@ -64,6 +64,14 @@ static inline void initFrame(davisHandle handle) {
 	// Write out start of frame timestamp.
 	caerFrameEventSetTSStartOfFrame(state->currentFrameEvent[0], state->currentTimestamp);
 
+	// Send APS info event out (as special event).
+	caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
+		state->currentSpecialPacketPosition);
+	caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+	caerSpecialEventSetType(currentSpecialEvent, APS_FRAME_START);
+	caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+	state->currentSpecialPacketPosition++;
+
 	// Setup frame. Only ROI region 0 is supported currently.
 	caerFrameEventSetLengthXLengthYChannelNumber(state->currentFrameEvent[0], state->apsROISizeX[0],
 		state->apsROISizeY[0], APS_ADC_CHANNELS, state->currentFramePacket);
@@ -2866,6 +2874,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							// Write out end of frame timestamp.
 							caerFrameEventSetTSEndOfFrame(state->currentFrameEvent[0], state->currentTimestamp);
 
+							// Send APS info event out (as special event).
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
+							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+							caerSpecialEventSetType(currentSpecialEvent, APS_FRAME_END);
+							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+							state->currentSpecialPacketPosition++;
+
 							// Validate event and advance frame packet position.
 							if (validFrame) {
 								caerFrameEventValidate(state->currentFrameEvent[0], state->currentFramePacket);
@@ -2917,6 +2933,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							if (!state->apsGlobalShutter && state->apsCountX[APS_READOUT_RESET] == 0) {
 								caerFrameEventSetTSStartOfExposure(state->currentFrameEvent[0],
 									state->currentTimestamp);
+
+								// Send APS info event out (as special event).
+								caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+									state->currentSpecialPacket, state->currentSpecialPacketPosition);
+								caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+								caerSpecialEventSetType(currentSpecialEvent, APS_EXPOSURE_START);
+								caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+								state->currentSpecialPacketPosition++;
 							}
 
 							break;
@@ -2939,6 +2963,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							// of the exposure time, for both RS and GS.
 							if (state->apsCountX[APS_READOUT_SIGNAL] == 0) {
 								caerFrameEventSetTSEndOfExposure(state->currentFrameEvent[0], state->currentTimestamp);
+
+								// Send APS info event out (as special event).
+								caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+									state->currentSpecialPacket, state->currentSpecialPacketPosition);
+								caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+								caerSpecialEventSetType(currentSpecialEvent, APS_EXPOSURE_END);
+								caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+								state->currentSpecialPacketPosition++;
 							}
 
 							break;
@@ -2972,6 +3004,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 									== caerFrameEventGetLengthX(state->currentFrameEvent[0])) {
 								caerFrameEventSetTSStartOfExposure(state->currentFrameEvent[0],
 									state->currentTimestamp);
+
+								// Send APS info event out (as special event).
+								caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+									state->currentSpecialPacket, state->currentSpecialPacketPosition);
+								caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
+								caerSpecialEventSetType(currentSpecialEvent, APS_EXPOSURE_START);
+								caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
+								state->currentSpecialPacketPosition++;
 							}
 
 							break;
@@ -2990,6 +3030,10 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							// the start of frame.
 							caerFrameEventSetTSStartOfExposure(state->currentFrameEvent[0], state->currentTimestamp);
 
+							// No APS info event is sent out (as special event). Only one event
+							// per type can be sent out per cycle, and initFrame() already does
+							// that and sets APS_FRAME_START.
+
 							break;
 						}
 
@@ -3005,6 +3049,10 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							// If reset reads are disabled, the start of exposure is closest to
 							// the start of frame.
 							caerFrameEventSetTSStartOfExposure(state->currentFrameEvent[0], state->currentTimestamp);
+
+							// No APS info event is sent out (as special event). Only one event
+							// per type can be sent out per cycle, and initFrame() already does
+							// that and sets APS_FRAME_START.
 
 							break;
 						}
