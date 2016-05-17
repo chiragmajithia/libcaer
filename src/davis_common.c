@@ -2692,12 +2692,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 			checkStrictMonotonicTimestamp(handle);
 		}
 		else {
-			// Get all current events, so we don't have to duplicate code in every branch.
-			caerPolarityEvent currentPolarityEvent = caerPolarityEventPacketGetEvent(state->currentPolarityPacket,
-				state->currentPolarityPacketPosition);
-			caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
-				state->currentSpecialPacketPosition);
-
 			// Look at the code, to determine event and data type.
 			uint8_t code = U8T((event & 0x7000) >> 12);
 			uint16_t data = (event & 0x0FFF);
@@ -2718,6 +2712,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_INFO, handle->info.deviceString, "Timestamp reset event received.");
 
 							// Create timestamp reset event.
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, INT32_MAX);
 							caerSpecialEventSetType(currentSpecialEvent, TIMESTAMP_RESET);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -2737,6 +2733,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input (falling edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT_FALLING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -2748,6 +2746,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input (rising edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT_RISING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -2759,6 +2759,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input (pulse) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT_PULSE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3088,6 +3090,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 1 (falling edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_FALLING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3099,6 +3103,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 1 (rising edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_RISING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3110,6 +3116,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 1 (pulse) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT1_PULSE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3121,6 +3129,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 2 (falling edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_FALLING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3132,6 +3142,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 2 (rising edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_RISING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3143,6 +3155,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External input 2 (pulse) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_INPUT2_PULSE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3154,6 +3168,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External generator (falling edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_GENERATOR_FALLING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3165,6 +3181,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							caerLog(CAER_LOG_DEBUG, handle->info.deviceString,
 								"External generator (rising edge) event received.");
 
+							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+								state->currentSpecialPacket, state->currentSpecialPacketPosition);
 							caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 							caerSpecialEventSetType(currentSpecialEvent, EXTERNAL_GENERATOR_RISING_EDGE);
 							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
@@ -3188,6 +3206,9 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					}
 
 					if (state->dvsGotY) {
+						caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+							state->currentSpecialPacket, state->currentSpecialPacketPosition);
+
 						// Timestamp at event-stream insertion point.
 						caerSpecialEventSetTimestamp(currentSpecialEvent, state->currentTimestamp);
 						caerSpecialEventSetType(currentSpecialEvent, DVS_ROW_ONLY);
@@ -3216,6 +3237,9 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					// Invert polarity for PixelParade high gain pixels (DavisSense), because of
 					// negative gain from pre-amplifier.
 					uint8_t polarity = ((IS_DAVIS208(handle->info.chipID)) && (data < 192)) ? U8T(~code) : (code);
+
+					caerPolarityEvent currentPolarityEvent = caerPolarityEventPacketGetEvent(
+						state->currentPolarityPacket, state->currentPolarityPacketPosition);
 
 					// Timestamp at event-stream insertion point.
 					caerPolarityEventSetTimestamp(currentPolarityEvent, state->currentTimestamp);
@@ -3536,6 +3560,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						// Increment TSOverflow counter.
 						state->wrapOverflow++;
 
+						caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
+							state->currentSpecialPacket, state->currentSpecialPacketPosition);
 						caerSpecialEventSetTimestamp(currentSpecialEvent, INT32_MAX);
 						caerSpecialEventSetType(currentSpecialEvent, TIMESTAMP_WRAP);
 						caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
