@@ -159,6 +159,37 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 	container->eventPackets[n] = packetHeader;
 }
 
+/**
+ * Get the reference for an EventPacket stored in this container
+ * with the given event type. This returns the first found event packet
+ * with that type ID, or NULL if we get to the end without finding any
+ * such event packet.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, returns NULL too.
+ * @param typeID the event type to search for.
+ *
+ * @return a reference to an EventPacket with a certain type or NULL if none found.
+ */
+static inline caerEventPacketHeader caerEventPacketContainerGetEventPacketForType(caerEventPacketContainer container,
+	int16_t typeID) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (NULL);
+	}
+
+	for (int32_t i = 0; i < caerEventPacketContainerGetEventPacketsNumber(container); i++) {
+		caerEventPacketHeader packet = caerEventPacketContainerGetEventPacket(container, i);
+
+		if (packet != NULL && caerEventPacketHeaderGetEventType(packet) == typeID) {
+			// Found it, return it.
+			return (packet);
+		}
+	}
+
+	// Found nothing, return nothing.
+	return (NULL);
+}
+
 #ifdef __cplusplus
 }
 #endif
