@@ -45,12 +45,12 @@ extern "C" {
 struct caer_point2d_event {
 	/// Event information. First because of valid mark.
 	uint32_t info;
-	/// Event timestamp.
-	int32_t timestamp;
 	/// X axis measurement.
 	float x;
 	/// Y axis measurement.
 	float y;
+	/// Event timestamp.
+	int32_t timestamp;
 }__attribute__((__packed__));
 
 /**
