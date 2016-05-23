@@ -10,6 +10,7 @@
 #include "events/point1d.h"
 #include "events/point2d.h"
 #include "events/point3d.h"
+#include "events/point4d.h"
 
 caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNumber) {
 	if (eventPacketsNumber == 0) {
@@ -366,6 +367,35 @@ caerPoint3DEventPacket caerPoint3DEventPacketAllocate(int32_t eventCapacity, int
 	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
 	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
 	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_point3d_event, timestamp));
+	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
+	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
+
+	return (packet);
+}
+
+caerPoint4DEventPacket caerPoint4DEventPacketAllocate(int32_t eventCapacity, int16_t eventSource, int32_t tsOverflow) {
+	if (eventCapacity == 0) {
+		return (NULL);
+	}
+
+	size_t eventSize = sizeof(struct caer_point4d_event);
+	size_t eventPacketSize = sizeof(struct caer_point4d_event_packet) + ((size_t) eventCapacity * eventSize);
+
+	// Zero out event memory (all events invalid).
+	caerPoint4DEventPacket packet = calloc(1, eventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Point4D Event",
+			"Failed to allocate %zu bytes of memory for Point4D Event Packet of capacity %"
+			PRIi32 " from source %" PRIi16 ". Error: %d.", eventPacketSize, eventCapacity, eventSource,
+			errno);
+		return (NULL);
+	}
+
+	// Fill in header fields.
+	caerEventPacketHeaderSetEventType(&packet->packetHeader, POINT4D_EVENT);
+	caerEventPacketHeaderSetEventSource(&packet->packetHeader, eventSource);
+	caerEventPacketHeaderSetEventSize(&packet->packetHeader, I32T(eventSize));
+	caerEventPacketHeaderSetEventTSOffset(&packet->packetHeader, offsetof(struct caer_point4d_event, timestamp));
 	caerEventPacketHeaderSetEventTSOverflow(&packet->packetHeader, tsOverflow);
 	caerEventPacketHeaderSetEventCapacity(&packet->packetHeader, eventCapacity);
 

@@ -63,6 +63,7 @@ enum caer_default_event_types {
 	POINT1D_EVENT = 8,  //!< 1D measurement events.
 	POINT2D_EVENT = 9,  //!< 2D measurement events.
 	POINT3D_EVENT = 10, //!< 3D measurement events.
+	POINT4D_EVENT = 11, //!< 4D measurement events.
 };
 
 /**
