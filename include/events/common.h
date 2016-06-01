@@ -367,6 +367,54 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 }
 
 /**
+ * Grow an events packet.
+ * Use free() to reclaim this memory afterwards.
+ *
+ * @param packet the current events packet.
+ * @param eventCapacity the new maximum number of events this packet will hold.
+ *
+ * @return a valid event packet handle or NULL on error.
+ * On success, the old packet handle is to be considered invalid and not to be
+ * used anymore. On failure, the old packet handle is not touched in any way.
+ */
+static inline caerEventPacketHeader caerGenericEventPacketGrow(caerEventPacketHeader packet, int32_t newEventCapacity) {
+	if (packet == NULL || newEventCapacity == 0) {
+		return (NULL);
+	}
+
+	int32_t oldEventCapacity = caerEventPacketHeaderGetEventCapacity(packet);
+
+	if (newEventCapacity <= oldEventCapacity) {
+		caerLog(CAER_LOG_CRITICAL, "Generic Event Packet",
+			"Called caerGenericEventPacketGrow() with a new capacity value (%" PRIi32 ") that is equal or smaller than the old one (%" PRIi32 "). "
+			"Only strictly growing an event packet is supported!", newEventCapacity, oldEventCapacity);
+		return (NULL);
+	}
+
+	int32_t eventSize = caerEventPacketHeaderGetEventSize(packet);
+	size_t newEventPacketSize = CAER_EVENT_PACKET_HEADER_SIZE + (size_t) (newEventCapacity * eventSize);
+
+	// Grow memory used to hold events.
+	packet = (caerEventPacketHeader) realloc(packet, newEventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Generic Event Packet",
+			"Failed to reallocate %zu bytes of memory for growing Event Packet of capacity %"
+			PRIi32 " to new capacity of %" PRIi32 ". Error: %d.", newEventPacketSize, oldEventCapacity,
+			newEventCapacity, errno);
+		return (NULL);
+	}
+
+	// Zero out new event memory (all events invalid).
+	memset(((uint8_t *) packet) + CAER_EVENT_PACKET_HEADER_SIZE + (oldEventCapacity * eventSize), 0,
+		(size_t) ((newEventCapacity - oldEventCapacity) * eventSize));
+
+	// Update header fields.
+	caerEventPacketHeaderSetEventCapacity(packet, newEventCapacity);
+
+	return (packet);
+}
+
+/**
  * Get a generic pointer to an event, without having to know what event
  * type the packet is containing.
  *
