@@ -3,7 +3,7 @@
  *
  * Polarity Events format definition and handling functions.
  * This event contains change information, with an X/Y address
- * and an ON/OFF polarity, plus a possible color.
+ * and an ON/OFF polarity.
  * The (0, 0) address is in the upper left corner of the screen,
  * like in OpenCV/computer graphics.
  */
@@ -18,38 +18,24 @@ extern "C" {
 #include "common.h"
 
 /**
- * Shift and mask values for the polarity, color, X and Y addresses
+ * Shift and mask values for the polarity, X and Y addresses
  * of a polarity event.
  * Addresses up to 14 bit are supported. Polarity is ON(=1) or OFF(=0).
- * 2 bits are reserved for color information (R, G, B, W).
  * Bit 0 is the valid mark, see 'common.h' for more details.
  */
 //@{
 #define POLARITY_SHIFT 1
 #define POLARITY_MASK 0x00000001
-#define COLOR_SHIFT 2
-#define COLOR_MASK 0x00000003
-#define Y_ADDR_SHIFT 4
-#define Y_ADDR_MASK 0x00003FFF
-#define X_ADDR_SHIFT 18
-#define X_ADDR_MASK 0x00003FFF
+#define Y_ADDR_SHIFT 2
+#define Y_ADDR_MASK 0x00007FFF
+#define X_ADDR_SHIFT 17
+#define X_ADDR_MASK 0x00007FFF
 //@}
 
 /**
- * List of all polarity event color identifiers.
- * Used to interpret the polarity event color field.
- */
-enum caer_polarity_event_color {
-	W = 0, //!< White/Mono. No color.
-	R = 1, //!< Red.
-	G = 2, //!< Green.
-	B = 3, //!< Blue.
-};
-
-/**
  * Polarity event data structure definition.
- * This contains the actual X/Y addresses, the polarity, the
- * color as well as the 32 bit event timestamp.
+ * This contains the actual X/Y addresses, the polarity,
+ * as well as the 32 bit event timestamp.
  * The (0, 0) address is in the upper left corner of the screen,
  * like in OpenCV/computer graphics.
  * Signed integers are used for fields that are to be interpreted
@@ -246,28 +232,6 @@ static inline bool caerPolarityEventGetPolarity(caerPolarityEvent event) {
 static inline void caerPolarityEventSetPolarity(caerPolarityEvent event, bool polarity) {
 	CLEAR_NUMBITS32(event->data, POLARITY_SHIFT, POLARITY_MASK);
 	SET_NUMBITS32(event->data, POLARITY_SHIFT, POLARITY_MASK, polarity);
-}
-
-/**
- * Get the identifier for the pixel's color.
- *
- * @param event a valid PolarityEvent pointer. Cannot be NULL.
- *
- * @return color identifier.
- */
-static inline enum caer_polarity_event_color caerPolarityEventGetColor(caerPolarityEvent event) {
-	return ((enum caer_polarity_event_color) U8T(GET_NUMBITS32(event->data, COLOR_SHIFT, COLOR_MASK)));
-}
-
-/**
- * Set the identifier for the pixel's color.
- *
- * @param event a valid PolarityEvent pointer. Cannot be NULL.
- * @param color color identifier.
- */
-static inline void caerPolarityEventSetColor(caerPolarityEvent event, enum caer_polarity_event_color color) {
-	CLEAR_NUMBITS32(event->data, COLOR_SHIFT, COLOR_MASK);
-	SET_NUMBITS32(event->data, COLOR_SHIFT, COLOR_MASK, color);
 }
 
 /**

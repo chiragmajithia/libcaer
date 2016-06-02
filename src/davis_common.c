@@ -3292,7 +3292,6 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					// Timestamp at event-stream insertion point.
 					caerPolarityEventSetTimestamp(currentPolarityEvent, state->currentTimestamp);
 					caerPolarityEventSetPolarity(currentPolarityEvent, (polarity & 0x01));
-					caerPolarityEventSetColor(currentPolarityEvent, W);
 					if (state->dvsInvertXY) {
 						// Flip Y address to conform to CG format.
 						caerPolarityEventSetY(currentPolarityEvent, U16T((state->dvsSizeX - 1) - data));

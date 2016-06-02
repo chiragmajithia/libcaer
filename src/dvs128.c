@@ -1072,7 +1072,6 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 					state->currentPolarityPacketPosition++);
 				caerPolarityEventSetTimestamp(currentEvent, state->currentTimestamp);
 				caerPolarityEventSetPolarity(currentEvent, polarity);
-				caerPolarityEventSetColor(currentEvent, W);
 				caerPolarityEventSetY(currentEvent, y);
 				caerPolarityEventSetX(currentEvent, x);
 				caerPolarityEventValidate(currentEvent, state->currentPolarityPacket);
