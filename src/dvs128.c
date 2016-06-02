@@ -78,12 +78,8 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	atomic_store_explicit(&state->usbBufferSize, 4096, memory_order_relaxed);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store_explicit(&state->maxPacketContainerSize, 4096 + 128, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPacketContainerInterval, 5000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPolarityPacketSize, 4096, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPolarityPacketInterval, 5000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxSpecialPacketSize, 128, memory_order_relaxed);
-	atomic_store_explicit(&state->maxSpecialPacketInterval, 1000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerSize, 4096, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerInterval, 10000, memory_order_relaxed);
 
 	atomic_store_explicit(&state->dvsIsMaster, true, memory_order_relaxed); // Always master by default.
 
@@ -286,22 +282,6 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					atomic_store(&state->maxPacketContainerInterval, param);
 					break;
 
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
-					atomic_store(&state->maxPolarityPacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
-					atomic_store(&state->maxPolarityPacketInterval, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
-					atomic_store(&state->maxSpecialPacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
-					atomic_store(&state->maxSpecialPacketInterval, param);
-					break;
-
 				default:
 					return (false);
 					break;
@@ -458,22 +438,6 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 					*param = U32T(atomic_load(&state->maxPacketContainerInterval));
 					break;
 
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
-					*param = U32T(atomic_load(&state->maxPolarityPacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
-					*param = U32T(atomic_load(&state->maxPolarityPacketInterval));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
-					*param = U32T(atomic_load(&state->maxSpecialPacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
-					*param = U32T(atomic_load(&state->maxSpecialPacketInterval));
-					break;
-
 				default:
 					return (false);
 					break;
@@ -545,6 +509,10 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 	state->dataShutdownNotify = dataShutdownNotify;
 	state->dataShutdownUserPtr = dataShutdownUserPtr;
 
+	// Set wanted time interval to uninitialized. Getting the first TS or TS_RESET
+	// will then set this correctly.
+	state->currentPacketContainerCommitTimestamp = -1;
+
 	// Initialize RingBuffer.
 	state->dataExchangeBuffer = ringBufferInit(atomic_load(&state->dataExchangeBufferSize));
 	if (state->dataExchangeBuffer == NULL) {
@@ -561,7 +529,7 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
+	state->currentPolarityPacket = caerPolarityEventPacketAllocate(DVS_POLARITY_DEFAULT_SIZE,
 		I16T(handle->info.deviceID), 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
@@ -570,8 +538,8 @@ bool dvs128DataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void *ptr)
 		return (false);
 	}
 
-	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
-		I16T(handle->info.deviceID), 0);
+	state->currentSpecialPacket = caerSpecialEventPacketAllocate(DVS_SPECIAL_DEFAULT_SIZE, I16T(handle->info.deviceID),
+		0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -931,6 +899,17 @@ static void LIBUSB_CALL dvs128LibUsbCallback(struct libusb_transfer *transfer) {
 #define DVS128_SYNC_EVENT_MASK 0x8000
 #define TS_WRAP_ADD 0x4000
 
+static inline int64_t generateFullTimestamp(int32_t tsOverflow, int32_t timestamp) {
+	return (I64T((U64T(tsOverflow) << TS_OVERFLOW_SHIFT) | U64T(timestamp)));
+}
+
+static inline void initContainerCommitTimestamp(dvs128State state) {
+	if (state->currentPacketContainerCommitTimestamp == -1) {
+		state->currentPacketContainerCommitTimestamp = state->currentTimestamp
+			+ atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed) - 1;
+	}
+}
+
 static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t bytesSent) {
 	dvs128State state = &handle->state;
 
@@ -952,23 +931,47 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		}
 
 		if (state->currentPolarityPacket == NULL) {
-			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxPolarityPacketSize, memory_order_relaxed)),
+			state->currentPolarityPacket = caerPolarityEventPacketAllocate(DVS_POLARITY_DEFAULT_SIZE,
 				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
 			}
 		}
+		else if (state->currentPolarityPacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentPolarityPacket)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerPolarityEventPacket grownPacket = (caerPolarityEventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentPolarityPacket, state->currentPolarityPacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow polarity event packet.");
+				return;
+			}
+
+			state->currentPolarityPacket = grownPacket;
+		}
 
 		if (state->currentSpecialPacket == NULL) {
-			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxSpecialPacketSize, memory_order_relaxed)),
+			state->currentSpecialPacket = caerSpecialEventPacketAllocate(DVS_SPECIAL_DEFAULT_SIZE,
 				I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
 			}
+		}
+		else if (state->currentSpecialPacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentSpecialPacket)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerSpecialEventPacket grownPacket = (caerSpecialEventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentSpecialPacket, state->currentSpecialPacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow special event packet.");
+				return;
+			}
+
+			state->currentSpecialPacket = grownPacket;
 		}
 
 		bool forceCommit = false;
@@ -1002,6 +1005,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				state->lastTimestamp = state->currentTimestamp;
 				state->currentTimestamp = state->wrapAdd;
+				initContainerCommitTimestamp(state);
 
 				// Check monotonicity of timestamps.
 				checkMonotonicTimestamp(handle);
@@ -1014,6 +1018,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->wrapAdd = 0;
 			state->lastTimestamp = 0;
 			state->currentTimestamp = 0;
+			state->currentPacketContainerCommitTimestamp = -1;
+			initContainerCommitTimestamp(state);
 
 			// Create timestamp reset event.
 			caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
@@ -1036,6 +1042,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			// Expand to 32 bits. (Tick is 1µs already.)
 			state->lastTimestamp = state->currentTimestamp;
 			state->currentTimestamp = state->wrapAdd + timestampUSB;
+			initContainerCommitTimestamp(state);
 
 			// Check monotonicity of timestamps.
 			checkMonotonicTimestamp(handle);
@@ -1080,44 +1087,21 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
-		int32_t polaritySize = state->currentPolarityPacketPosition;
-		int32_t polarityInterval =
-			(polaritySize > 1) ?
-				(caerPolarityEventGetTimestamp(
-					caerPolarityEventPacketGetEvent(state->currentPolarityPacket, polaritySize - 1))
-					- caerPolarityEventGetTimestamp(caerPolarityEventPacketGetEvent(state->currentPolarityPacket, 0))) :
-				(0);
-
-		int32_t specialSize = state->currentSpecialPacketPosition;
-		int32_t specialInterval =
-			(specialSize > 1) ?
-				(caerSpecialEventGetTimestamp(
-					caerSpecialEventPacketGetEvent(state->currentSpecialPacket, specialSize - 1))
-					- caerSpecialEventGetTimestamp(caerSpecialEventPacketGetEvent(state->currentSpecialPacket, 0))) :
-				(0);
-
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerCommit = (((polaritySize + specialSize)
+		bool containerCommit = (((state->currentPolarityPacketPosition + state->currentSpecialPacketPosition)
 			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed))
-			|| (polarityInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed))
-			|| (specialInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool polarityPacketCommit = ((polaritySize
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentPolarityPacket->packetHeader))
-			|| (polarityInterval >= atomic_load_explicit(&state->maxPolarityPacketInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool specialPacketCommit = ((specialSize
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentSpecialPacket->packetHeader))
-			|| (specialInterval >= atomic_load_explicit(&state->maxSpecialPacketInterval, memory_order_relaxed)));
+			|| (generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
+				> state->currentPacketContainerCommitTimestamp));
+		// FIXME: with the current DVS128 architecture, currentTimestamp always comes together
+		// with an event, so the very first event that matches this threshold will be
+		// also part of the committed packet container. This doesn't break any of the invariants.
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
-		if (forceCommit || containerCommit || polarityPacketCommit || specialPacketCommit) {
+		if (forceCommit || containerCommit) {
 			// One or more of the commit triggers are hit. Set the packet container up to contain
 			// any non-empty packets. Empty packets are not forwarded to save memory.
-			if (polaritySize > 0) {
+			if (state->currentPolarityPacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT,
 					(caerEventPacketHeader) state->currentPolarityPacket);
 
@@ -1125,12 +1109,20 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				state->currentPolarityPacketPosition = 0;
 			}
 
-			if (specialSize > 0) {
+			if (state->currentSpecialPacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT,
 					(caerEventPacketHeader) state->currentSpecialPacket);
 
 				state->currentSpecialPacket = NULL;
 				state->currentSpecialPacketPosition = 0;
+			}
+
+			// If the commit was triggered by a packet container limit being reached, we always
+			// update the time related limit. The size related one is updated implicitly by size
+			// being reset to zero after commit (new packets are empty).
+			if (containerCommit) {
+				state->currentPacketContainerCommitTimestamp += atomic_load_explicit(&state->maxPacketContainerInterval,
+					memory_order_relaxed);
 			}
 
 			retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {

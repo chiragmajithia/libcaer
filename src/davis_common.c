@@ -181,16 +181,8 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	atomic_store_explicit(&state->usbBufferSize, 8192, memory_order_relaxed);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store_explicit(&state->maxPacketContainerSize, 4096 + 128 + 4 + 8, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPacketContainerInterval, 5000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPolarityPacketSize, 4096, memory_order_relaxed);
-	atomic_store_explicit(&state->maxPolarityPacketInterval, 5000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxSpecialPacketSize, 128, memory_order_relaxed);
-	atomic_store_explicit(&state->maxSpecialPacketInterval, 1000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxFramePacketSize, 4, memory_order_relaxed);
-	atomic_store_explicit(&state->maxFramePacketInterval, 50000, memory_order_relaxed);
-	atomic_store_explicit(&state->maxIMU6PacketSize, 8, memory_order_relaxed);
-	atomic_store_explicit(&state->maxIMU6PacketInterval, 5000, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerSize, 8192, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerInterval, 10000, memory_order_relaxed);
 
 	atomic_thread_fence(memory_order_release);
 
@@ -827,38 +819,6 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
 					atomic_store(&state->maxPacketContainerInterval, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
-					atomic_store(&state->maxPolarityPacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
-					atomic_store(&state->maxPolarityPacketInterval, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
-					atomic_store(&state->maxSpecialPacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
-					atomic_store(&state->maxSpecialPacketInterval, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_SIZE:
-					atomic_store(&state->maxFramePacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_INTERVAL:
-					atomic_store(&state->maxFramePacketInterval, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_SIZE:
-					atomic_store(&state->maxIMU6PacketSize, param);
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL:
-					atomic_store(&state->maxIMU6PacketInterval, param);
 					break;
 
 				default:
@@ -1501,38 +1461,6 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					*param = U32T(atomic_load(&state->maxPacketContainerInterval));
 					break;
 
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_SIZE:
-					*param = U32T(atomic_load(&state->maxPolarityPacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_POLARITY_INTERVAL:
-					*param = U32T(atomic_load(&state->maxPolarityPacketInterval));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_SIZE:
-					*param = U32T(atomic_load(&state->maxSpecialPacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_SPECIAL_INTERVAL:
-					*param = U32T(atomic_load(&state->maxSpecialPacketInterval));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_SIZE:
-					*param = U32T(atomic_load(&state->maxFramePacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_FRAME_INTERVAL:
-					*param = U32T(atomic_load(&state->maxFramePacketInterval));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_SIZE:
-					*param = U32T(atomic_load(&state->maxIMU6PacketSize));
-					break;
-
-				case CAER_HOST_CONFIG_PACKETS_MAX_IMU6_INTERVAL:
-					*param = U32T(atomic_load(&state->maxIMU6PacketInterval));
-					break;
-
 				default:
 					return (false);
 					break;
@@ -2109,6 +2037,10 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 	state->dataShutdownNotify = dataShutdownNotify;
 	state->dataShutdownUserPtr = dataShutdownUserPtr;
 
+	// Set wanted time interval to uninitialized. Getting the first TS or TS_RESET
+	// will then set this correctly.
+	state->currentPacketContainerCommitTimestamp = -1;
+
 	// Initialize RingBuffer.
 	state->dataExchangeBuffer = ringBufferInit(atomic_load(&state->dataExchangeBufferSize));
 	if (state->dataExchangeBuffer == NULL) {
@@ -2125,7 +2057,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentPolarityPacket = caerPolarityEventPacketAllocate(I32T(atomic_load(&state->maxPolarityPacketSize)),
+	state->currentPolarityPacket = caerPolarityEventPacketAllocate(DAVIS_POLARITY_DEFAULT_SIZE,
 		I16T(handle->info.deviceID), 0);
 	if (state->currentPolarityPacket == NULL) {
 		freeAllDataMemory(state);
@@ -2134,7 +2066,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentSpecialPacket = caerSpecialEventPacketAllocate(I32T(atomic_load(&state->maxSpecialPacketSize)),
+	state->currentSpecialPacket = caerSpecialEventPacketAllocate(DAVIS_SPECIAL_DEFAULT_SIZE,
 		I16T(handle->info.deviceID), 0);
 	if (state->currentSpecialPacket == NULL) {
 		freeAllDataMemory(state);
@@ -2143,8 +2075,8 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		return (false);
 	}
 
-	state->currentFramePacket = caerFrameEventPacketAllocate(I32T(atomic_load(&state->maxFramePacketSize)),
-		I16T(handle->info.deviceID), 0, state->apsSizeX, state->apsSizeY, 1);
+	state->currentFramePacket = caerFrameEventPacketAllocate(DAVIS_FRAME_DEFAULT_SIZE, I16T(handle->info.deviceID), 0,
+		state->apsSizeX, state->apsSizeY, 1);
 	if (state->currentFramePacket == NULL) {
 		freeAllDataMemory(state);
 
@@ -2170,8 +2102,7 @@ bool davisCommonDataStart(caerDeviceHandle cdh, void (*dataNotifyIncrease)(void 
 		state->currentFrameEvent[i] = (caerFrameEvent) (((uint8_t*) state->currentFrameEvent[0]) + (i * eventSize));
 	}
 
-	state->currentIMU6Packet = caerIMU6EventPacketAllocate(I32T(atomic_load(&state->maxIMU6PacketSize)),
-		I16T(handle->info.deviceID), 0);
+	state->currentIMU6Packet = caerIMU6EventPacketAllocate(DAVIS_IMU_DEFAULT_SIZE, I16T(handle->info.deviceID), 0);
 	if (state->currentIMU6Packet == NULL) {
 		freeAllDataMemory(state);
 
@@ -2626,6 +2557,17 @@ static void LIBUSB_CALL davisLibUsbCallback(struct libusb_transfer *transfer) {
 
 #define TS_WRAP_ADD 0x8000
 
+static inline int64_t generateFullTimestamp(int32_t tsOverflow, int32_t timestamp) {
+	return (I64T((U64T(tsOverflow) << TS_OVERFLOW_SHIFT) | U64T(timestamp)));
+}
+
+static inline void initContainerCommitTimestamp(davisState state) {
+	if (state->currentPacketContainerCommitTimestamp == -1) {
+		state->currentPacketContainerCommitTimestamp = state->currentTimestamp
+			+ atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed) - 1;
+	}
+}
+
 static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t bytesSent) {
 	davisState state = &handle->state;
 
@@ -2648,42 +2590,91 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		if (state->currentPolarityPacket == NULL) {
 			state->currentPolarityPacket = caerPolarityEventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxPolarityPacketSize, memory_order_relaxed)),
-				I16T(handle->info.deviceID), state->wrapOverflow);
+			DAVIS_POLARITY_DEFAULT_SIZE, I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentPolarityPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate polarity event packet.");
 				return;
 			}
 		}
+		else if (state->currentPolarityPacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentPolarityPacket)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerPolarityEventPacket grownPacket = (caerPolarityEventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentPolarityPacket, state->currentPolarityPacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow polarity event packet.");
+				return;
+			}
+
+			state->currentPolarityPacket = grownPacket;
+		}
 
 		if (state->currentSpecialPacket == NULL) {
 			state->currentSpecialPacket = caerSpecialEventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxSpecialPacketSize, memory_order_relaxed)),
-				I16T(handle->info.deviceID), state->wrapOverflow);
+			DAVIS_SPECIAL_DEFAULT_SIZE, I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentSpecialPacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate special event packet.");
 				return;
 			}
 		}
+		else if (state->currentSpecialPacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentSpecialPacket)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerSpecialEventPacket grownPacket = (caerSpecialEventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentSpecialPacket, state->currentSpecialPacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow special event packet.");
+				return;
+			}
+
+			state->currentSpecialPacket = grownPacket;
+		}
 
 		if (state->currentFramePacket == NULL) {
 			state->currentFramePacket = caerFrameEventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxFramePacketSize, memory_order_relaxed)),
-				I16T(handle->info.deviceID), state->wrapOverflow, state->apsSizeX, state->apsSizeY, 1);
+			DAVIS_FRAME_DEFAULT_SIZE, I16T(handle->info.deviceID), state->wrapOverflow, state->apsSizeX,
+				state->apsSizeY, 1);
 			if (state->currentFramePacket == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate frame event packet.");
 				return;
 			}
 		}
+		else if (state->currentFramePacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentFramePacket)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerFrameEventPacket grownPacket = (caerFrameEventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentFramePacket, state->currentFramePacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow frame event packet.");
+				return;
+			}
+
+			state->currentFramePacket = grownPacket;
+		}
 
 		if (state->currentIMU6Packet == NULL) {
 			state->currentIMU6Packet = caerIMU6EventPacketAllocate(
-				I32T(atomic_load_explicit(&state->maxIMU6PacketSize, memory_order_relaxed)),
-				I16T(handle->info.deviceID), state->wrapOverflow);
+			DAVIS_IMU_DEFAULT_SIZE, I16T(handle->info.deviceID), state->wrapOverflow);
 			if (state->currentIMU6Packet == NULL) {
 				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to allocate IMU6 event packet.");
 				return;
 			}
+		}
+		else if (state->currentIMU6PacketPosition
+			>= caerEventPacketHeaderGetEventCapacity((caerEventPacketHeader) state->currentIMU6Packet)) {
+			// If not committed, let's check if any of the packets has reached its maximum
+			// capacity limit. If yes, we grow them to accomodate new events.
+			caerIMU6EventPacket grownPacket = (caerIMU6EventPacket) caerGenericEventPacketGrow(
+				(caerEventPacketHeader) state->currentIMU6Packet, state->currentIMU6PacketPosition * 2);
+			if (grownPacket == NULL) {
+				caerLog(CAER_LOG_CRITICAL, handle->info.deviceString, "Failed to grow IMU6 event packet.");
+				return;
+			}
+
+			state->currentIMU6Packet = grownPacket;
 		}
 
 		bool forceCommit = false;
@@ -2695,6 +2686,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 			// Is a timestamp! Expand to 32 bits. (Tick is 1µs already.)
 			state->lastTimestamp = state->currentTimestamp;
 			state->currentTimestamp = state->wrapAdd + (event & 0x7FFF);
+			initContainerCommitTimestamp(state);
 
 			// Check monotonicity of timestamps.
 			checkStrictMonotonicTimestamp(handle);
@@ -2716,6 +2708,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 							state->wrapAdd = 0;
 							state->lastTimestamp = 0;
 							state->currentTimestamp = 0;
+							state->currentPacketContainerCommitTimestamp = -1;
+							initContainerCommitTimestamp(state);
 
 							caerLog(CAER_LOG_INFO, handle->info.deviceString, "Timestamp reset event received.");
 
@@ -3626,6 +3620,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 						state->lastTimestamp = state->currentTimestamp;
 						state->currentTimestamp = state->wrapAdd;
+						initContainerCommitTimestamp(state);
 
 						// Check monotonicity of timestamps.
 						checkStrictMonotonicTimestamp(handle);
@@ -3645,72 +3640,19 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
-		int32_t polaritySize = state->currentPolarityPacketPosition;
-		int32_t polarityInterval =
-			(polaritySize > 1) ?
-				(caerPolarityEventGetTimestamp(
-					caerPolarityEventPacketGetEvent(state->currentPolarityPacket, polaritySize - 1))
-					- caerPolarityEventGetTimestamp(caerPolarityEventPacketGetEvent(state->currentPolarityPacket, 0))) :
-				(0);
-
-		int32_t specialSize = state->currentSpecialPacketPosition;
-		int32_t specialInterval =
-			(specialSize > 1) ?
-				(caerSpecialEventGetTimestamp(
-					caerSpecialEventPacketGetEvent(state->currentSpecialPacket, specialSize - 1))
-					- caerSpecialEventGetTimestamp(caerSpecialEventPacketGetEvent(state->currentSpecialPacket, 0))) :
-				(0);
-
-		int32_t frameSize = state->currentFramePacketPosition;
-		int32_t frameInterval =
-			(frameSize > 1) ?
-				(caerFrameEventGetTSStartOfExposure(
-					caerFrameEventPacketGetEvent(state->currentFramePacket, frameSize - 1))
-					- caerFrameEventGetTSStartOfExposure(caerFrameEventPacketGetEvent(state->currentFramePacket, 0))) :
-				(0);
-
-		int32_t imu6Size = state->currentIMU6PacketPosition;
-		int32_t imu6Interval =
-			(imu6Size > 1) ?
-				(caerIMU6EventGetTimestamp(caerIMU6EventPacketGetEvent(state->currentIMU6Packet, imu6Size - 1))
-					- caerIMU6EventGetTimestamp(caerIMU6EventPacketGetEvent(state->currentIMU6Packet, 0))) :
-				(0);
-
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerCommit = (((polaritySize + specialSize + frameSize + imu6Size)
+		bool containerCommit = (((state->currentPolarityPacketPosition + state->currentSpecialPacketPosition
+			+ state->currentFramePacketPosition + state->currentIMU6PacketPosition)
 			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed))
-			|| (polarityInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed))
-			|| (specialInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed))
-			|| (frameInterval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed))
-			|| (imu6Interval >= atomic_load_explicit(&state->maxPacketContainerInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool polarityPacketCommit = ((polaritySize
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentPolarityPacket->packetHeader))
-			|| (polarityInterval >= atomic_load_explicit(&state->maxPolarityPacketInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool specialPacketCommit = ((specialSize
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentSpecialPacket->packetHeader))
-			|| (specialInterval >= atomic_load_explicit(&state->maxSpecialPacketInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool framePacketCommit = ((frameSize
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentFramePacket->packetHeader))
-			|| (frameInterval >= atomic_load_explicit(&state->maxFramePacketInterval, memory_order_relaxed)));
-
-		// Trigger if any of the packet-specific thresholds are met.
-		bool imu6PacketCommit = ((imu6Size
-			>= caerEventPacketHeaderGetEventCapacity(&state->currentIMU6Packet->packetHeader))
-			|| (imu6Interval >= atomic_load_explicit(&state->maxIMU6PacketInterval, memory_order_relaxed)));
+			|| (generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
+				> state->currentPacketContainerCommitTimestamp));
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
-		if (forceCommit || containerCommit || polarityPacketCommit || specialPacketCommit || framePacketCommit
-			|| imu6PacketCommit) {
+		if (forceCommit || containerCommit) {
 			// One or more of the commit triggers are hit. Set the packet container up to contain
 			// any non-empty packets. Empty packets are not forwarded to save memory.
-			if (polaritySize > 0) {
+			if (state->currentPolarityPacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT,
 					(caerEventPacketHeader) state->currentPolarityPacket);
 
@@ -3718,7 +3660,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				state->currentPolarityPacketPosition = 0;
 			}
 
-			if (specialSize > 0) {
+			if (state->currentSpecialPacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT,
 					(caerEventPacketHeader) state->currentSpecialPacket);
 
@@ -3726,7 +3668,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				state->currentSpecialPacketPosition = 0;
 			}
 
-			if (frameSize > 0) {
+			if (state->currentFramePacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, FRAME_EVENT,
 					(caerEventPacketHeader) state->currentFramePacket);
 
@@ -3734,7 +3676,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				state->currentFramePacketPosition = 0;
 			}
 
-			if (imu6Size > 0) {
+			if (state->currentIMU6PacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, IMU6_EVENT,
 					(caerEventPacketHeader) state->currentIMU6Packet);
 
@@ -3752,6 +3694,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				// See APS and IMU6 END states for more details on a related issue.
 				state->apsIgnoreEvents = true;
 				state->imuIgnoreEvents = true;
+			}
+
+			// If the commit was triggered by a packet container limit being reached, we always
+			// update the time related limit. The size related one is updated implicitly by size
+			// being reset to zero after commit (new packets are empty).
+			if (containerCommit) {
+				state->currentPacketContainerCommitTimestamp += atomic_load_explicit(&state->maxPacketContainerInterval,
+					memory_order_relaxed);
 			}
 
 			retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {

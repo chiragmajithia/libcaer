@@ -24,6 +24,9 @@
 
 #define DVS_EVENT_TYPES 2
 
+#define DVS_POLARITY_DEFAULT_SIZE 4096
+#define DVS_SPECIAL_DEFAULT_SIZE 128
+
 #define DVS_DATA_ENDPOINT 0x86
 
 #define VENDOR_REQUEST_START_TRANSFER 0xB3
@@ -70,16 +73,13 @@ struct dvs128_state {
 	caerEventPacketContainer currentPacketContainer;
 	atomic_int_fast32_t maxPacketContainerSize;
 	atomic_int_fast32_t maxPacketContainerInterval;
+	int64_t currentPacketContainerCommitTimestamp;
 	// Polarity Packet State
 	caerPolarityEventPacket currentPolarityPacket;
 	int32_t currentPolarityPacketPosition;
-	atomic_int_fast32_t maxPolarityPacketSize;
-	atomic_int_fast32_t maxPolarityPacketInterval;
 	// Special Packet State
 	caerSpecialEventPacket currentSpecialPacket;
 	int32_t currentSpecialPacketPosition;
-	atomic_int_fast32_t maxSpecialPacketSize;
-	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Camera bias and settings memory (for getter operations)
 	// TODO: replace with real device calls once DVS128 logic rewritten.
 	uint8_t biases[BIAS_NUMBER][BIAS_LENGTH];

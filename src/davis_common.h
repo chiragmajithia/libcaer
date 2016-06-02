@@ -35,6 +35,11 @@
 
 #define DAVIS_EVENT_TYPES 4
 
+#define DAVIS_POLARITY_DEFAULT_SIZE 4096
+#define DAVIS_SPECIAL_DEFAULT_SIZE 128
+#define DAVIS_FRAME_DEFAULT_SIZE 4
+#define DAVIS_IMU_DEFAULT_SIZE 64
+
 #define DAVIS_DATA_ENDPOINT 0x82
 
 #define VENDOR_REQUEST_FPGA_CONFIG          0xBF
@@ -107,26 +112,19 @@ struct davis_state {
 	caerEventPacketContainer currentPacketContainer;
 	atomic_int_fast32_t maxPacketContainerSize;
 	atomic_int_fast32_t maxPacketContainerInterval;
+	int64_t currentPacketContainerCommitTimestamp;
 	// Polarity Packet state
 	caerPolarityEventPacket currentPolarityPacket;
 	int32_t currentPolarityPacketPosition;
-	atomic_int_fast32_t maxPolarityPacketSize;
-	atomic_int_fast32_t maxPolarityPacketInterval;
 	// Frame Packet state
 	caerFrameEventPacket currentFramePacket;
 	int32_t currentFramePacketPosition;
-	atomic_int_fast32_t maxFramePacketSize;
-	atomic_int_fast32_t maxFramePacketInterval;
 	// IMU6 Packet state
 	caerIMU6EventPacket currentIMU6Packet;
 	int32_t currentIMU6PacketPosition;
-	atomic_int_fast32_t maxIMU6PacketSize;
-	atomic_int_fast32_t maxIMU6PacketInterval;
 	// Special Packet state
 	caerSpecialEventPacket currentSpecialPacket;
 	int32_t currentSpecialPacketPosition;
-	atomic_int_fast32_t maxSpecialPacketSize;
-	atomic_int_fast32_t maxSpecialPacketInterval;
 	// Current composite events, for later copy, to not loose them on commits.
 	caerFrameEvent currentFrameEvent[APS_ROI_REGIONS_MAX];
 	struct caer_imu6_event currentIMU6Event;
