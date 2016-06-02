@@ -33,6 +33,19 @@ extern "C" {
 #include "log.h"
 
 /**
+ * libcaer version (MAJOR * 10000 + MINOR * 100 + PATCH).
+ */
+#define LIBCAER_VERSION ((@PROJECT_VERSION_MAJOR@ * 10000) + (@PROJECT_VERSION_MINOR@ * 100) + @PROJECT_VERSION_PATCH@)
+/**
+ * libcaer name string.
+ */
+#define LIBCAER_NAME_STRING "@PROJECT_NAME@"
+/**
+ * libcaer version string.
+ */
+#define LIBCAER_VERSION_STRING "@PROJECT_VERSION_NOREV@"
+
+/**
  * Cast argument to uint8_t (8bit unsigned integer).
  */
 #define U8T(X)  ((uint8_t)  (X))
