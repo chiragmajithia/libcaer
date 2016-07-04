@@ -693,7 +693,7 @@ static libusb_device_handle *dvs128DeviceOpen(libusb_context *devContext, uint16
 				if (serialNumber != NULL && !caerStrEquals(serialNumber, "")) {
 					char deviceSerialNumber[8 + 1] = { 0 };
 					int getStringDescResult = libusb_get_string_descriptor_ascii(devHandle, devDesc.iSerialNumber,
-						(unsigned char *) deviceSerialNumber, 8);
+						(unsigned char *) deviceSerialNumber, 8 + 1);
 
 					// Check serial number success and length.
 					if (getStringDescResult < 0 || getStringDescResult > 8) {
