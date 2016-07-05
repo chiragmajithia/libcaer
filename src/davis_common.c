@@ -3772,7 +3772,7 @@ static int davisDataAcquisitionThread(void *inPtr) {
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "data acquisition thread ready to process events.");
 
 	// Handle USB events (1 second timeout).
-	struct timeval te = { .tv_sec = 0, .tv_usec = 1000000 };
+	struct timeval te = { .tv_sec = 1, .tv_usec = 0 };
 
 	while (atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)
 		&& state->activeDataTransfers > 0) {
