@@ -28,8 +28,11 @@ caerEventPacketContainer caerEventPacketContainerAllocate(int32_t eventPacketsNu
 		return (NULL);
 	}
 
-	// Fill in header fields.
-	caerEventPacketContainerSetEventPacketsNumber(packetContainer, eventPacketsNumber);
+	// Fill in header fields. Don't care about endianness here, purely internal
+	// memory construct, never meant for inter-system exchange.
+	packetContainer->eventPacketsNumber = eventPacketsNumber;
+	packetContainer->lowestEventTimestamp = -1;
+	packetContainer->highestEventTimestamp = -1;
 
 	return (packetContainer);
 }

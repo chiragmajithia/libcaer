@@ -12,6 +12,12 @@
  * used by the caerGenericEvent*() functions. It's guaranteed that all
  * conforming input modules keep to this rule, generating containers
  * that include all events from all types within the given time-slice.
+ * The smallest and largest timestamps are tracked at the packet container
+ * level as a convenience, to avoid having to examine all packets for
+ * this often useful piece of information.
+ * All integers are in their native host format, as this is a purely
+ * internal, in-memory data structure, never meant for exchange between
+ * different systems (and different endianness).
  */
 
 #ifndef LIBCAER_EVENTS_PACKETCONTAINER_H_
@@ -29,6 +35,10 @@ extern "C" {
  * do not have unsigned ones, such as Java.
  */
 struct caer_event_packet_container {
+	/// Smallest event timestamp contained in this packet container.
+	int64_t lowestEventTimestamp;
+	/// Largest event timestamp contained in this packet container.
+	int64_t highestEventTimestamp;
 	/// Number of different event packets contained.
 	int32_t eventPacketsNumber;
 	/// Array of pointers to the actual event packets.
@@ -76,7 +86,7 @@ static inline int32_t caerEventPacketContainerGetEventPacketsNumber(caerEventPac
 		return (0);
 	}
 
-	return (le32toh(container->eventPacketsNumber));
+	return (container->eventPacketsNumber);
 }
 
 /**
@@ -101,7 +111,7 @@ static inline void caerEventPacketContainerSetEventPacketsNumber(caerEventPacket
 		return;
 	}
 
-	container->eventPacketsNumber = htole32(eventPacketsNumber);
+	container->eventPacketsNumber = eventPacketsNumber;
 }
 
 /**
@@ -157,6 +167,27 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 
 	// Store the given event packet.
 	container->eventPackets[n] = packetHeader;
+
+	// Deleting packets (setting to NULL) will not result in timestamp-tracking updates.
+	if (packetHeader == NULL) {
+		return;
+	}
+
+	// Get timestamps to update lowest/highest tracking.
+	void *firstEvent = caerGenericEventGetEvent(packetHeader, 0);
+	int64_t currLowestEventTimestamp = caerGenericEventGetTimestamp64(firstEvent, packetHeader);
+
+	void *lastEvent = caerGenericEventGetEvent(packetHeader, caerEventPacketHeaderGetEventNumber(packetHeader) - 1);
+	int64_t currHighestEventTimestamp = caerGenericEventGetTimestamp64(lastEvent, packetHeader);
+
+	// Update tracked timestamps (or initialize if needed).
+	if ((container->lowestEventTimestamp == -1) || (container->lowestEventTimestamp > currLowestEventTimestamp)) {
+		container->lowestEventTimestamp = currLowestEventTimestamp;
+	}
+
+	if ((container->highestEventTimestamp == -1) || (container->highestEventTimestamp < currHighestEventTimestamp)) {
+		container->highestEventTimestamp = currHighestEventTimestamp;
+	}
 }
 
 /**
@@ -188,6 +219,38 @@ static inline caerEventPacketHeader caerEventPacketContainerGetEventPacketForTyp
 
 	// Found nothing, return nothing.
 	return (NULL);
+}
+
+/**
+ * Get the lowest timestamp contained in this event packet container.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, -1 is returned.
+ *
+ * @return the lowest timestamp (in µs) or -1 if not initialized.
+ */
+static inline int64_t caerEventPacketContainerGetLowestEventTimestamp(caerEventPacketContainer container) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (-1);
+	}
+
+	return (container->lowestEventTimestamp);
+}
+
+/**
+ * Get the highest timestamp contained in this event packet container.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, -1 is returned.
+ *
+ * @return the highest timestamp (in µs) or -1 if not initialized.
+ */
+static inline int64_t caerEventPacketContainerGetHighestEventTimestamp(caerEventPacketContainer container) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (-1);
+	}
+
+	return (container->highestEventTimestamp);
 }
 
 #ifdef __cplusplus
