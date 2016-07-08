@@ -39,6 +39,10 @@ struct caer_event_packet_container {
 	int64_t lowestEventTimestamp;
 	/// Largest event timestamp contained in this packet container.
 	int64_t highestEventTimestamp;
+	/// Number of events contained within all the packets in this container.
+	int32_t eventsNumber;
+	/// Number of valid events contained within all the packets in this container.
+	int32_t eventsValidNumber;
 	/// Number of different event packets contained.
 	int32_t eventPacketsNumber;
 	/// Array of pointers to the actual event packets.
@@ -188,6 +192,9 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 	if ((container->highestEventTimestamp == -1) || (container->highestEventTimestamp < currHighestEventTimestamp)) {
 		container->highestEventTimestamp = currHighestEventTimestamp;
 	}
+
+	container->eventsNumber += caerEventPacketHeaderGetEventNumber(packetHeader);
+	container->eventsValidNumber += caerEventPacketHeaderGetEventValid(packetHeader);
 }
 
 /**
@@ -251,6 +258,38 @@ static inline int64_t caerEventPacketContainerGetHighestEventTimestamp(caerEvent
 	}
 
 	return (container->highestEventTimestamp);
+}
+
+/**
+ * Get the number of events contained in this event packet container.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, 0 is returned.
+ *
+ * @return the number of events in this container.
+ */
+static inline int32_t caerEventPacketContainerGetEventsNumber(caerEventPacketContainer container) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (0);
+	}
+
+	return (container->eventsNumber);
+}
+
+/**
+ * Get the number of valid events contained in this event packet container.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, 0 is returned.
+ *
+ * @return the number of valid events in this container.
+ */
+static inline int32_t caerEventPacketContainerGetEventsValidNumber(caerEventPacketContainer container) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (0);
+	}
+
+	return (container->eventsValidNumber);
 }
 
 #ifdef __cplusplus

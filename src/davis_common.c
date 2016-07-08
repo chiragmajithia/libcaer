@@ -3717,17 +3717,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					caerLog(CAER_LOG_INFO, handle->info.deviceString,
 						"Dropped EventPacket Container because ring-buffer full!");
 
-					// Re-use the event-packet container to avoid having to reallocate it.
-					// The contained event packets do have to be dropped first!
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, POLARITY_EVENT));
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, SPECIAL_EVENT));
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, FRAME_EVENT));
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, IMU6_EVENT));
-
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT, NULL);
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT, NULL);
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, FRAME_EVENT, NULL);
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, IMU6_EVENT, NULL);
+					caerEventPacketContainerFree(state->currentPacketContainer);
+					state->currentPacketContainer = NULL;
 				}
 			}
 			else {

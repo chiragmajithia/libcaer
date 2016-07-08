@@ -1057,9 +1057,11 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			}
 			else {
 				// Invert X values (flip along X axis). To correct for flipped camera.
-				uint16_t x = U16T((DVS_ARRAY_SIZE_X - 1) - U16T((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK));
+				uint16_t x = U16T(
+					(DVS_ARRAY_SIZE_X - 1) - U16T((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK));
 				// Invert Y values (flip along Y axis). To convert to CG format.
-				uint16_t y = U16T((DVS_ARRAY_SIZE_Y - 1) - U16T((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK));
+				uint16_t y = U16T(
+					(DVS_ARRAY_SIZE_Y - 1) - U16T((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK));
 				// Invert polarity bit. Hardware is like this.
 				bool polarity = (((addressUSB >> DVS128_POLARITY_SHIFT) & DVS128_POLARITY_MASK) == 0) ? (1) : (0);
 
@@ -1138,13 +1140,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 					caerLog(CAER_LOG_INFO, handle->info.deviceString,
 						"Dropped EventPacket Container because ring-buffer full!");
 
-					// Re-use the event-packet container to avoid having to reallocate it.
-					// The contained event packets do have to be dropped first!
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, POLARITY_EVENT));
-					free(caerEventPacketContainerGetEventPacket(state->currentPacketContainer, SPECIAL_EVENT));
-
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT, NULL);
-					caerEventPacketContainerSetEventPacket(state->currentPacketContainer, SPECIAL_EVENT, NULL);
+					caerEventPacketContainerFree(state->currentPacketContainer);
+					state->currentPacketContainer = NULL;
 				}
 			}
 			else {
