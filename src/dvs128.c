@@ -1090,25 +1090,30 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerCommit = (((state->currentPolarityPacketPosition + state->currentSpecialPacketPosition)
-			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed))
-			|| (generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
-				> state->currentPacketContainerCommitTimestamp));
+		bool containerSizeCommit = (state->currentPolarityPacketPosition + state->currentSpecialPacketPosition)
+			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed);
+
+		bool containerTimeCommit = generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
+			> state->currentPacketContainerCommitTimestamp;
+
 		// FIXME: with the current DVS128 architecture, currentTimestamp always comes together
 		// with an event, so the very first event that matches this threshold will be
 		// also part of the committed packet container. This doesn't break any of the invariants.
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
-		if (forceCommit || containerCommit) {
+		if (forceCommit || containerSizeCommit || containerTimeCommit) {
 			// One or more of the commit triggers are hit. Set the packet container up to contain
 			// any non-empty packets. Empty packets are not forwarded to save memory.
+			bool emptyContainerCommit = true;
+
 			if (state->currentPolarityPacketPosition > 0) {
 				caerEventPacketContainerSetEventPacket(state->currentPacketContainer, POLARITY_EVENT,
 					(caerEventPacketHeader) state->currentPolarityPacket);
 
 				state->currentPolarityPacket = NULL;
 				state->currentPolarityPacketPosition = 0;
+				emptyContainerCommit = false;
 			}
 
 			if (state->currentSpecialPacketPosition > 0) {
@@ -1117,39 +1122,51 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 				state->currentSpecialPacket = NULL;
 				state->currentSpecialPacketPosition = 0;
+				emptyContainerCommit = false;
 			}
 
 			// If the commit was triggered by a packet container limit being reached, we always
 			// update the time related limit. The size related one is updated implicitly by size
 			// being reset to zero after commit (new packets are empty).
-			if (containerCommit) {
-				state->currentPacketContainerCommitTimestamp += atomic_load_explicit(&state->maxPacketContainerInterval,
-					memory_order_relaxed);
+			if (containerTimeCommit) {
+				while (generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
+					> state->currentPacketContainerCommitTimestamp) {
+					state->currentPacketContainerCommitTimestamp += atomic_load_explicit(
+						&state->maxPacketContainerInterval, memory_order_relaxed);
+				}
 			}
 
-			retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
-				// Failed to forward packet container, drop it, unless it contains a timestamp
-				// related change, those are critical, so we just spin until we can
-				// deliver that one. (Easily detected by forceCommit!)
-				if (forceCommit) {
-					goto retry_important;
-				}
-				else {
-					// Failed to forward packet container, just drop it, it doesn't contain
-					// any critical information anyway.
-					caerLog(CAER_LOG_INFO, handle->info.deviceString,
-						"Dropped EventPacket Container because ring-buffer full!");
-
-					caerEventPacketContainerFree(state->currentPacketContainer);
-					state->currentPacketContainer = NULL;
-				}
+			// Filter out completely empty commits. This can happen when data is turned off,
+			// but the timestamps are still going forward.
+			if (emptyContainerCommit) {
+				caerEventPacketContainerFree(state->currentPacketContainer);
+				state->currentPacketContainer = NULL;
 			}
 			else {
-				if (state->dataNotifyIncrease != NULL) {
-					state->dataNotifyIncrease(state->dataNotifyUserPtr);
-				}
+				retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
+					// Failed to forward packet container, drop it, unless it contains a timestamp
+					// related change, those are critical, so we just spin until we can
+					// deliver that one. (Easily detected by forceCommit!)
+					if (forceCommit) {
+						goto retry_important;
+					}
+					else {
+						// Failed to forward packet container, just drop it, it doesn't contain
+						// any critical information anyway.
+						caerLog(CAER_LOG_INFO, handle->info.deviceString,
+							"Dropped EventPacket Container because ring-buffer full!");
 
-				state->currentPacketContainer = NULL;
+						caerEventPacketContainerFree(state->currentPacketContainer);
+						state->currentPacketContainer = NULL;
+					}
+				}
+				else {
+					if (state->dataNotifyIncrease != NULL) {
+						state->dataNotifyIncrease(state->dataNotifyUserPtr);
+					}
+
+					state->currentPacketContainer = NULL;
+				}
 			}
 		}
 	}
