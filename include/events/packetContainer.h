@@ -312,6 +312,61 @@ static inline caerEventPacketHeader caerEventPacketContainerFindEventPacketByTyp
 	return (NULL);
 }
 
+/**
+ * Make a deep copy of an event packet container and all of its
+ * event packets and their current events.
+ *
+ * @param container an event packet container to copy.
+ *
+ * @return a deep copy of an event packet container, containing all events.
+ */
+static inline caerEventPacketContainer caerEventPacketContainerCopyAllEvents(caerEventPacketContainer container) {
+	if (container == NULL) {
+		return (NULL);
+	}
+
+	caerEventPacketContainer newContainer = caerEventPacketContainerAllocate(
+		caerEventPacketContainerGetEventsNumber(container));
+	if (newContainer == NULL) {
+		return (NULL);
+	}
+
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_START(container)
+		caerEventPacketContainerSetEventPacket(newContainer, caerEventPacketContainerIteratorCounter,
+			caerCopyEventPacketOnlyEvents(caerEventPacketContainerIteratorElement));
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_END
+
+	return (newContainer);
+}
+
+/**
+ * Make a deep copy of an event packet container, with its event packets
+ * sized down to only include the currently valid events (eventValid),
+ * and discarding everything else.
+ *
+ * @param container an event packet container to copy.
+ *
+ * @return a deep copy of an event packet container, containing only valid events.
+ */
+static inline caerEventPacketContainer caerEventPacketContainerCopyValidEvents(caerEventPacketContainer container) {
+	if (container == NULL) {
+		return (NULL);
+	}
+
+	caerEventPacketContainer newContainer = caerEventPacketContainerAllocate(
+		caerEventPacketContainerGetEventsNumber(container));
+	if (newContainer == NULL) {
+		return (NULL);
+	}
+
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_START(container)
+		caerEventPacketContainerSetEventPacket(newContainer, caerEventPacketContainerIteratorCounter,
+			caerCopyEventPacketOnlyValidEvents(caerEventPacketContainerIteratorElement));
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_END
+
+	return (newContainer);
+}
+
 #ifdef __cplusplus
 }
 #endif
