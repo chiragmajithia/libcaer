@@ -317,6 +317,50 @@ static inline void caerSpecialEventSetData(caerSpecialEvent event, uint32_t data
  */
 #define CAER_SPECIAL_ITERATOR_VALID_END }
 
+/**
+ * Get the first special event with the given event type in this
+ * event packet. This returns the first found event with that type ID,
+ * or NULL if we get to the end without finding any such event.
+ *
+ * @param packet a valid SpecialEventPacket pointer. Cannot be NULL.
+ * @param type the special event type to search for.
+ *
+ * @return the requested special event or NULL on error/not found.
+ */
+static inline caerSpecialEvent caerSpecialEventPacketFindEventByType(caerSpecialEventPacket packet, uint8_t type) {
+	CAER_SPECIAL_ITERATOR_ALL_START(packet)
+		if (caerSpecialEventGetType(caerSpecialIteratorElement) == type) {
+			// Found it, return it.
+			return (caerSpecialIteratorElement);
+		}
+	CAER_SPECIAL_ITERATOR_ALL_END
+
+	// Found nothing, return nothing.
+	return (NULL);
+}
+
+/**
+ * Get the first valid special event with the given event type in this
+ * event packet. This returns the first found valid event with that type ID,
+ * or NULL if we get to the end without finding any such event.
+ *
+ * @param packet a valid SpecialEventPacket pointer. Cannot be NULL.
+ * @param type the special event type to search for.
+ *
+ * @return the requested valid special event or NULL on error/not found.
+ */
+static inline caerSpecialEvent caerSpecialEventPacketFindValidEventByType(caerSpecialEventPacket packet, uint8_t type) {
+	CAER_SPECIAL_ITERATOR_VALID_START(packet)
+		if (caerSpecialEventGetType(caerSpecialIteratorElement) == type) {
+			// Found it, return it.
+			return (caerSpecialIteratorElement);
+		}
+	CAER_SPECIAL_ITERATOR_VALID_END
+
+	// Found nothing, return nothing.
+	return (NULL);
+}
+
 #ifdef __cplusplus
 }
 #endif

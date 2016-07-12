@@ -198,37 +198,6 @@ static inline void caerEventPacketContainerSetEventPacket(caerEventPacketContain
 }
 
 /**
- * Get the reference for an EventPacket stored in this container
- * with the given event type. This returns the first found event packet
- * with that type ID, or NULL if we get to the end without finding any
- * such event packet.
- *
- * @param container a valid EventPacketContainer handle. If NULL, returns NULL too.
- * @param typeID the event type to search for.
- *
- * @return a reference to an EventPacket with a certain type or NULL if none found.
- */
-static inline caerEventPacketHeader caerEventPacketContainerGetEventPacketForType(caerEventPacketContainer container,
-	int16_t typeID) {
-	// Non-existing (empty) containers have no valid packets in them!
-	if (container == NULL) {
-		return (NULL);
-	}
-
-	for (int32_t i = 0; i < caerEventPacketContainerGetEventPacketsNumber(container); i++) {
-		caerEventPacketHeader packet = caerEventPacketContainerGetEventPacket(container, i);
-
-		if (packet != NULL && caerEventPacketHeaderGetEventType(packet) == typeID) {
-			// Found it, return it.
-			return (packet);
-		}
-	}
-
-	// Found nothing, return nothing.
-	return (NULL);
-}
-
-/**
  * Get the lowest timestamp contained in this event packet container.
  *
  * @param container a valid EventPacketContainer handle. If NULL, -1 is returned.
@@ -290,6 +259,57 @@ static inline int32_t caerEventPacketContainerGetEventsValidNumber(caerEventPack
 	}
 
 	return (container->eventsValidNumber);
+}
+
+/**
+ * Iterator over all event packets in an event packet container.
+ * Returns the current index in the 'caerEventPacketContainerIteratorCounter' variable
+ * of type 'int32_t' and the current event packet in the 'caerEventPacketContainerIteratorElement'
+ * variable of type caerEventPacketHeader. The current packet may be NULL, in which case it is
+ * skipped during iteration.
+ *
+ * PACKET_CONTAINER: a valid EventPacketContainer handle. If NULL, no iteration is performed.
+ */
+#define CAER_EVENT_PACKET_CONTAINER_ITERATOR_START(PACKET_CONTAINER) \
+	if ((PACKET_CONTAINER) != NULL) { \
+		for (int32_t caerEventPacketContainerIteratorCounter = 0; \
+			caerEventPacketContainerIteratorCounter < caerEventPacketContainerGetEventPacketsNumber(PACKET_CONTAINER); \
+			caerEventPacketContainerIteratorCounter++) { \
+			caerEventPacketHeader caerEventPacketContainerIteratorElement = caerEventPacketContainerGetEventPacket(PACKET_CONTAINER, caerEventPacketContainerIteratorCounter); \
+			if (caerEventPacketContainerIteratorElement == NULL) { continue; }
+
+/**
+ * Iterator close statement.
+ */
+#define CAER_EVENT_PACKET_CONTAINER_ITERATOR_END } }
+
+/**
+ * Get the reference for an EventPacket stored in this container
+ * with the given event type. This returns the first found event packet
+ * with that type ID, or NULL if we get to the end without finding any
+ * such event packet.
+ *
+ * @param container a valid EventPacketContainer handle. If NULL, returns NULL too.
+ * @param typeID the event type to search for.
+ *
+ * @return a reference to an EventPacket with a certain type or NULL if none found.
+ */
+static inline caerEventPacketHeader caerEventPacketContainerFindEventPacketByType(caerEventPacketContainer container,
+	int16_t typeID) {
+	// Non-existing (empty) containers have no valid packets in them!
+	if (container == NULL) {
+		return (NULL);
+	}
+
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_START(container)
+		if (caerEventPacketHeaderGetEventType(caerEventPacketContainerIteratorElement) == typeID) {
+			// Found it, return it.
+			return (caerEventPacketContainerIteratorElement);
+		}
+	CAER_EVENT_PACKET_CONTAINER_ITERATOR_END
+
+	// Found nothing, return nothing.
+	return (NULL);
 }
 
 #ifdef __cplusplus
