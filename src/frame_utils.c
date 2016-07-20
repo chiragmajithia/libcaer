@@ -161,6 +161,7 @@ static inline enum pixelColorEnum determinePixelColor(enum caer_frame_event_colo
 			}
 			break;
 
+		case MONO:
 		default:
 			// Just fall through.
 			break;
