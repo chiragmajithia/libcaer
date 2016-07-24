@@ -321,6 +321,45 @@ static inline void caerPolarityEventSetX(caerPolarityEvent event, uint16_t xAddr
  */
 #define CAER_POLARITY_ITERATOR_VALID_END }
 
+/**
+ * Reverse iterator over all polarity events in a packet.
+ * Returns the current index in the 'caerPolarityIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerPolarityIteratorElement' variable
+ * of type caerPolarityEvent.
+ *
+ * POLARITY_PACKET: a valid PolarityEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_POLARITY_REVERSE_ITERATOR_ALL_START(POLARITY_PACKET) \
+	for (int32_t caerPolarityIteratorCounter = caerEventPacketHeaderGetEventNumber(&(POLARITY_PACKET)->packetHeader) - 1; \
+		caerPolarityIteratorCounter >= 0; \
+		caerPolarityIteratorCounter--) { \
+		caerPolarityEvent caerPolarityIteratorElement = caerPolarityEventPacketGetEvent(POLARITY_PACKET, caerPolarityIteratorCounter);
+
+/**
+ * Reverse iterator close statement.
+ */
+#define CAER_POLARITY_REVERSE_ITERATOR_ALL_END }
+
+/**
+ * Reverse iterator over only the valid polarity events in a packet.
+ * Returns the current index in the 'caerPolarityIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerPolarityIteratorElement' variable
+ * of type caerPolarityEvent.
+ *
+ * POLARITY_PACKET: a valid PolarityEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_POLARITY_REVERSE_ITERATOR_VALID_START(POLARITY_PACKET) \
+	for (int32_t caerPolarityIteratorCounter = caerEventPacketHeaderGetEventNumber(&(POLARITY_PACKET)->packetHeader) - 1; \
+		caerPolarityIteratorCounter >= 0; \
+		caerPolarityIteratorCounter--) { \
+		caerPolarityEvent caerPolarityIteratorElement = caerPolarityEventPacketGetEvent(POLARITY_PACKET, caerPolarityIteratorCounter); \
+		if (!caerPolarityEventIsValid(caerPolarityIteratorElement)) { continue; } // Skip invalid polarity events.
+
+/**
+ * Reverse iterator close statement.
+ */
+#define CAER_POLARITY_REVERSE_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif

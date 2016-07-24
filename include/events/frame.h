@@ -973,6 +973,45 @@ static inline uint16_t *caerFrameEventGetPixelArrayUnsafe(caerFrameEvent event) 
  */
 #define CAER_FRAME_ITERATOR_VALID_END }
 
+/**
+ * Reverse iterator over all frame events in a packet.
+ * Returns the current index in the 'caerFrameIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerFrameIteratorElement' variable
+ * of type caerFrameEvent.
+ *
+ * FRAME_PACKET: a valid FrameEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_FRAME_REVERSE_ITERATOR_ALL_START(FRAME_PACKET) \
+	for (int32_t caerFrameIteratorCounter = caerEventPacketHeaderGetEventNumber(&(FRAME_PACKET)->packetHeader) - 1; \
+		caerFrameIteratorCounter >= 0; \
+		caerFrameIteratorCounter--) { \
+		caerFrameEvent caerFrameIteratorElement = caerFrameEventPacketGetEvent(FRAME_PACKET, caerFrameIteratorCounter);
+
+/**
+ * Reverse iterator close statement.
+ */
+#define CAER_FRAME_REVERSE_ITERATOR_ALL_END }
+
+/**
+ * Reverse iterator over only the valid frame events in a packet.
+ * Returns the current index in the 'caerFrameIteratorCounter' variable of type
+ * 'int32_t' and the current event in the 'caerFrameIteratorElement' variable
+ * of type caerFrameEvent.
+ *
+ * FRAME_PACKET: a valid FrameEventPacket pointer. Cannot be NULL.
+ */
+#define CAER_FRAME_REVERSE_ITERATOR_VALID_START(FRAME_PACKET) \
+	for (int32_t caerFrameIteratorCounter = caerEventPacketHeaderGetEventNumber(&(FRAME_PACKET)->packetHeader) - 1; \
+		caerFrameIteratorCounter >= 0; \
+		caerFrameIteratorCounter--) { \
+		caerFrameEvent caerFrameIteratorElement = caerFrameEventPacketGetEvent(FRAME_PACKET, caerFrameIteratorCounter); \
+		if (!caerFrameEventIsValid(caerFrameIteratorElement)) { continue; } // Skip invalid frame events.
+
+/**
+ * Reverse iterator close statement.
+ */
+#define CAER_FRAME_REVERSE_ITERATOR_VALID_END }
+
 #ifdef __cplusplus
 }
 #endif
