@@ -736,8 +736,8 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	// Special extra pixels control for DAVIS240 A/B.
 	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS240_CONFIG_CHIP_SPECIALPIXELCONTROL, false);
 
-	// Select which grey counter to use with the internal ADC: '0' means the external grey counter is used, which
-	// has to be supplied off-chip. '1' means the on-chip grey counter is used instead.
+	// Select which gray counter to use with the internal ADC: '0' means the external gray counter is used, which
+	// has to be supplied off-chip. '1' means the on-chip gray counter is used instead.
 	(*configSet)(cdh, DAVIS_CONFIG_CHIP, DAVIS128_CONFIG_CHIP_SELECTGRAYCOUNTER, 1);
 
 	// Test ADC functionality: if true, the ADC takes its input voltage not from the pixel, but from the
