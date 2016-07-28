@@ -974,7 +974,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->currentSpecialPacket = grownPacket;
 		}
 
-		bool forceCommit = false;
+		bool tsReset = false;
+		bool tsBigWrap = false;
 
 		if ((buffer[i + 3] & DVS128_TIMESTAMP_WRAP_MASK) == DVS128_TIMESTAMP_WRAP_MASK) {
 			// Detect big timestamp wrap-around.
@@ -996,7 +997,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
 
 				// Commit packets to separate before wrap from after cleanly.
-				forceCommit = true;
+				tsBigWrap = true;
 			}
 			else {
 				// timestamp bit 15 is one -> wrap: now we need to increment
@@ -1021,15 +1022,10 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 			state->currentPacketContainerCommitTimestamp = -1;
 			initContainerCommitTimestamp(state);
 
-			// Create timestamp reset event.
-			caerSpecialEvent currentEvent = caerSpecialEventPacketGetEvent(state->currentSpecialPacket,
-				state->currentSpecialPacketPosition++);
-			caerSpecialEventSetTimestamp(currentEvent, INT32_MAX);
-			caerSpecialEventSetType(currentEvent, TIMESTAMP_RESET);
-			caerSpecialEventValidate(currentEvent, state->currentSpecialPacket);
-
+			// Defer timestamp reset event to later, so we commit it
+			// alone, in its own packet.
 			// Commit packets when doing a reset to clearly separate them.
-			forceCommit = true;
+			tsReset = true;
 		}
 		else {
 			// address is LSB MSB (USB is LE)
@@ -1102,7 +1098,7 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
-		if (forceCommit || containerSizeCommit || containerTimeCommit) {
+		if (tsReset || tsBigWrap || containerSizeCommit || containerTimeCommit) {
 			// One or more of the commit triggers are hit. Set the packet container up to contain
 			// any non-empty packets. Empty packets are not forwarded to save memory.
 			bool emptyContainerCommit = true;
@@ -1143,22 +1139,14 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 				state->currentPacketContainer = NULL;
 			}
 			else {
-				retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
-					// Failed to forward packet container, drop it, unless it contains a timestamp
-					// related change, those are critical, so we just spin until we can
-					// deliver that one. (Easily detected by forceCommit!)
-					if (forceCommit) {
-						goto retry_important;
-					}
-					else {
-						// Failed to forward packet container, just drop it, it doesn't contain
-						// any critical information anyway.
-						caerLog(CAER_LOG_INFO, handle->info.deviceString,
-							"Dropped EventPacket Container because ring-buffer full!");
+				if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
+					// Failed to forward packet container, just drop it, it doesn't contain
+					// any critical information anyway.
+					caerLog(CAER_LOG_INFO, handle->info.deviceString,
+						"Dropped EventPacket Container because ring-buffer full!");
 
-						caerEventPacketContainerFree(state->currentPacketContainer);
-						state->currentPacketContainer = NULL;
-					}
+					caerEventPacketContainerFree(state->currentPacketContainer);
+					state->currentPacketContainer = NULL;
 				}
 				else {
 					if (state->dataNotifyIncrease != NULL) {
@@ -1166,6 +1154,53 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 					}
 
 					state->currentPacketContainer = NULL;
+				}
+			}
+
+			// The only critical timestamp information to forward is the timestamp reset event.
+			// The timestamp big-wrap can also (and should!) be detected by observing a packet's
+			// tsOverflow value, not the special packet TIMESTAMP_WRAP event, which is only informative.
+			// For the timestamp reset event (TIMESTAMP_RESET), we thus ensure that it is always
+			// committed, and we send it alone, in its own packet container, to ensure it will always
+			// be ordered after any other event packets in any processing or output stream.
+			if (tsReset) {
+				// Allocate packet container just for this event.
+				caerEventPacketContainer tsResetContainer = caerEventPacketContainerAllocate(DVS_EVENT_TYPES);
+				if (tsResetContainer == NULL) {
+					caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
+						"Failed to allocate tsReset event packet container.");
+					return;
+				}
+
+				// Allocate special packet just for this event.
+				caerSpecialEventPacket tsResetPacket = caerSpecialEventPacketAllocate(1, I16T(handle->info.deviceID),
+					state->wrapOverflow);
+				if (tsResetPacket == NULL) {
+					caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
+						"Failed to allocate tsReset special event packet.");
+					return;
+				}
+
+				// Create timestamp reset event.
+				caerSpecialEvent tsResetEvent = caerSpecialEventPacketGetEvent(tsResetPacket, 0);
+				caerSpecialEventSetTimestamp(tsResetEvent, INT32_MAX);
+				caerSpecialEventSetType(tsResetEvent, TIMESTAMP_RESET);
+				caerSpecialEventValidate(tsResetEvent, tsResetPacket);
+
+				// Assign special packet to packet container.
+				caerEventPacketContainerSetEventPacket(tsResetContainer, SPECIAL_EVENT,
+					(caerEventPacketHeader) tsResetPacket);
+
+				// Reste MUST be committed, always, else downstream data processing and
+				// outputs get confused if they have no notification of timestamps
+				// jumping back go zero.
+				while (!ringBufferPut(state->dataExchangeBuffer, tsResetContainer)) {
+					;
+				}
+
+				// Signal new container as usual.
+				if (state->dataNotifyIncrease != NULL) {
+					state->dataNotifyIncrease(state->dataNotifyUserPtr);
 				}
 			}
 		}

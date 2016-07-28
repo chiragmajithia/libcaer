@@ -2677,7 +2677,8 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 			state->currentIMU6Packet = grownPacket;
 		}
 
-		bool forceCommit = false;
+		bool tsReset = false;
+		bool tsBigWrap = false;
 
 		uint16_t event = le16toh(*((uint16_t * ) (&buffer[i])));
 
@@ -2713,16 +2714,10 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 							caerLog(CAER_LOG_INFO, handle->info.deviceString, "Timestamp reset event received.");
 
-							// Create timestamp reset event.
-							caerSpecialEvent currentSpecialEvent = caerSpecialEventPacketGetEvent(
-								state->currentSpecialPacket, state->currentSpecialPacketPosition);
-							caerSpecialEventSetTimestamp(currentSpecialEvent, INT32_MAX);
-							caerSpecialEventSetType(currentSpecialEvent, TIMESTAMP_RESET);
-							caerSpecialEventValidate(currentSpecialEvent, state->currentSpecialPacket);
-							state->currentSpecialPacketPosition++;
-
+							// Defer timestamp reset event to later, so we commit it
+							// alone, in its own packet.
 							// Commit packets when doing a reset to clearly separate them.
-							forceCommit = true;
+							tsReset = true;
 
 							// Update Master/Slave status on incoming TS resets. Done in main thread
 							// to avoid deadlock inside callback.
@@ -3609,7 +3604,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 						state->currentSpecialPacketPosition++;
 
 						// Commit packets to separate before wrap from after cleanly.
-						forceCommit = true;
+						tsBigWrap = true;
 					}
 					else {
 						// Each wrap is 2^15 µs (~32ms), and we have
@@ -3650,7 +3645,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 
 		// Commit packet containers to the ring-buffer, so they can be processed by the
 		// main-loop, when any of the required conditions are met.
-		if (forceCommit || containerSizeCommit || containerTimeCommit) {
+		if (tsReset || tsBigWrap || containerSizeCommit || containerTimeCommit) {
 			// One or more of the commit triggers are hit. Set the packet container up to contain
 			// any non-empty packets. Empty packets are not forwarded to save memory.
 			bool emptyContainerCommit = true;
@@ -3691,7 +3686,7 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				emptyContainerCommit = false;
 			}
 
-			if (forceCommit) {
+			if (tsReset || tsBigWrap) {
 				// Ignore all APS and IMU6 (composite) events, until a new APS or IMU6
 				// Start event comes in, for the next packet.
 				// This is to correctly support the forced packet commits that a TS reset,
@@ -3721,22 +3716,14 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				state->currentPacketContainer = NULL;
 			}
 			else {
-				retry_important: if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
-					// Failed to forward packet container, drop it, unless it contains a timestamp
-					// related change, those are critical, so we just spin until we can
-					// deliver that one. (Easily detected by forceCommit!)
-					if (forceCommit) {
-						goto retry_important;
-					}
-					else {
-						// Failed to forward packet container, just drop it, it doesn't contain
-						// any critical information anyway.
-						caerLog(CAER_LOG_INFO, handle->info.deviceString,
-							"Dropped EventPacket Container because ring-buffer full!");
+				if (!ringBufferPut(state->dataExchangeBuffer, state->currentPacketContainer)) {
+					// Failed to forward packet container, just drop it, it doesn't contain
+					// any critical information anyway.
+					caerLog(CAER_LOG_INFO, handle->info.deviceString,
+						"Dropped EventPacket Container because ring-buffer full!");
 
-						caerEventPacketContainerFree(state->currentPacketContainer);
-						state->currentPacketContainer = NULL;
-					}
+					caerEventPacketContainerFree(state->currentPacketContainer);
+					state->currentPacketContainer = NULL;
 				}
 				else {
 					if (state->dataNotifyIncrease != NULL) {
@@ -3744,6 +3731,53 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 					}
 
 					state->currentPacketContainer = NULL;
+				}
+			}
+
+			// The only critical timestamp information to forward is the timestamp reset event.
+			// The timestamp big-wrap can also (and should!) be detected by observing a packet's
+			// tsOverflow value, not the special packet TIMESTAMP_WRAP event, which is only informative.
+			// For the timestamp reset event (TIMESTAMP_RESET), we thus ensure that it is always
+			// committed, and we send it alone, in its own packet container, to ensure it will always
+			// be ordered after any other event packets in any processing or output stream.
+			if (tsReset) {
+				// Allocate packet container just for this event.
+				caerEventPacketContainer tsResetContainer = caerEventPacketContainerAllocate(DAVIS_EVENT_TYPES);
+				if (tsResetContainer == NULL) {
+					caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
+						"Failed to allocate tsReset event packet container.");
+					return;
+				}
+
+				// Allocate special packet just for this event.
+				caerSpecialEventPacket tsResetPacket = caerSpecialEventPacketAllocate(1, I16T(handle->info.deviceID),
+					state->wrapOverflow);
+				if (tsResetPacket == NULL) {
+					caerLog(CAER_LOG_CRITICAL, handle->info.deviceString,
+						"Failed to allocate tsReset special event packet.");
+					return;
+				}
+
+				// Create timestamp reset event.
+				caerSpecialEvent tsResetEvent = caerSpecialEventPacketGetEvent(tsResetPacket, 0);
+				caerSpecialEventSetTimestamp(tsResetEvent, INT32_MAX);
+				caerSpecialEventSetType(tsResetEvent, TIMESTAMP_RESET);
+				caerSpecialEventValidate(tsResetEvent, tsResetPacket);
+
+				// Assign special packet to packet container.
+				caerEventPacketContainerSetEventPacket(tsResetContainer, SPECIAL_EVENT,
+					(caerEventPacketHeader) tsResetPacket);
+
+				// Reste MUST be committed, always, else downstream data processing and
+				// outputs get confused if they have no notification of timestamps
+				// jumping back go zero.
+				while (!ringBufferPut(state->dataExchangeBuffer, tsResetContainer)) {
+					;
+				}
+
+				// Signal new container as usual.
+				if (state->dataNotifyIncrease != NULL) {
+					state->dataNotifyIncrease(state->dataNotifyUserPtr);
 				}
 			}
 		}
