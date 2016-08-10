@@ -361,7 +361,6 @@ struct caer_davis_info caerDavisInfoGet(caerDeviceHandle cdh) {
 bool davisCommonSendDefaultFPGAConfig(caerDeviceHandle cdh,
 bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint32_t param)) {
 	davisHandle handle = (davisHandle) cdh;
-	davisState state = &handle->state;
 
 	(*configSet)(cdh, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_TIMESTAMP_RESET, false);
 	(*configSet)(cdh, DAVIS_CONFIG_MUX, DAVIS_CONFIG_MUX_FORCE_CHIP_BIAS_ENABLE, false);
@@ -378,22 +377,22 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_ROW_ONLY_EVENTS, true);
 	(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_EXTERNAL_AER_CONTROL, false);
 	if (handle->info.dvsHasPixelFilter) {
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_0_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_1_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_2_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_3_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_4_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_5_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_6_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN, U32T(state->dvsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_7_ROW, U32T(state->dvsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_7_COLUMN, U32T(state->dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_0_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_1_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_2_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_3_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_4_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_5_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_6_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN, U32T(handle->info.dvsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_7_ROW, U32T(handle->info.dvsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_PIXEL_7_COLUMN, U32T(handle->info.dvsSizeX));
 	}
 	if (handle->info.dvsHasBackgroundActivityFilter) {
 		(*configSet)(cdh, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_FILTER_BACKGROUND_ACTIVITY, true);
@@ -408,8 +407,8 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_GLOBAL_SHUTTER, handle->info.apsHasGlobalShutter);
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0, 0);
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0, 0);
-	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, U16T(state->apsSizeX - 1));
-	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, U16T(state->apsSizeY - 1));
+	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0, U16T(handle->info.apsSizeX - 1));
+	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, U16T(handle->info.apsSizeY - 1));
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_EXPOSURE, 4000); // in µs, converted to cycles @ ADCClock later
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_FRAME_DELAY, 1000); // in µs, converted to cycles @ ADCClock later
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RESET_SETTLE, U32T(handle->info.adcClock / 3)); // in cycles @ ADCClock
@@ -417,18 +416,18 @@ bool (*configSet)(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, uint3
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_ROW_SETTLE, U32T(handle->info.adcClock / 3)); // in cycles @ ADCClock
 	(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_NULL_SETTLE, U32T(handle->info.adcClock / 10)); // in cycles @ ADCClock
 	if (handle->info.apsHasQuadROI) {
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_1, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_1, U32T(state->apsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_1, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_1, U32T(state->apsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_2, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_2, U32T(state->apsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_2, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_2, U32T(state->apsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_3, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_3, U32T(state->apsSizeY));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_3, U32T(state->apsSizeX));
-		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_3, U32T(state->apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_1, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_1, U32T(handle->info.apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_1, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_1, U32T(handle->info.apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_2, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_2, U32T(handle->info.apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_2, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_2, U32T(handle->info.apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_3, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_3, U32T(handle->info.apsSizeY));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_3, U32T(handle->info.apsSizeX));
+		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_3, U32T(handle->info.apsSizeY));
 	}
 	if (handle->info.apsHasInternalADC) {
 		(*configSet)(cdh, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_USE_INTERNAL_ADC, true);
@@ -887,23 +886,43 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					break;
 
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_ROW:
+					if (handle->info.dvsHasPixelFilter) {
+						if (handle->state.dvsInvertXY) {
+							// Convert to column if X/Y inverted.
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, U8T(paramAddr + 1), param));
+						}
+						else {
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						}
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_COLUMN:
 					if (handle->info.dvsHasPixelFilter) {
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						if (handle->state.dvsInvertXY) {
+							// Convert to row if X/Y inverted.
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, U8T(paramAddr - 1), param));
+						}
+						else {
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						}
 					}
 					else {
 						return (false);
@@ -956,55 +975,27 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					}
 					break;
 
-				case DAVIS_CONFIG_APS_START_COLUMN_0: {
+				case DAVIS_CONFIG_APS_START_COLUMN_0:
+				case DAVIS_CONFIG_APS_END_COLUMN_0:
 					if (state->apsInvertXY) {
-						// INVERT TO ROW!
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							param));
+						// Convert to row if X/Y inverted.
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr + 1), param));
 					}
 					else {
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					break;
-				}
 
-				case DAVIS_CONFIG_APS_START_ROW_0: {
+				case DAVIS_CONFIG_APS_START_ROW_0:
+				case DAVIS_CONFIG_APS_END_ROW_0:
 					if (state->apsInvertXY) {
-						// INVERT TO COLUMN!
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							param));
+						// Convert to column if X/Y inverted.
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr - 1), param));
 					}
 					else {
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							param));
+						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					break;
-				}
-
-				case DAVIS_CONFIG_APS_END_COLUMN_0: {
-					if (state->apsInvertXY) {
-						// INVERT TO ROW!
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
-					}
-					else {
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							param));
-					}
-					break;
-				}
-
-				case DAVIS_CONFIG_APS_END_ROW_0: {
-					if (state->apsInvertXY) {
-						// INVERT TO COLUMN!
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							param));
-					}
-					else {
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0, param));
-					}
-					break;
-				}
 
 				case DAVIS_CONFIG_APS_EXPOSURE:
 				case DAVIS_CONFIG_APS_FRAME_DELAY:
@@ -1029,21 +1020,41 @@ bool davisCommonConfigSet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					}
 					break;
 
+					// TODO: no support on host-side for QuadROI and multi-frame decoding.
 				case DAVIS_CONFIG_APS_START_COLUMN_1:
-				case DAVIS_CONFIG_APS_START_ROW_1:
 				case DAVIS_CONFIG_APS_END_COLUMN_1:
-				case DAVIS_CONFIG_APS_END_ROW_1:
 				case DAVIS_CONFIG_APS_START_COLUMN_2:
-				case DAVIS_CONFIG_APS_START_ROW_2:
 				case DAVIS_CONFIG_APS_END_COLUMN_2:
-				case DAVIS_CONFIG_APS_END_ROW_2:
 				case DAVIS_CONFIG_APS_START_COLUMN_3:
-				case DAVIS_CONFIG_APS_START_ROW_3:
 				case DAVIS_CONFIG_APS_END_COLUMN_3:
+					if (handle->info.apsHasQuadROI) {
+						if (state->apsInvertXY) {
+							// Convert to row if X/Y inverted.
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr + 1), param));
+						}
+						else {
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						}
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_APS_START_ROW_1:
+				case DAVIS_CONFIG_APS_END_ROW_1:
+				case DAVIS_CONFIG_APS_START_ROW_2:
+				case DAVIS_CONFIG_APS_END_ROW_2:
+				case DAVIS_CONFIG_APS_START_ROW_3:
 				case DAVIS_CONFIG_APS_END_ROW_3:
 					if (handle->info.apsHasQuadROI) {
-						// TODO: no support on host-side for QuadROI and multi-frame decoding.
-						return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						if (state->apsInvertXY) {
+							// Convert to column if X/Y inverted.
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr - 1), param));
+						}
+						else {
+							return (spiConfigSend(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						}
 					}
 					else {
 						return (false);
@@ -1510,23 +1521,43 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					break;
 
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_ROW:
-				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_ROW:
+					if (handle->info.dvsHasPixelFilter) {
+						if (handle->state.dvsInvertXY) {
+							// Convert to column if X/Y inverted.
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, U8T(paramAddr + 1), param));
+						}
+						else {
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						}
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_0_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_1_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_2_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_3_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_4_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_5_COLUMN:
+				case DAVIS_CONFIG_DVS_FILTER_PIXEL_6_COLUMN:
 				case DAVIS_CONFIG_DVS_FILTER_PIXEL_7_COLUMN:
 					if (handle->info.dvsHasPixelFilter) {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						if (handle->state.dvsInvertXY) {
+							// Convert to row if X/Y inverted.
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, U8T(paramAddr - 1), param));
+						}
+						else {
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_DVS, paramAddr, param));
+						}
 					}
 					else {
 						return (false);
@@ -1575,57 +1606,27 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					break;
 
-				case DAVIS_CONFIG_APS_START_COLUMN_0: {
+				case DAVIS_CONFIG_APS_START_COLUMN_0:
+				case DAVIS_CONFIG_APS_END_COLUMN_0:
 					if (state->apsInvertXY) {
-						// INVERT TO ROW!
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							param));
+						// Convert to row if X/Y inverted.
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr + 1), param));
 					}
 					else {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							param));
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					break;
-				}
 
-				case DAVIS_CONFIG_APS_START_ROW_0: {
+				case DAVIS_CONFIG_APS_START_ROW_0:
+				case DAVIS_CONFIG_APS_END_ROW_0:
 					if (state->apsInvertXY) {
-						// INVERT TO COLUMN!
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_COLUMN_0,
-							param));
+						// Convert to column if X/Y inverted.
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr - 1), param));
 					}
 					else {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_START_ROW_0,
-							param));
+						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
 					}
 					break;
-				}
-
-				case DAVIS_CONFIG_APS_END_COLUMN_0: {
-					if (state->apsInvertXY) {
-						// INVERT TO ROW!
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0,
-							param));
-					}
-					else {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							param));
-					}
-					break;
-				}
-
-				case DAVIS_CONFIG_APS_END_ROW_0: {
-					if (state->apsInvertXY) {
-						// INVERT TO COLUMN!
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_COLUMN_0,
-							param));
-					}
-					else {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_END_ROW_0,
-							param));
-					}
-					break;
-				}
 
 				case DAVIS_CONFIG_APS_RESET_SETTLE:
 				case DAVIS_CONFIG_APS_COLUMN_SETTLE:
@@ -1664,19 +1665,39 @@ bool davisCommonConfigGet(davisHandle handle, int8_t modAddr, uint8_t paramAddr,
 					break;
 
 				case DAVIS_CONFIG_APS_START_COLUMN_1:
-				case DAVIS_CONFIG_APS_START_ROW_1:
 				case DAVIS_CONFIG_APS_END_COLUMN_1:
-				case DAVIS_CONFIG_APS_END_ROW_1:
 				case DAVIS_CONFIG_APS_START_COLUMN_2:
-				case DAVIS_CONFIG_APS_START_ROW_2:
 				case DAVIS_CONFIG_APS_END_COLUMN_2:
-				case DAVIS_CONFIG_APS_END_ROW_2:
 				case DAVIS_CONFIG_APS_START_COLUMN_3:
-				case DAVIS_CONFIG_APS_START_ROW_3:
 				case DAVIS_CONFIG_APS_END_COLUMN_3:
+					if (handle->info.apsHasQuadROI) {
+						if (state->apsInvertXY) {
+							// Convert to row if X/Y inverted.
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr + 1), param));
+						}
+						else {
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						}
+					}
+					else {
+						return (false);
+					}
+					break;
+
+				case DAVIS_CONFIG_APS_START_ROW_1:
+				case DAVIS_CONFIG_APS_END_ROW_1:
+				case DAVIS_CONFIG_APS_START_ROW_2:
+				case DAVIS_CONFIG_APS_END_ROW_2:
+				case DAVIS_CONFIG_APS_START_ROW_3:
 				case DAVIS_CONFIG_APS_END_ROW_3:
 					if (handle->info.apsHasQuadROI) {
-						return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						if (state->apsInvertXY) {
+							// Convert to column if X/Y inverted.
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, U8T(paramAddr - 1), param));
+						}
+						else {
+							return (spiConfigReceive(state->deviceHandle, DAVIS_CONFIG_APS, paramAddr, param));
+						}
 					}
 					else {
 						return (false);
