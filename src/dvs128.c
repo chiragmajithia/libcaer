@@ -1086,8 +1086,10 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerSizeCommit = (state->currentPolarityPacketPosition + state->currentSpecialPacketPosition)
-			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed);
+		int32_t currentPacketContainerCommitSize = atomic_load_explicit(&state->maxPacketContainerSize,
+			memory_order_relaxed);
+		bool containerSizeCommit = (state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
+			|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize);
 
 		bool containerTimeCommit = generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
 			> state->currentPacketContainerCommitTimestamp;

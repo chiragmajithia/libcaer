@@ -3657,9 +3657,12 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
 		// Trigger if any of the global container-wide thresholds are met.
-		bool containerSizeCommit = (state->currentPolarityPacketPosition + state->currentSpecialPacketPosition
-			+ state->currentFramePacketPosition + state->currentIMU6PacketPosition)
-			>= atomic_load_explicit(&state->maxPacketContainerSize, memory_order_relaxed);
+		int32_t currentPacketContainerCommitSize = atomic_load_explicit(&state->maxPacketContainerSize,
+			memory_order_relaxed);
+		bool containerSizeCommit = (state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
+			|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize)
+			|| (state->currentFramePacketPosition >= currentPacketContainerCommitSize)
+			|| (state->currentIMU6PacketPosition >= currentPacketContainerCommitSize);
 
 		bool containerTimeCommit = generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
 			> state->currentPacketContainerCommitTimestamp;
