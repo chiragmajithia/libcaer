@@ -91,19 +91,19 @@ typedef struct caer_device_handle *caerDeviceHandle;
 
 /**
  * Parameter address for module CAER_HOST_CONFIG_PACKETS:
- * set the maximum number of events a packet container may
- * hold before it's made available to the user.
- * This is a sum of the number of events held in each typed
+ * set the maximum number of events any of a packet container's
+ * packets may hold before it's made available to the user.
+ * This is checked for each number of events held in each typed
  * EventPacket that is a part of the EventPacketContainer.
  */
-#define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE     0
+#define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_PACKET_SIZE 0
 /**
  * Parameter address for module CAER_HOST_CONFIG_PACKETS:
- * set the interval between subsequent packet containers.
+ * set the time interval between subsequent packet containers.
  * The value is in microseconds, and is checked across all
  * types of events contained in the EventPacketContainer.
  */
-#define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL 1
+#define CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL    1
 
 /**
  * Open a specified USB device, assign an ID to it and return a handle for further usage.

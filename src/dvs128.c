@@ -78,7 +78,7 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	atomic_store_explicit(&state->usbBufferSize, 4096, memory_order_relaxed);
 
 	// Packet settings (size (in events) and time interval (in µs)).
-	atomic_store_explicit(&state->maxPacketContainerSize, 4096, memory_order_relaxed);
+	atomic_store_explicit(&state->maxPacketContainerPacketSize, 4096, memory_order_relaxed);
 	atomic_store_explicit(&state->maxPacketContainerInterval, 10000, memory_order_relaxed);
 
 	atomic_store_explicit(&state->dvsIsMaster, true, memory_order_relaxed); // Always master by default.
@@ -274,8 +274,8 @@ bool dvs128ConfigSet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 
 		case CAER_HOST_CONFIG_PACKETS:
 			switch (paramAddr) {
-				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
-					atomic_store(&state->maxPacketContainerSize, param);
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_PACKET_SIZE:
+					atomic_store(&state->maxPacketContainerPacketSize, param);
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
@@ -430,8 +430,8 @@ bool dvs128ConfigGet(caerDeviceHandle cdh, int8_t modAddr, uint8_t paramAddr, ui
 
 		case CAER_HOST_CONFIG_PACKETS:
 			switch (paramAddr) {
-				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_SIZE:
-					*param = U32T(atomic_load(&state->maxPacketContainerSize));
+				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_PACKET_SIZE:
+					*param = U32T(atomic_load(&state->maxPacketContainerPacketSize));
 					break;
 
 				case CAER_HOST_CONFIG_PACKETS_MAX_CONTAINER_INTERVAL:
@@ -1086,8 +1086,8 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		// Thresholds on which to trigger packet container commit.
 		// forceCommit is already defined above.
 		// Trigger if any of the global container-wide thresholds are met.
-		int32_t currentPacketContainerCommitSize = atomic_load_explicit(&state->maxPacketContainerSize,
-			memory_order_relaxed);
+		int32_t currentPacketContainerCommitSize = I32T(
+			atomic_load_explicit(&state->maxPacketContainerPacketSize, memory_order_relaxed));
 		bool containerSizeCommit = (state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
 			|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize);
 
