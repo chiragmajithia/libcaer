@@ -2592,6 +2592,14 @@ static inline void initContainerCommitTimestamp(davisState state) {
 static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t bytesSent) {
 	davisState state = &handle->state;
 
+	// Return right away if not running anymore. This prevents useless work if many
+	// buffers are still waiting when shut down, as well as incorrect event sequences
+	// if a TS_RESET is stuck on ring-buffer commit further down, and detects shut-down;
+	// then any subsequent buffers should also detect shut-down and not be handled.
+	if (!atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)) {
+		return;
+	}
+
 	// Truncate off any extra partial event.
 	if ((bytesSent & 0x01) != 0) {
 		caerLog(CAER_LOG_ALERT, handle->info.deviceString,
@@ -3793,11 +3801,16 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 				caerEventPacketContainerSetEventPacket(tsResetContainer, SPECIAL_EVENT,
 					(caerEventPacketHeader) tsResetPacket);
 
-				// Reste MUST be committed, always, else downstream data processing and
+				// Reset MUST be committed, always, else downstream data processing and
 				// outputs get confused if they have no notification of timestamps
 				// jumping back go zero.
 				while (!ringBufferPut(state->dataExchangeBuffer, tsResetContainer)) {
-					;
+					// Prevent dead-lock if shutdown is requested and nothing is consuming
+					// data anymore, but the ring-buffer is full (and would thus never empty),
+					// thus blocking the USB handling thread in this loop.
+					if (!atomic_load_explicit(&state->dataAcquisitionThreadRun, memory_order_relaxed)) {
+						return;
+					}
 				}
 
 				// Signal new container as usual.
