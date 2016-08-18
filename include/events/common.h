@@ -367,7 +367,7 @@ static inline void caerEventPacketHeaderSetEventValid(caerEventPacketHeader head
 }
 
 /**
- * Grow an events packet.
+ * Grows an event packet.
  * Use free() to reclaim this memory afterwards.
  *
  * @param packet the current events packet.
@@ -410,6 +410,79 @@ static inline caerEventPacketHeader caerGenericEventPacketGrow(caerEventPacketHe
 
 	// Update header fields.
 	caerEventPacketHeaderSetEventCapacity(packet, newEventCapacity);
+
+	return (packet);
+}
+
+/**
+ * Appends an event packet to another.
+ * This is a simple append operation, no timestamp reordering is done.
+ * Please ensure time is monotonically increasing over the two packets!
+ * Use free() to reclaim this memory afterwards.
+ *
+ * @param packet the main events packet.
+ * @param appendPacket the events packet to append on the main one.
+ *
+ * @return a valid event packet handle or NULL on error.
+ * On success, the old packet handle is to be considered invalid and not to be
+ * used anymore. On failure, the old packet handle is not touched in any way.
+ * The appendPacket handle is never touched in any way.
+ */
+static inline caerEventPacketHeader caerGenericEventPacketAppend(caerEventPacketHeader packet,
+	caerEventPacketHeader appendPacket) {
+	if (packet == NULL) {
+		return (NULL);
+	}
+
+	// Support appending nothing, the result is the unmodified input.
+	if (appendPacket == NULL) {
+		return (packet);
+	}
+
+	// Check that the two packets are of the same type and size, and have the same TSOverflow epoch.
+	if ((caerEventPacketHeaderGetEventType(packet) != caerEventPacketHeaderGetEventType(appendPacket))
+		|| (caerEventPacketHeaderGetEventSize(packet) != caerEventPacketHeaderGetEventSize(appendPacket))
+		|| (caerEventPacketHeaderGetEventTSOverflow(packet) != caerEventPacketHeaderGetEventTSOverflow(appendPacket))) {
+		return (NULL);
+	}
+
+	int32_t packetEventValid = caerEventPacketHeaderGetEventValid(packet);
+	int32_t packetEventNumber = caerEventPacketHeaderGetEventNumber(packet);
+	int32_t packetEventCapacity = caerEventPacketHeaderGetEventCapacity(packet);
+
+	int32_t appendPacketEventValid = caerEventPacketHeaderGetEventValid(appendPacket);
+	int32_t appendPacketEventNumber = caerEventPacketHeaderGetEventNumber(appendPacket);
+	int32_t appendPacketEventCapacity = caerEventPacketHeaderGetEventCapacity(appendPacket);
+
+	int32_t eventSize = caerEventPacketHeaderGetEventSize(packet); // Is the same! Checked above.
+	size_t newEventPacketSize = CAER_EVENT_PACKET_HEADER_SIZE
+		+ (size_t) ((packetEventCapacity + appendPacketEventCapacity) * eventSize);
+
+	// Grow memory used to hold events.
+	packet = (caerEventPacketHeader) realloc(packet, newEventPacketSize);
+	if (packet == NULL) {
+		caerLog(CAER_LOG_CRITICAL, "Generic Event Packet",
+			"Failed to reallocate %zu bytes of memory for appending Event Packet of capacity %"
+			PRIi32 " to Event Packet of capacity %" PRIi32 ". Error: %d.", newEventPacketSize,
+			appendPacketEventCapacity, packetEventCapacity, errno);
+		return (NULL);
+	}
+
+	// Copy appendPacket event memory at start of free space in packet.
+	memcpy(((uint8_t *) packet) + CAER_EVENT_PACKET_HEADER_SIZE + (packetEventNumber * eventSize),
+		((uint8_t *) appendPacket) + CAER_EVENT_PACKET_HEADER_SIZE, (size_t) (appendPacketEventNumber * eventSize));
+
+	// Zero out remaining event memory (all events invalid).
+	memset(
+		((uint8_t *) packet) + CAER_EVENT_PACKET_HEADER_SIZE
+			+ ((packetEventNumber + appendPacketEventNumber) * eventSize), 0,
+		(size_t) (((packetEventCapacity + appendPacketEventCapacity) - (packetEventNumber + appendPacketEventNumber))
+			* eventSize));
+
+	// Update header fields.
+	caerEventPacketHeaderSetEventValid(packet, (packetEventValid + appendPacketEventValid));
+	caerEventPacketHeaderSetEventNumber(packet, (packetEventNumber + appendPacketEventNumber));
+	caerEventPacketHeaderSetEventCapacity(packet, (packetEventCapacity + appendPacketEventCapacity));
 
 	return (packet);
 }
@@ -646,7 +719,7 @@ static inline void *caerCopyEventPacketOnlyValidEvents(void *eventPacket) {
 	CAER_ITERATOR_VALID_START(header, void *)
 		memcpy(((uint8_t *) eventPacketCopy) + offset, caerIteratorElement, (size_t) eventSize);
 		offset += (size_t) eventSize;
-	CAER_ITERATOR_VALID_END
+	}
 
 	// Set the event capacity and the event number to the number of
 	// valid events, since we only copied those.
@@ -654,6 +727,50 @@ static inline void *caerCopyEventPacketOnlyValidEvents(void *eventPacket) {
 	caerEventPacketHeaderSetEventNumber(eventPacketCopy, eventValid);
 
 	return (eventPacketCopy);
+}
+
+/**
+ * Cleanup a packet by removing all invalid events, so that
+ * the total number of events is the number of valid events.
+ * The packet's capacity doesn't change.
+ *
+ * @param eventPacket an event packet to clean.
+ */
+static inline void caerCleanEventPacket(void *eventPacket) {
+	// Handle empty event packets.
+	if (eventPacket == NULL) {
+		return;
+	}
+
+	// Calculate needed memory for new event packet.
+	caerEventPacketHeader header = (caerEventPacketHeader) eventPacket;
+	int32_t eventSize = caerEventPacketHeaderGetEventSize(header);
+	int32_t eventValid = caerEventPacketHeaderGetEventValid(header);
+	int32_t eventNumber = caerEventPacketHeaderGetEventNumber(header);
+	int32_t eventCapacity = caerEventPacketHeaderGetEventCapacity(header);
+
+	// If we have no invalid events, we're already done.
+	if (eventValid == eventNumber) {
+		return;
+	}
+
+	// Move all valid events close together. Must check every event for validity!
+	size_t offset = CAER_EVENT_PACKET_HEADER_SIZE;
+
+	CAER_ITERATOR_VALID_START(header, void *)
+		void *dest = ((uint8_t *) header) + offset;
+
+		if (dest != caerIteratorElement) {
+			memcpy(dest, caerIteratorElement, (size_t) eventSize);
+			offset += (size_t) eventSize;
+		}
+	}
+
+	// Reset remaining memory, up to capacity, to zero (all events invalid).
+	memset(((uint8_t *) header) + offset, 0, (size_t) ((eventCapacity - eventValid) * eventSize));
+
+	// Event capacity remains unchanged, event number shrunk to event valid number.
+	caerEventPacketHeaderSetEventNumber(header, eventValid);
 }
 
 #ifdef __cplusplus
