@@ -3659,10 +3659,11 @@ static void davisEventTranslator(davisHandle handle, uint8_t *buffer, size_t byt
 		// Trigger if any of the global container-wide thresholds are met.
 		int32_t currentPacketContainerCommitSize = I32T(
 			atomic_load_explicit(&state->maxPacketContainerPacketSize, memory_order_relaxed));
-		bool containerSizeCommit = (state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
-			|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize)
-			|| (state->currentFramePacketPosition >= currentPacketContainerCommitSize)
-			|| (state->currentIMU6PacketPosition >= currentPacketContainerCommitSize);
+		bool containerSizeCommit = (currentPacketContainerCommitSize > 0)
+			&& ((state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
+				|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize)
+				|| (state->currentFramePacketPosition >= currentPacketContainerCommitSize)
+				|| (state->currentIMU6PacketPosition >= currentPacketContainerCommitSize));
 
 		bool containerTimeCommit = generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
 			> state->currentPacketContainerCommitTimestamp;

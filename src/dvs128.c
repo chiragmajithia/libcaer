@@ -1088,8 +1088,9 @@ static void dvs128EventTranslator(dvs128Handle handle, uint8_t *buffer, size_t b
 		// Trigger if any of the global container-wide thresholds are met.
 		int32_t currentPacketContainerCommitSize = I32T(
 			atomic_load_explicit(&state->maxPacketContainerPacketSize, memory_order_relaxed));
-		bool containerSizeCommit = (state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
-			|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize);
+		bool containerSizeCommit = (currentPacketContainerCommitSize > 0)
+			&& ((state->currentPolarityPacketPosition >= currentPacketContainerCommitSize)
+				|| (state->currentSpecialPacketPosition >= currentPacketContainerCommitSize));
 
 		bool containerTimeCommit = generateFullTimestamp(state->wrapOverflow, state->currentTimestamp)
 			> state->currentPacketContainerCommitTimestamp;
