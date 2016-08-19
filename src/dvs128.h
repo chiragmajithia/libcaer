@@ -52,6 +52,7 @@ struct dvs128_state {
 	void (*dataShutdownNotify)(void *ptr);
 	void *dataShutdownUserPtr;
 	// USB Device State
+	char deviceThreadName[15 + 1]; // +1 for terminating NUL character.
 	libusb_context *deviceContext;
 	libusb_device_handle *deviceHandle;
 	// USB Transfer Settings

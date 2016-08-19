@@ -85,12 +85,26 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 
 	atomic_thread_fence(memory_order_release);
 
+	// Set device thread name. Maximum length of 15 chars due to Linux limitations.
+	snprintf(state->deviceThreadName, 15 + 1, "%s ID-%" PRIu16, DVS_DEVICE_NAME, deviceID);
+	state->deviceThreadName[15] = '\0';
+
 	// Search for device and open it.
 	// Initialize libusb using a separate context for each device.
 	// This is to correctly support one thread per device.
-	if ((errno = libusb_init(&state->deviceContext)) != LIBUSB_SUCCESS) {
-		free(handle);
+	// libusb may create its own threads at this stage, so we temporarly set
+	// a different thread name.
+	char originalThreadName[15 + 1]; // +1 for terminating NUL character.
+	thrd_get_name(originalThreadName, 15);
+	originalThreadName[15] = '\0';
 
+	thrd_set_name(state->deviceThreadName);
+	errno = libusb_init(&state->deviceContext);
+
+	thrd_set_name(originalThreadName);
+
+	if (errno != LIBUSB_SUCCESS) {
+		free(handle);
 		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
 		return (NULL);
 	}
@@ -1238,6 +1252,9 @@ static int dvs128DataAcquisitionThread(void *inPtr) {
 	dvs128State state = &handle->state;
 
 	caerLog(CAER_LOG_DEBUG, handle->info.deviceString, "Initializing data acquisition thread ...");
+
+	// Set thread name.
+	thrd_set_name(state->deviceThreadName);
 
 	// Reset configuration update, so as to not re-do work afterwards.
 	atomic_store(&state->dataAcquisitionThreadConfigUpdate, 0);
