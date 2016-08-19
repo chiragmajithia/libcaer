@@ -200,12 +200,12 @@ bool davisCommonOpen(davisHandle handle, uint16_t VID, uint16_t PID, uint8_t DID
 	originalThreadName[15] = '\0';
 
 	thrd_set_name(state->deviceThreadName);
-	errno = libusb_init(&state->deviceContext);
+	int res = libusb_init(&state->deviceContext);
 
 	thrd_set_name(originalThreadName);
 
-	if (errno != LIBUSB_SUCCESS) {
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
+	if (res != LIBUSB_SUCCESS) {
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", res);
 		return (false);
 	}
 

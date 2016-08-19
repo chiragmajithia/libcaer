@@ -99,13 +99,13 @@ caerDeviceHandle dvs128Open(uint16_t deviceID, uint8_t busNumberRestrict, uint8_
 	originalThreadName[15] = '\0';
 
 	thrd_set_name(state->deviceThreadName);
-	errno = libusb_init(&state->deviceContext);
+	int res = libusb_init(&state->deviceContext);
 
 	thrd_set_name(originalThreadName);
 
-	if (errno != LIBUSB_SUCCESS) {
+	if (res != LIBUSB_SUCCESS) {
 		free(handle);
-		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", errno);
+		caerLog(CAER_LOG_CRITICAL, __func__, "Failed to initialize libusb context. Error: %d.", res);
 		return (NULL);
 	}
 
