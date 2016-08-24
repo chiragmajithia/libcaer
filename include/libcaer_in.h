@@ -14,10 +14,7 @@
 
 #ifdef __cplusplus
 
-#include <cstddef>
-#include <cstdlib>
 #include <cstdio>
-#include <cstdbool>
 #include <cstdint>
 #include <cinttypes>
 #include <cstring>
