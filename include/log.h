@@ -8,6 +8,9 @@
 #define LIBCAER_LOG_H_
 
 #ifdef __cplusplus
+
+#include <cstdint>
+
 extern "C" {
 #endif
 
