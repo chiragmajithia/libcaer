@@ -1,9 +1,19 @@
-file(GLOB_RECURSE LIBCAER_SRC_FILES *.c)
+SET(LIBCAER_SRC_FILES
+	log.c
+	events.c
+	frame_utils.c
+	device.c
+	dvs128.c
+	davis_common.c
+	davis_fx2.c
+	davis_fx3.c)
 
 IF (ENABLE_OPENCV)
 	# Add C++ OpenCV file and its C wrapper.
 	SET(LIBCAER_SRC_FILES ${LIBCAER_SRC_FILES} frame_utils_opencv.cpp)
 ENDIF()
+
+SET(LIBCAER_SRC_FILES ${LIBCAER_SRC_FILES} PARENT_SCOPE)
 
 IF (UNIX AND NOT APPLE)
 	# Add --as-needed to linker flags for library.
