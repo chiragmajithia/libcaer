@@ -5,7 +5,6 @@
 #include <opencv2/imgproc.hpp>
 
 using namespace cv;
-using namespace std;
 
 static void frameUtilsOpenCVDemosaicFrame(caerFrameEvent colorFrame, caerFrameEvent monoFrame,
 	enum caer_frame_utils_opencv_demosaic demosaicType);
@@ -207,7 +206,7 @@ void caerFrameUtilsOpenCVContrast(caerFrameEventPacket framePacket,
 		// So, if this is a grayscale image, good, else if its a color
 		// image we convert it to YCrCb and operate on the Y channel only.
 		Mat intensity;
-		vector<Mat> yCrCbPlanes(3);
+		std::vector<Mat> yCrCbPlanes(3);
 		Mat rgbaAlpha;
 
 		// Grayscale, no intensity extraction needed.
@@ -396,7 +395,7 @@ static void frameUtilsOpenCVContrastEqualize(Mat &intensity) {
 	hist *= (float) UINT16_MAX;
 
 	// Apply lookup table to input image.
-	for_each(intensity.begin<uint16_t>(), intensity.end<uint16_t>(),
+	std::for_each(intensity.begin<uint16_t>(), intensity.end<uint16_t>(),
 		[&hist](uint16_t &elem) {elem = hist.at<float>(elem);});
 }
 
