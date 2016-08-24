@@ -56,8 +56,13 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 	// So we make sure to call it here, to be portable.
 	tzset();
 
+#if defined(OS_WINDOWS)
+	// localtime() is thread-safe on Windows (and there is no localtime_r() at all).
+	struct tm *currentTime = localtime(&currentTimeEpoch);
+#else
 	struct tm currentTime;
 	localtime_r(&currentTimeEpoch, &currentTime);
+#endif
 
 	// Following time format uses exactly 29 characters (8 separators/punctuation,
 	// 4 year, 2 month, 2 day, 2 hours, 2 minutes, 2 seconds, 2 'TZ', 5 timezone).
@@ -115,13 +120,23 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 
 	if (logFileDescriptor1 >= 0) {
 		va_start(argptr, format);
+#if defined(OS_WINDOWS)
+		FILE *logFilePointer1 = fdopen(logFileDescriptor1, "a");
+		vfprintf(logFilePointer1, logString, argptr);
+#else
 		vdprintf(logFileDescriptor1, logString, argptr);
+#endif
 		va_end(argptr);
 	}
 
 	if (logFileDescriptor2 >= 0) {
 		va_start(argptr, format);
+#if defined(OS_WINDOWS)
+		FILE *logFilePointer2 = fdopen(logFileDescriptor2, "a");
+		vfprintf(logFilePointer2, logString, argptr);
+#else
 		vdprintf(logFileDescriptor2, logString, argptr);
+#endif
 		va_end(argptr);
 	}
 }
