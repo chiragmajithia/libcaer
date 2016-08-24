@@ -60,15 +60,16 @@ void caerLog(uint8_t logLevel, const char *subSystem, const char *format, ...) {
 	// localtime() is thread-safe on Windows (and there is no localtime_r() at all).
 	struct tm *currentTime = localtime(&currentTimeEpoch);
 #else
-	struct tm currentTime;
-	localtime_r(&currentTimeEpoch, &currentTime);
+	struct tm currentTimeStruct;
+	struct tm *currentTime = &currentTimeStruct;
+	localtime_r(&currentTimeEpoch, currentTime);
 #endif
 
 	// Following time format uses exactly 29 characters (8 separators/punctuation,
 	// 4 year, 2 month, 2 day, 2 hours, 2 minutes, 2 seconds, 2 'TZ', 5 timezone).
 	size_t currentTimeStringLength = 29;
 	char currentTimeString[currentTimeStringLength + 1]; // + 1 for terminating NUL byte.
-	strftime(currentTimeString, currentTimeStringLength + 1, "%Y-%m-%d %H:%M:%S (TZ%z)", &currentTime);
+	strftime(currentTimeString, currentTimeStringLength + 1, "%Y-%m-%d %H:%M:%S (TZ%z)", currentTime);
 
 	// Prepend debug level as a string to format.
 	const char *logLevelString;
